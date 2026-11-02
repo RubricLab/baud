@@ -10,10 +10,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 # Without debug info and incremental state, peer's test build fits the runner's disk and cache.
+# peer's tests run real QUIC nodes with real timeouts (an introduction waits 2 s for an answer), so
+# two at a time on the runner's few cores, not one per core all at once.
 env:
   CARGO_INCREMENTAL: 0
   CARGO_PROFILE_DEV_DEBUG: 0
   CARGO_PROFILE_TEST_DEBUG: 0
+  RUST_TEST_THREADS: 2
 jobs:
   test:
     name: ${{ matrix.workspace }}
