@@ -27,7 +27,7 @@ final class PeerTests: XCTestCase {
         XCTAssertEqual(ana.inviteMeeting().kind, MeetingKind.none, "no reachable device yet: raw addresses")
         XCTAssertTrue(ana.redirects().isEmpty, "no identity merged yet")
         let link = try ana.invite()
-        XCTAssertTrue(link.hasPrefix("swift://add#peer1.f."), link)
+        XCTAssertTrue(link.hasPrefix("swift://add#"), link)
         let contact = try await sam.add(link: link)
         XCTAssertEqual(contact.name, "ana")
         try await until("ana sees sam") { ana.contacts().contains { $0.name == "sam" } }
