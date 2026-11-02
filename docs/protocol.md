@@ -167,6 +167,13 @@ so a message written offline goes out the next time a path exists, and nothing w
 across restarts. Delivery is data, not decoration: the line under a message says whether it was
 sent, carried by which device, delivered to which device, or read, and it is built from receipts.
 
+Messages can disappear. The setting is a line in the conversation that says for how long (anyone
+in a chat may change it, only an admin in a channel), and each message written while it is on
+carries its own time, so when it goes never depends on when the setting arrived. Each device
+removes my message that long after I sent it, and anyone else's that long after any of my devices
+first read it; an unread message waits. Its words, files, edits and pin go from that device. The
+bare entry stays, so devices still agree on what each holds and nobody sends it again.
+
 ## Waking an iPhone
 
 iOS pauses an app's network soon after it leaves the screen, and only Apple can wake a sleeping
@@ -224,6 +231,8 @@ kept in a database encrypted with SQLCipher under the store key.
 - **Phones help others only while open.** iOS pauses an app's network in the background, so a
   phone relays and carries for others only while baud is on screen or just after. A wake brings
   it online to receive, not to serve.
+- **Older versions keep disappearing messages.** baud 0.2.19 and earlier ignore the setting and
+  keep the messages.
 - **Stale addresses mean meeting again.** If every address you hold for someone is out of date and
   nobody in your circle can reach them, you need a new link.
 
