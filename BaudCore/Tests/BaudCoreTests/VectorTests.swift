@@ -55,7 +55,17 @@ struct VectorTests {
 			("create-group", ev(1, .create, encode(CreateBody(kind: .chat, name: "Weekend", space: nil, history: "members", creator: anaCard, isDefault: nil)), text: "Weekend")),
 			("create-default", ev(1, .create, encode(CreateBody(kind: .chat, name: nil, space: nil, history: "members", creator: benCard, isDefault: true)), dev: benMac, user: ben)),
 			("card", ev(20, .card, encode(anaCard))),
+			("message-ttl", ev(21, .message, encode(MessageBody(text: "gone a day after it's read", ttl: 86_400)), text: "gone a day after it's read")),
+			("state-disappear", ev(22, .state, encode(StateBody(key: "disappear", value: "86400")), text: "disappear")),
+			("state-disappear-off", ev(23, .state, encode(StateBody(key: "disappear", value: "0")), text: "disappear")),
 		]
+	}
+
+	/// The timeline's line for the setting and its words, as both cores make them.
+	static var sentences: [[String: Any]] {
+		[0, 1, 45, 60, 300, 3600, 28_800, 86_400, 172_800, 604_800, 2_419_200, 90, 5400].flatMap { s in
+			["Ana", "You"].map { who in ["by": who, "seconds": s, "line": disappearLine(by: who, seconds: s), "after": disappearAfter(s), "short": disappearShort(s)] as [String: Any] }
+		}
 	}
 
 	static var frames: [(String, Frame)] {
@@ -87,6 +97,7 @@ struct VectorTests {
 		[
 			("MessageBody", encode(MessageBody(text: "a/b", attachments: [Attachment(hash: "h", mime: "image/png", size: 1, name: nil, width: 2, height: 3, duration: nil)], reply: "r", thread: "t", mentions: [ben]))),
 			("MessageBody-empty", encode(MessageBody(text: nil, attachments: nil, reply: nil, thread: nil, mentions: nil))),
+			("MessageBody-ttl", encode(MessageBody(text: "x", attachments: nil, reply: nil, thread: nil, mentions: nil, ttl: 300))),
 			("EditBody", encode(EditBody(target: id(4), text: "x"))),
 			("ReactionBody", encode(ReactionBody(target: id(4), key: "❤️", on: true))),
 			("RedactBody", encode(RedactBody(target: id(4)))),
@@ -185,7 +196,11 @@ struct VectorTests {
 			["input": input, "url": l?.url ?? NSNull(), "kind": l?.kind.rawValue ?? NSNull(), "name": l?.name ?? NSNull(), "expires": l.map { $0.expires.timeIntervalSince1970 } ?? NSNull()]
 		}
 
-		let all: [String: Any] = ["frames": frameRows, "bodies": bodyRows, "packets": packetRows, "ids": ids, "homes": homes, "fingerprints": prints, "links": links, "wireVersion": wireVersion]
+		#expect(disappearLine(by: "Ana", seconds: 86_400) == "Ana set messages to disappear 1 day after they're read")
+		#expect(disappearLine(by: "You", seconds: 0) == "You turned off disappearing messages")
+		#expect([300, 3600, 28_800, 86_400, 604_800, 2_419_200].map(disappearShort) == ["5m", "1h", "8h", "1d", "1w", "4w"])
+
+		let all: [String: Any] = ["frames": frameRows, "bodies": bodyRows, "packets": packetRows, "ids": ids, "homes": homes, "fingerprints": prints, "links": links, "sentences": Self.sentences, "wireVersion": wireVersion]
 		let out = try JSONSerialization.data(withJSONObject: all, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
 		try FileManager.default.createDirectory(at: Self.vectors, withIntermediateDirectories: true)
 		try out.write(to: Self.vectors.appendingPathComponent("swift.json"))
@@ -208,6 +223,11 @@ struct VectorTests {
 			let opened = core.open(Data((row["packet"] as? String ?? "").utf8))
 			#expect(opened != nil, "rust packet \(name) opens")
 			if let opened { #expect(Self.same(encode(opened), row["frame"] as? String ?? ""), "rust packet \(name) holds its frame") }
+		}
+		for row in all["sentences"] as? [[String: Any]] ?? [] {
+			let who = row["by"] as? String ?? "", s = row["seconds"] as? Int ?? -1
+			#expect(disappearLine(by: who, seconds: s) == row["line"] as? String, "rust's line for \(s) s")
+			#expect(disappearAfter(s) == row["after"] as? String && disappearShort(s) == row["short"] as? String, "rust's words for \(s) s")
 		}
 	}
 }

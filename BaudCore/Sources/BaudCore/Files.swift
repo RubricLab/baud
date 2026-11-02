@@ -151,10 +151,11 @@ extension LocalCore {
 		for h in missing { Task { [weak self] in _ = await self?.fetchBlob(h) } }
 	}
 
-	/// Files in arriving messages, small enough to come along: fetched now, so they're here when looked at.
+	/// Files in arriving messages, small enough to come along: fetched now, so they're here when
+	/// looked at. Not a disappearing message's that was gone the moment it arrived.
 	func prefetch(_ events: [WireEvent]) {
 		guard transport != nil else { return }
-		let files = events.filter { $0.type == .message }.flatMap { decode(MessageBody.self, $0.body)?.attachments ?? [] }
+		let files = events.filter { e in e.type == .message && !lock.withLock { gone(e.id) } }.flatMap { decode(MessageBody.self, $0.body)?.attachments ?? [] }
 		for a in files where a.size <= Self.prefetchLimit && !FileManager.default.fileExists(atPath: blobPath(a.hash).path) {
 			Task { [weak self] in _ = await self?.fetchBlob(a.hash) }
 		}

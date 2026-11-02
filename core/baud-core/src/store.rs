@@ -74,7 +74,13 @@ impl Store {
             let _ = conn.execute_batch("pragma journal_mode = wal; pragma synchronous = normal;");
         }
         conn.execute_batch(SCHEMA)?;
-        Ok(Store { conn: ReentrantMutex::new(conn) })
+        let store = Store { conn: ReentrantMutex::new(conn) };
+        // Disappearing messages, into stores from before them: the conversation's setting in
+        // seconds (0, off), and when each message goes on this device, once that is known.
+        store.exec("alter table conversations add column disappear int default 0");
+        store.exec("alter table events add column expires_at real");
+        store.exec("create index if not exists events_expires on events(expires_at) where expires_at is not null");
+        Ok(store)
     }
 
     /// Several statements, no rows; errors are the caller's to ignore (`alter table` on a store
@@ -153,9 +159,9 @@ const SCHEMA: &str = "
 create table if not exists me(k text primary key, v text);
 create table if not exists people(user text primary key, name text, fingerprint text, verified int default 0, contact int default 0, met_at real, demo int default 0, avatar text, peer_card blob, vouched integer default 0);
 create table if not exists devices(id text primary key, user text, name text, kind text, added_at real, last_online real);
-create table if not exists conversations(id text primary key, kind text, name text, topic text, space text, created_at real, is_default int default 0, demo int default 0);
+create table if not exists conversations(id text primary key, kind text, name text, topic text, space text, created_at real, is_default int default 0, demo int default 0, disappear int default 0);
 create table if not exists members(conv text, user text, admin int default 0, joined_at real, primary key(conv, user));
-create table if not exists events(id text primary key, conv text, device text, seq int, user text, at real, lamport int, type text, text text, reply text, thread text, target text, body text, carried_by text, via text);
+create table if not exists events(id text primary key, conv text, device text, seq int, user text, at real, lamport int, type text, text text, reply text, thread text, target text, body text, carried_by text, via text, expires_at real);
 create unique index if not exists events_feed on events(conv, device, seq);
 create index if not exists events_conv on events(conv, lamport, id);
 create index if not exists events_thread on events(thread, lamport);

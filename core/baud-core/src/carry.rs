@@ -321,6 +321,10 @@ impl Core {
         if read_here {
             self.store.run("insert or replace into reads(conv,event,lamport) values(?,?,?)", &[&r.conv, &r.event, &r.lamport]);
         }
+        // Read by me, here or on another device of mine: disappearing messages start their clocks.
+        if r.kind == "read" && r.user == self.user() {
+            self.start_clocks(&r.conv, r.lamport, r.at);
+        }
         self.emit(Change::Delivery { conv: r.conv.clone() });
         if read_here {
             self.emit(Change::Conversations);

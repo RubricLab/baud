@@ -1,7 +1,7 @@
 {
   "bodies" : [
     {
-      "json" : "{\"reply\":\"r\",\"mentions\":[\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\"],\"attachments\":[{\"size\":1,\"hash\":\"h\",\"key\":\"\",\"mime\":\"image\\/png\",\"width\":2,\"height\":3}],\"thread\":\"t\",\"text\":\"a\\/b\"}",
+      "json" : "{\"mentions\":[\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\"],\"text\":\"a\\/b\",\"attachments\":[{\"size\":1,\"height\":3,\"width\":2,\"hash\":\"h\",\"mime\":\"image\\/png\",\"key\":\"\"}],\"reply\":\"r\",\"thread\":\"t\"}",
       "name" : "MessageBody"
     },
     {
@@ -9,11 +9,15 @@
       "name" : "MessageBody-empty"
     },
     {
-      "json" : "{\"text\":\"x\",\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\"}",
+      "json" : "{\"text\":\"x\",\"ttl\":300}",
+      "name" : "MessageBody-ttl"
+    },
+    {
+      "json" : "{\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"text\":\"x\"}",
       "name" : "EditBody"
     },
     {
-      "json" : "{\"key\":\"❤️\",\"on\":true,\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\"}",
+      "json" : "{\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"key\":\"❤️\",\"on\":true}",
       "name" : "ReactionBody"
     },
     {
@@ -21,15 +25,15 @@
       "name" : "RedactBody"
     },
     {
-      "json" : "{\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"card\":{\"devices\":[{\"id\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"name\":\"Ben's Mac\",\"addedAt\":1792000000.5,\"kind\":\"mac\"}],\"fingerprint\":\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"name\":\"Ben\"},\"action\":\"add\",\"admin\":true}",
+      "json" : "{\"admin\":true,\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"card\":{\"devices\":[{\"name\":\"Ben's Mac\",\"kind\":\"mac\",\"id\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"addedAt\":1792000000.5}],\"name\":\"Ben\",\"fingerprint\":\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\"},\"action\":\"add\"}",
       "name" : "MemberBody"
     },
     {
-      "json" : "{\"key\":\"name\",\"value\":\"Ö\"}",
+      "json" : "{\"value\":\"Ö\",\"key\":\"name\"}",
       "name" : "StateBody"
     },
     {
-      "json" : "{\"creator\":{\"devices\":[{\"id\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"name\":\"Ben's Mac\",\"addedAt\":1792000000.5,\"kind\":\"mac\"}],\"fingerprint\":\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"name\":\"Ben\"},\"kind\":\"channel\",\"space\":\"0707070707070707070707070707070707070707070707070707070707070707\",\"isDefault\":true,\"history\":\"shared\",\"name\":\"general\"}",
+      "json" : "{\"history\":\"shared\",\"isDefault\":true,\"kind\":\"channel\",\"creator\":{\"devices\":[{\"name\":\"Ben's Mac\",\"kind\":\"mac\",\"id\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"addedAt\":1792000000.5}],\"name\":\"Ben\",\"fingerprint\":\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\"},\"name\":\"general\",\"space\":\"0707070707070707070707070707070707070707070707070707070707070707\"}",
       "name" : "CreateBody"
     },
     {
@@ -37,7 +41,7 @@
       "name" : "CallRecord"
     },
     {
-      "json" : "[{\"isDefault\":true,\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"name\":\"general\"},{\"isDefault\":false,\"conv\":\"0707070707070707070707070707070707070707070707070707070707070707\",\"name\":\"random\"}]",
+      "json" : "[{\"isDefault\":true,\"name\":\"general\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\"},{\"isDefault\":false,\"name\":\"random\",\"conv\":\"0707070707070707070707070707070707070707070707070707070707070707\"}]",
       "name" : "ChannelRefs"
     }
   ],
@@ -57,87 +61,99 @@
   ],
   "frames" : [
     {
-      "json" : "{\"events\":{\"_0\":[{\"text\":\"See https:\\/\\/x.y\\/z — café é 😀\\n\\\"quoted\\\" \\\\ back\\/slash\\ttab\",\"body\":\"{\\\"thread\\\":\\\"fb1038a339a997a301c079074bfe0928\\\",\\\"text\\\":\\\"See https:\\\\\\/\\\\\\/x.y\\\\\\/z — café é 😀\\\\n\\\\\\\"quoted\\\\\\\" \\\\\\\\ back\\\\\\/slash\\\\ttab\\\",\\\"mentions\\\":[\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\"],\\\"attachments\\\":[{\\\"size\\\":2345678,\\\"mime\\\":\\\"image\\\\\\/jpeg\\\",\\\"height\\\":3024,\\\"name\\\":\\\"IMG_0001.jpg\\\",\\\"hash\\\":\\\"abababababababababababababababababababababababababababababababab\\\",\\\"key\\\":\\\"0011223344556677\\\",\\\"width\\\":4032},{\\\"size\\\":12000000,\\\"mime\\\":\\\"video\\\\\\/quicktime\\\",\\\"duration\\\":12.48,\\\"height\\\":1080,\\\"name\\\":\\\"clip.mov\\\",\\\"hash\\\":\\\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\\\",\\\"key\\\":\\\"8899aabbccddeeff\\\",\\\"width\\\":1920},{\\\"key\\\":\\\"\\\",\\\"size\\\":3,\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\"}],\\\"reply\\\":\\\"fb1039a339a999566388ff4dccb38d13\\\"}\",\"seq\":3,\"reply\":\"fb1039a339a999566388ff4dccb38d13\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"type\":\"message\",\"id\":\"fb1037a339a995f09ff7f2c0cb48853d\",\"at\":1792191121.909131,\"lamport\":3,\"thread\":\"fb1038a339a997a301c079074bfe0928\"}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"message\",\"text\":\"See https:\\/\\/x.y\\/z — café é 😀\\n\\\"quoted\\\" \\\\ back\\/slash\\ttab\",\"body\":\"{\\\"reply\\\":\\\"fb1039a339a999566388ff4dccb38d13\\\",\\\"text\\\":\\\"See https:\\\\\\/\\\\\\/x.y\\\\\\/z — café é 😀\\\\n\\\\\\\"quoted\\\\\\\" \\\\\\\\ back\\\\\\/slash\\\\ttab\\\",\\\"attachments\\\":[{\\\"size\\\":2345678,\\\"key\\\":\\\"0011223344556677\\\",\\\"name\\\":\\\"IMG_0001.jpg\\\",\\\"hash\\\":\\\"abababababababababababababababababababababababababababababababab\\\",\\\"mime\\\":\\\"image\\\\\\/jpeg\\\",\\\"width\\\":4032,\\\"height\\\":3024},{\\\"size\\\":12000000,\\\"key\\\":\\\"8899aabbccddeeff\\\",\\\"name\\\":\\\"clip.mov\\\",\\\"duration\\\":12.48,\\\"mime\\\":\\\"video\\\\\\/quicktime\\\",\\\"hash\\\":\\\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\\\",\\\"width\\\":1920,\\\"height\\\":1080},{\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"size\\\":3,\\\"key\\\":\\\"\\\",\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\"}],\\\"thread\\\":\\\"fb1038a339a997a301c079074bfe0928\\\",\\\"mentions\\\":[\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\"]}\",\"seq\":3,\"reply\":\"fb1039a339a999566388ff4dccb38d13\",\"id\":\"fb1037a339a995f09ff7f2c0cb48853d\",\"at\":1792191121.909131,\"lamport\":3,\"thread\":\"fb1038a339a997a301c079074bfe0928\"}]}}",
       "name" : "events-message-full"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"text\":\"hi\",\"body\":\"{\\\"text\\\":\\\"hi\\\"}\",\"seq\":4,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"type\":\"message\",\"id\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"at\":1792191121,\"lamport\":4}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"message\",\"text\":\"hi\",\"seq\":4,\"at\":1792191121,\"id\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"lamport\":4,\"body\":\"{\\\"text\\\":\\\"hi\\\"}\"}]}}",
       "name" : "events-message-text"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":5,\"id\":\"fb103da339a9a022dc66e633c9dd7d67\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"message\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"attachments\\\":[{\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\",\\\"size\\\":3,\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"key\\\":\\\"\\\"}]}\",\"seq\":5}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"message\",\"seq\":5,\"id\":\"fb103da339a9a022dc66e633c9dd7d67\",\"at\":1792191121.909131,\"lamport\":5,\"body\":\"{\\\"attachments\\\":[{\\\"size\\\":3,\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\",\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"key\\\":\\\"\\\"}]}\"}]}}",
       "name" : "events-message-photo-only"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":6,\"id\":\"fb103ca339a99e6f7a9e5fed4927f97c\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"hi again\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"edit\",\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\",\\\"text\\\":\\\"hi again\\\"}\",\"seq\":6}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"edit\",\"text\":\"hi again\",\"seq\":6,\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"id\":\"fb103ca339a99e6f7a9e5fed4927f97c\",\"at\":1792191121.909131,\"lamport\":6,\"body\":\"{\\\"text\\\":\\\"hi again\\\",\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\"}\"}]}}",
       "name" : "events-edit"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":7,\"id\":\"fb103ba339a99cbc18d5d9a6c8727591\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"reaction\",\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"key\\\":\\\"👍\\\",\\\"on\\\":true,\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\"}\",\"seq\":7}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"reaction\",\"seq\":7,\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"at\":1792191121.909131,\"id\":\"fb103ba339a99cbc18d5d9a6c8727591\",\"lamport\":7,\"body\":\"{\\\"key\\\":\\\"👍\\\",\\\"on\\\":true,\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\"}\"}]}}",
       "name" : "events-reaction-on"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"body\":\"{\\\"key\\\":\\\"👍\\\",\\\"on\\\":false,\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\"}\",\"seq\":8,\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"type\":\"reaction\",\"id\":\"fb1042a339a9a8a1b70d536047bcf1a6\",\"at\":1792191121.909131,\"lamport\":8}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"reaction\",\"seq\":8,\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"at\":1792191121.909131,\"id\":\"fb1042a339a9a8a1b70d536047bcf1a6\",\"lamport\":8,\"body\":\"{\\\"key\\\":\\\"👍\\\",\\\"on\\\":false,\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\"}\"}]}}",
       "name" : "events-reaction-off"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":9,\"id\":\"fb1041a339a9a6ee5544cd19c7076dbb\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"redact\",\"target\":\"fb103da339a9a022dc66e633c9dd7d67\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"target\\\":\\\"fb103da339a9a022dc66e633c9dd7d67\\\"}\",\"seq\":9}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"redact\",\"seq\":9,\"target\":\"fb103da339a9a022dc66e633c9dd7d67\",\"at\":1792191121.909131,\"id\":\"fb1041a339a9a6ee5544cd19c7076dbb\",\"lamport\":9,\"body\":\"{\\\"target\\\":\\\"fb103da339a9a022dc66e633c9dd7d67\\\"}\"}]}}",
       "name" : "events-redact"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"text\":\"add\",\"body\":\"{\\\"card\\\":{\\\"devices\\\":[{\\\"kind\\\":\\\"mac\\\",\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\",\\\"addedAt\\\":1792100000.25,\\\"name\\\":\\\"Ana's Mac\\\"},{\\\"kind\\\":\\\"iphone\\\",\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\",\\\"addedAt\\\":1792100500,\\\"name\\\":\\\"Ana's iPhone\\\"}],\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"name\\\":\\\"Ana Zoë\\\"},\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"admin\\\":false,\\\"action\\\":\\\"add\\\"}\",\"seq\":10,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"type\":\"member\",\"id\":\"462b565afb2fa85269db9feed5850a7f\",\"at\":1792191121.909131,\"lamport\":10}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"member\",\"text\":\"add\",\"seq\":10,\"at\":1792191121.909131,\"id\":\"462b565afb2fa85269db9feed5850a7f\",\"lamport\":10,\"body\":\"{\\\"card\\\":{\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"name\\\":\\\"Ana Zoë\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"devices\\\":[{\\\"addedAt\\\":1792100000.25,\\\"kind\\\":\\\"mac\\\",\\\"name\\\":\\\"Ana's Mac\\\",\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\"},{\\\"addedAt\\\":1792100500,\\\"kind\\\":\\\"iphone\\\",\\\"name\\\":\\\"Ana's iPhone\\\",\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\"}],\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\"},\\\"action\\\":\\\"add\\\",\\\"admin\\\":false,\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\"}\"}]}}",
       "name" : "events-member-add"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":11,\"id\":\"462b575afb2faa05081319a854cf8694\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"remove\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"member\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"user\\\":\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\",\\\"action\\\":\\\"remove\\\"}\",\"seq\":11}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"member\",\"text\":\"remove\",\"seq\":11,\"at\":1792191121.909131,\"id\":\"462b575afb2faa05081319a854cf8694\",\"lamport\":11,\"body\":\"{\\\"action\\\":\\\"remove\\\",\\\"user\\\":\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\"}\"}]}}",
       "name" : "events-member-remove"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"text\":\"leave\",\"body\":\"{\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"action\\\":\\\"leave\\\"}\",\"seq\":12,\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"type\":\"member\",\"id\":\"462b545afb2fa4eca64a9361d41a02a9\",\"at\":1792191121.909131,\"lamport\":12}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"member\",\"text\":\"leave\",\"seq\":12,\"id\":\"462b545afb2fa4eca64a9361d41a02a9\",\"at\":1792191121.909131,\"lamport\":12,\"body\":\"{\\\"action\\\":\\\"leave\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\"}\"}]}}",
       "name" : "events-member-leave"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":13,\"id\":\"462b555afb2fa69f44820d1b53647ebe\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"name\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"value\\\":\\\"Weekend \\\\\\/ plans\\\",\\\"key\\\":\\\"name\\\"}\",\"seq\":13}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"state\",\"text\":\"name\",\"seq\":13,\"id\":\"462b555afb2fa69f44820d1b53647ebe\",\"at\":1792191121.909131,\"lamport\":13,\"body\":\"{\\\"value\\\":\\\"Weekend \\\\\\/ plans\\\",\\\"key\\\":\\\"name\\\"}\"}]}}",
       "name" : "events-state-name"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":14,\"id\":\"462b525afb2fa186e2b986d4d2aefad3\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"topic\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"value\\\":\\\"Saturday\\\",\\\"key\\\":\\\"topic\\\"}\",\"seq\":14}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"state\",\"text\":\"topic\",\"seq\":14,\"id\":\"462b525afb2fa186e2b986d4d2aefad3\",\"at\":1792191121.909131,\"lamport\":14,\"body\":\"{\\\"value\\\":\\\"Saturday\\\",\\\"key\\\":\\\"topic\\\"}\"}]}}",
       "name" : "events-state-topic"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":15,\"id\":\"462b535afb2fa33980f1008e51f976e8\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"pin\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"value\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\",\\\"key\\\":\\\"pin\\\"}\",\"seq\":15}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"state\",\"text\":\"pin\",\"seq\":15,\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"id\":\"462b535afb2fa33980f1008e51f976e8\",\"at\":1792191121.909131,\"lamport\":15,\"body\":\"{\\\"value\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\",\\\"key\\\":\\\"pin\\\"}\"}]}}",
       "name" : "events-state-pin"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":16,\"id\":\"462b505afb2f9e201f287a47d143f2fd\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"pin\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"value\\\":\\\"-fb103ea339a9a1d53e2f6c7a4a930152\\\",\\\"key\\\":\\\"pin\\\"}\",\"seq\":16}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"state\",\"text\":\"pin\",\"seq\":16,\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"id\":\"462b505afb2f9e201f287a47d143f2fd\",\"at\":1792191121.909131,\"lamport\":16,\"body\":\"{\\\"value\\\":\\\"-fb103ea339a9a1d53e2f6c7a4a930152\\\",\\\"key\\\":\\\"pin\\\"}\"}]}}",
       "name" : "events-state-unpin"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":17,\"id\":\"462b515afb2f9fd3bd5ff401508e6f12\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"call\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"value\\\":\\\"{\\\\\\\"seconds\\\\\\\":245,\\\\\\\"outcome\\\\\\\":\\\\\\\"talked\\\\\\\",\\\\\\\"video\\\\\\\":true}\\\",\\\"key\\\":\\\"call\\\"}\",\"seq\":17}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"state\",\"text\":\"call\",\"seq\":17,\"id\":\"462b515afb2f9fd3bd5ff401508e6f12\",\"at\":1792191121.909131,\"lamport\":17,\"body\":\"{\\\"value\\\":\\\"{\\\\\\\"outcome\\\\\\\":\\\\\\\"talked\\\\\\\",\\\\\\\"seconds\\\\\\\":245,\\\\\\\"video\\\\\\\":true}\\\",\\\"key\\\":\\\"call\\\"}\"}]}}",
       "name" : "events-state-call"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":18,\"id\":\"462b5e5afb2fb5ea5b976dbacfd8eb27\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"value\\\":\\\"0090FF\\\",\\\"key\\\":\\\"profile.colour\\\"}\",\"seq\":18}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"seq\":18,\"id\":\"462b5e5afb2fb5ea5b976dbacfd8eb27\",\"at\":1792191121.909131,\"lamport\":18,\"body\":\"{\\\"value\\\":\\\"0090FF\\\",\\\"key\\\":\\\"profile.colour\\\"}\"}]}}",
       "name" : "events-state-profile-colour"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":19,\"id\":\"462b5f5afb2fb79df9cee7744f23673c\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"value\\\":\\\"42\\\",\\\"key\\\":\\\"profile.hidden.f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\\\"}\",\"seq\":19}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"seq\":19,\"id\":\"462b5f5afb2fb79df9cee7744f23673c\",\"at\":1792191121.909131,\"lamport\":19,\"body\":\"{\\\"value\\\":\\\"42\\\",\\\"key\\\":\\\"profile.hidden.f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\\\"}\"}]}}",
       "name" : "events-state-profile-hidden"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":1,\"id\":\"fb1039a339a999566388ff4dccb38d13\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"Weekend\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"create\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"kind\\\":\\\"chat\\\",\\\"name\\\":\\\"Weekend\\\",\\\"history\\\":\\\"members\\\",\\\"creator\\\":{\\\"devices\\\":[{\\\"kind\\\":\\\"mac\\\",\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\",\\\"addedAt\\\":1792100000.25,\\\"name\\\":\\\"Ana's Mac\\\"},{\\\"kind\\\":\\\"iphone\\\",\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\",\\\"addedAt\\\":1792100500,\\\"name\\\":\\\"Ana's iPhone\\\"}],\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"name\\\":\\\"Ana Zoë\\\"}}\",\"seq\":1}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"create\",\"text\":\"Weekend\",\"seq\":1,\"at\":1792191121.909131,\"id\":\"fb1039a339a999566388ff4dccb38d13\",\"lamport\":1,\"body\":\"{\\\"name\\\":\\\"Weekend\\\",\\\"creator\\\":{\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"name\\\":\\\"Ana Zoë\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"devices\\\":[{\\\"addedAt\\\":1792100000.25,\\\"kind\\\":\\\"mac\\\",\\\"name\\\":\\\"Ana's Mac\\\",\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\"},{\\\"addedAt\\\":1792100500,\\\"kind\\\":\\\"iphone\\\",\\\"name\\\":\\\"Ana's iPhone\\\",\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\"}],\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\"},\\\"history\\\":\\\"members\\\",\\\"kind\\\":\\\"chat\\\"}\"}]}}",
       "name" : "events-create-group"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":1,\"id\":\"edb4b96c5548ef568d2125ca77f97293\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"type\":\"create\",\"device\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"body\":\"{\\\"creator\\\":{\\\"user\\\":\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\",\\\"fingerprint\\\":\\\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\\\",\\\"devices\\\":[{\\\"kind\\\":\\\"mac\\\",\\\"id\\\":\\\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\\\",\\\"addedAt\\\":1792000000.5,\\\"name\\\":\\\"Ben's Mac\\\"}],\\\"name\\\":\\\"Ben\\\"},\\\"isDefault\\\":true,\\\"history\\\":\\\"members\\\",\\\"kind\\\":\\\"chat\\\"}\",\"seq\":1}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"create\",\"seq\":1,\"id\":\"edb4b96c5548ef568d2125ca77f97293\",\"at\":1792191121.909131,\"lamport\":1,\"body\":\"{\\\"creator\\\":{\\\"user\\\":\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\",\\\"name\\\":\\\"Ben\\\",\\\"fingerprint\\\":\\\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\\\",\\\"devices\\\":[{\\\"addedAt\\\":1792000000.5,\\\"kind\\\":\\\"mac\\\",\\\"name\\\":\\\"Ben's Mac\\\",\\\"id\\\":\\\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\\\"}]},\\\"history\\\":\\\"members\\\",\\\"isDefault\\\":true,\\\"kind\\\":\\\"chat\\\"}\"}]}}",
       "name" : "events-create-default"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":20,\"id\":\"4627d05afb2c8ec9491fcd11a3cd6438\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"card\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"name\\\":\\\"Ana Zoë\\\",\\\"devices\\\":[{\\\"name\\\":\\\"Ana's Mac\\\",\\\"addedAt\\\":1792100000.25,\\\"kind\\\":\\\"mac\\\",\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\"},{\\\"name\\\":\\\"Ana's iPhone\\\",\\\"addedAt\\\":1792100500,\\\"kind\\\":\\\"iphone\\\",\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\"}],\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\"}\",\"seq\":20}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"card\",\"seq\":20,\"id\":\"4627d05afb2c8ec9491fcd11a3cd6438\",\"at\":1792191121.909131,\"lamport\":20,\"body\":\"{\\\"name\\\":\\\"Ana Zoë\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"devices\\\":[{\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\",\\\"kind\\\":\\\"mac\\\",\\\"name\\\":\\\"Ana's Mac\\\",\\\"addedAt\\\":1792100000.25},{\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\",\\\"kind\\\":\\\"iphone\\\",\\\"name\\\":\\\"Ana's iPhone\\\",\\\"addedAt\\\":1792100500}],\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\"}\"}]}}",
       "name" : "events-card"
     },
     {
-      "json" : "{\"events\":{\"_0\":[{\"lamport\":3,\"thread\":\"fb1038a339a997a301c079074bfe0928\",\"id\":\"fb1037a339a995f09ff7f2c0cb48853d\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"See https:\\/\\/x.y\\/z — café é 😀\\n\\\"quoted\\\" \\\\ back\\/slash\\ttab\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"message\",\"reply\":\"fb1039a339a999566388ff4dccb38d13\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"thread\\\":\\\"fb1038a339a997a301c079074bfe0928\\\",\\\"reply\\\":\\\"fb1039a339a999566388ff4dccb38d13\\\",\\\"mentions\\\":[\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\"],\\\"text\\\":\\\"See https:\\\\\\/\\\\\\/x.y\\\\\\/z — café é 😀\\\\n\\\\\\\"quoted\\\\\\\" \\\\\\\\ back\\\\\\/slash\\\\ttab\\\",\\\"attachments\\\":[{\\\"width\\\":4032,\\\"mime\\\":\\\"image\\\\\\/jpeg\\\",\\\"height\\\":3024,\\\"hash\\\":\\\"abababababababababababababababababababababababababababababababab\\\",\\\"size\\\":2345678,\\\"key\\\":\\\"0011223344556677\\\",\\\"name\\\":\\\"IMG_0001.jpg\\\"},{\\\"width\\\":1920,\\\"mime\\\":\\\"video\\\\\\/quicktime\\\",\\\"height\\\":1080,\\\"hash\\\":\\\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\\\",\\\"size\\\":12000000,\\\"key\\\":\\\"8899aabbccddeeff\\\",\\\"name\\\":\\\"clip.mov\\\",\\\"duration\\\":12.48},{\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\",\\\"size\\\":3,\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"key\\\":\\\"\\\"}]}\",\"seq\":3},{\"lamport\":4,\"id\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"hi\",\"at\":1792191121,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"message\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"text\\\":\\\"hi\\\"}\",\"seq\":4},{\"lamport\":5,\"id\":\"fb103da339a9a022dc66e633c9dd7d67\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"message\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"attachments\\\":[{\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\",\\\"size\\\":3,\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"key\\\":\\\"\\\"}]}\",\"seq\":5},{\"lamport\":6,\"id\":\"fb103ca339a99e6f7a9e5fed4927f97c\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"hi again\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"edit\",\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\",\\\"text\\\":\\\"hi again\\\"}\",\"seq\":6},{\"lamport\":7,\"id\":\"fb103ba339a99cbc18d5d9a6c8727591\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"reaction\",\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"key\\\":\\\"👍\\\",\\\"on\\\":true,\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\"}\",\"seq\":7}]}}",
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"message\",\"text\":\"gone a day after it's read\",\"seq\":21,\"id\":\"4627cf5afb2c8d16e75746cb2317e04d\",\"at\":1792191121.909131,\"lamport\":21,\"body\":\"{\\\"text\\\":\\\"gone a day after it's read\\\",\\\"ttl\\\":86400}\"}]}}",
+      "name" : "events-message-ttl"
+    },
+    {
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"state\",\"text\":\"disappear\",\"seq\":22,\"id\":\"4627ce5afb2c8b63858ec084a2625c62\",\"at\":1792191121.909131,\"lamport\":22,\"body\":\"{\\\"value\\\":\\\"86400\\\",\\\"key\\\":\\\"disappear\\\"}\"}]}}",
+      "name" : "events-state-disappear"
+    },
+    {
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"state\",\"text\":\"disappear\",\"seq\":23,\"id\":\"4627cd5afb2c89b023c63a3e21acd877\",\"at\":1792191121.909131,\"lamport\":23,\"body\":\"{\\\"value\\\":\\\"0\\\",\\\"key\\\":\\\"disappear\\\"}\"}]}}",
+      "name" : "events-state-disappear-off"
+    },
+    {
+      "json" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"message\",\"text\":\"See https:\\/\\/x.y\\/z — café é 😀\\n\\\"quoted\\\" \\\\ back\\/slash\\ttab\",\"body\":\"{\\\"text\\\":\\\"See https:\\\\\\/\\\\\\/x.y\\\\\\/z — café é 😀\\\\n\\\\\\\"quoted\\\\\\\" \\\\\\\\ back\\\\\\/slash\\\\ttab\\\",\\\"thread\\\":\\\"fb1038a339a997a301c079074bfe0928\\\",\\\"reply\\\":\\\"fb1039a339a999566388ff4dccb38d13\\\",\\\"mentions\\\":[\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\"],\\\"attachments\\\":[{\\\"width\\\":4032,\\\"height\\\":3024,\\\"key\\\":\\\"0011223344556677\\\",\\\"mime\\\":\\\"image\\\\\\/jpeg\\\",\\\"size\\\":2345678,\\\"hash\\\":\\\"abababababababababababababababababababababababababababababababab\\\",\\\"name\\\":\\\"IMG_0001.jpg\\\"},{\\\"width\\\":1920,\\\"height\\\":1080,\\\"duration\\\":12.48,\\\"key\\\":\\\"8899aabbccddeeff\\\",\\\"mime\\\":\\\"video\\\\\\/quicktime\\\",\\\"size\\\":12000000,\\\"hash\\\":\\\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\\\",\\\"name\\\":\\\"clip.mov\\\"},{\\\"size\\\":3,\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\",\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"key\\\":\\\"\\\"}]}\",\"seq\":3,\"reply\":\"fb1039a339a999566388ff4dccb38d13\",\"id\":\"fb1037a339a995f09ff7f2c0cb48853d\",\"at\":1792191121.909131,\"lamport\":3,\"thread\":\"fb1038a339a997a301c079074bfe0928\"},{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"message\",\"text\":\"hi\",\"seq\":4,\"id\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"at\":1792191121,\"lamport\":4,\"body\":\"{\\\"text\\\":\\\"hi\\\"}\"},{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"message\",\"seq\":5,\"id\":\"fb103da339a9a022dc66e633c9dd7d67\",\"at\":1792191121.909131,\"lamport\":5,\"body\":\"{\\\"attachments\\\":[{\\\"size\\\":3,\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\",\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"key\\\":\\\"\\\"}]}\"},{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"edit\",\"text\":\"hi again\",\"seq\":6,\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"id\":\"fb103ca339a99e6f7a9e5fed4927f97c\",\"at\":1792191121.909131,\"lamport\":6,\"body\":\"{\\\"text\\\":\\\"hi again\\\",\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\"}\"},{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"type\":\"reaction\",\"seq\":7,\"target\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"id\":\"fb103ba339a99cbc18d5d9a6c8727591\",\"at\":1792191121.909131,\"lamport\":7,\"body\":\"{\\\"key\\\":\\\"👍\\\",\\\"on\\\":true,\\\"target\\\":\\\"fb103ea339a9a1d53e2f6c7a4a930152\\\"}\"}]}}",
       "name" : "events-several"
     },
     {
@@ -145,11 +161,11 @@
       "name" : "events-empty"
     },
     {
-      "json" : "{\"receipt\":{\"_0\":{\"kind\":\"delivered\",\"lamport\":4,\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121.909131,\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"event\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"device\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"}}}",
+      "json" : "{\"receipt\":{\"_0\":{\"device\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"event\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"kind\":\"delivered\",\"at\":1792191121.909131,\"lamport\":4}}}",
       "name" : "receipt-delivered"
     },
     {
-      "json" : "{\"receipt\":{\"_0\":{\"kind\":\"read\",\"lamport\":4,\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"at\":1792191121,\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"event\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"device\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"}}}",
+      "json" : "{\"receipt\":{\"_0\":{\"device\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"event\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"kind\":\"read\",\"at\":1792191121,\"lamport\":4}}}",
       "name" : "receipt-read"
     },
     {
@@ -157,27 +173,27 @@
       "name" : "typing"
     },
     {
-      "json" : "{\"hello\":{\"card\":{\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"devices\":[{\"addedAt\":1792000000.5,\"kind\":\"mac\",\"id\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"name\":\"Ben's Mac\"}],\"name\":\"Ben\",\"fingerprint\":\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\"},\"secret\":\"5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e\"}}",
+      "json" : "{\"hello\":{\"secret\":\"5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e\",\"card\":{\"fingerprint\":\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"devices\":[{\"addedAt\":1792000000.5,\"name\":\"Ben's Mac\",\"kind\":\"mac\",\"id\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"}],\"name\":\"Ben\"}}}",
       "name" : "hello"
     },
     {
-      "json" : "{\"welcome\":{\"card\":{\"devices\":[{\"addedAt\":1792100000.25,\"kind\":\"mac\",\"id\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"name\":\"Ana's Mac\"},{\"addedAt\":1792100500,\"kind\":\"iphone\",\"id\":\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\",\"name\":\"Ana's iPhone\"}],\"peerCard\":\"+\\/\\/+AAECA3+Avw==\",\"fingerprint\":\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\",\"avatar\":\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"name\":\"Ana Zoë\"}}}",
+      "json" : "{\"welcome\":{\"card\":{\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"name\":\"Ana Zoë\",\"fingerprint\":\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\",\"devices\":[{\"kind\":\"mac\",\"addedAt\":1792100000.25,\"id\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"name\":\"Ana's Mac\"},{\"name\":\"Ana's iPhone\",\"kind\":\"iphone\",\"id\":\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\",\"addedAt\":1792100500}],\"avatar\":\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\",\"peerCard\":\"+\\/\\/+AAECA3+Avw==\"}}}",
       "name" : "welcome"
     },
     {
-      "json" : "{\"link\":{\"device\":{\"name\":\"Ana's iPhone\",\"addedAt\":1792191121.909131,\"kind\":\"iphone\",\"id\":\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\"},\"secret\":\"6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f\"}}",
+      "json" : "{\"link\":{\"secret\":\"6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f\",\"device\":{\"id\":\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\",\"kind\":\"iphone\",\"addedAt\":1792191121.909131,\"name\":\"Ana's iPhone\"}}}",
       "name" : "link"
     },
     {
-      "json" : "{\"card\":{\"_0\":{\"devices\":[{\"addedAt\":1792000000.5,\"kind\":\"mac\",\"id\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"name\":\"Ben's Mac\"}],\"fingerprint\":\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"name\":\"Ben\"}}}",
+      "json" : "{\"card\":{\"_0\":{\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\",\"name\":\"Ben\",\"fingerprint\":\"22669 91359 43221 15228 05675 09997 47806 36219 44100 18589 80148 60185\",\"devices\":[{\"kind\":\"mac\",\"id\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"name\":\"Ben's Mac\",\"addedAt\":1792000000.5}]}}}",
       "name" : "card-bare"
     },
     {
-      "json" : "{\"card\":{\"_0\":{\"devices\":[{\"addedAt\":1792100000.25,\"kind\":\"mac\",\"id\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"name\":\"Ana's Mac\"},{\"addedAt\":1792100500,\"kind\":\"iphone\",\"id\":\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\",\"name\":\"Ana's iPhone\"}],\"peerCard\":\"+\\/\\/+AAECA3+Avw==\",\"fingerprint\":\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\",\"avatar\":\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"name\":\"Ana Zoë\"}}}",
+      "json" : "{\"card\":{\"_0\":{\"avatar\":\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"name\":\"Ana Zoë\",\"fingerprint\":\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\",\"devices\":[{\"kind\":\"mac\",\"id\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"name\":\"Ana's Mac\",\"addedAt\":1792100000.25},{\"kind\":\"iphone\",\"id\":\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\",\"name\":\"Ana's iPhone\",\"addedAt\":1792100500}],\"peerCard\":\"+\\/\\/+AAECA3+Avw==\"}}}",
       "name" : "card-full"
     },
     {
-      "json" : "{\"envelope\":{\"_0\":{\"id\":\"0123456789abcdef\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"frame\":{\"events\":{\"_0\":[{\"lamport\":4,\"id\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"text\":\"hi\",\"at\":1792191121,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"message\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"body\":\"{\\\"text\\\":\\\"hi\\\"}\",\"seq\":4}]}},\"size\":321,\"hops\":1,\"to\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"from\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"expires\":1793400721.5}}}",
+      "json" : "{\"envelope\":{\"_0\":{\"to\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"expires\":1793400721.5,\"hops\":1,\"frame\":{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"message\",\"text\":\"hi\",\"seq\":4,\"id\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"at\":1792191121,\"lamport\":4,\"body\":\"{\\\"text\\\":\\\"hi\\\"}\"}]}},\"from\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"size\":321,\"id\":\"0123456789abcdef\"}}}",
       "name" : "envelope"
     },
     {
@@ -185,11 +201,11 @@
       "name" : "ack"
     },
     {
-      "json" : "{\"clock\":{\"_0\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"_1\":{\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\":3,\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\":20}}}",
+      "json" : "{\"clock\":{\"_0\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"_1\":{\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\":20,\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\":3}}}",
       "name" : "clock"
     },
     {
-      "json" : "{\"clock\":{\"_0\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"_1\":{}}}",
+      "json" : "{\"clock\":{\"_1\":{},\"_0\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\"}}",
       "name" : "clock-empty"
     },
     {
@@ -197,11 +213,11 @@
       "name" : "clockReply"
     },
     {
-      "json" : "{\"inCall\":{\"_1\":{\"peers\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"name\":\"Ana\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\"},{\"device\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"name\":\"Ben\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\"}],\"id\":\"call-1\",\"video\":true,\"until\":1792191181.909131},\"_0\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\"}}",
+      "json" : "{\"inCall\":{\"_1\":{\"peers\":[{\"name\":\"Ana\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\"},{\"name\":\"Ben\",\"device\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"user\":\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\"}],\"until\":1792191181.909131,\"video\":true,\"id\":\"call-1\"},\"_0\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\"}}",
       "name" : "inCall"
     },
     {
-      "json" : "{\"inCall\":{\"_0\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"_1\":{\"video\":false,\"id\":\"call-1\",\"peers\":[],\"until\":1792191121}}}",
+      "json" : "{\"inCall\":{\"_1\":{\"peers\":[],\"until\":1792191121,\"video\":false,\"id\":\"call-1\"},\"_0\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\"}}",
       "name" : "inCall-over"
     },
     {
@@ -209,11 +225,11 @@
       "name" : "want"
     },
     {
-      "json" : "{\"offer\":{\"_0\":\"abababababababababababababababababababababababababababababababab\",\"_1\":\"1212121212121212121212121212121212121212121212121212121212121212\"}}",
+      "json" : "{\"offer\":{\"_1\":\"1212121212121212121212121212121212121212121212121212121212121212\",\"_0\":\"abababababababababababababababababababababababababababababababab\"}}",
       "name" : "offer"
     },
     {
-      "json" : "{\"relay\":{\"_0\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"_1\":\"eyJ2Ijoyffv\\/\\/gABAgN\\/gL8=\"}}",
+      "json" : "{\"relay\":{\"_1\":\"eyJ2Ijoyffv\\/\\/gABAgN\\/gL8=\",\"_0\":\"e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"}}",
       "name" : "relay"
     }
   ],
@@ -347,21 +363,21 @@
   "packets" : [
     {
       "conv" : "f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6",
-      "frame" : "{\"events\":{\"_0\":[{\"text\":\"See https:\\/\\/x.y\\/z — café é 😀\\n\\\"quoted\\\" \\\\ back\\/slash\\ttab\",\"body\":\"{\\\"reply\\\":\\\"fb1039a339a999566388ff4dccb38d13\\\",\\\"attachments\\\":[{\\\"key\\\":\\\"0011223344556677\\\",\\\"name\\\":\\\"IMG_0001.jpg\\\",\\\"hash\\\":\\\"abababababababababababababababababababababababababababababababab\\\",\\\"width\\\":4032,\\\"height\\\":3024,\\\"mime\\\":\\\"image\\\\\\/jpeg\\\",\\\"size\\\":2345678},{\\\"key\\\":\\\"8899aabbccddeeff\\\",\\\"name\\\":\\\"clip.mov\\\",\\\"hash\\\":\\\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\\\",\\\"width\\\":1920,\\\"duration\\\":12.48,\\\"height\\\":1080,\\\"mime\\\":\\\"video\\\\\\/quicktime\\\",\\\"size\\\":12000000},{\\\"key\\\":\\\"\\\",\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\",\\\"size\\\":3}],\\\"text\\\":\\\"See https:\\\\\\/\\\\\\/x.y\\\\\\/z — café é 😀\\\\n\\\\\\\"quoted\\\\\\\" \\\\\\\\ back\\\\\\/slash\\\\ttab\\\",\\\"thread\\\":\\\"fb1038a339a997a301c079074bfe0928\\\",\\\"mentions\\\":[\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\"]}\",\"seq\":3,\"reply\":\"fb1039a339a999566388ff4dccb38d13\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"type\":\"message\",\"id\":\"fb1037a339a995f09ff7f2c0cb48853d\",\"at\":1792191121.909131,\"lamport\":3,\"thread\":\"fb1038a339a997a301c079074bfe0928\"},{\"text\":\"hi\",\"body\":\"{\\\"text\\\":\\\"hi\\\"}\",\"seq\":4,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"type\":\"message\",\"id\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"at\":1792191121,\"lamport\":4}]}}",
+      "frame" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"message\",\"text\":\"See https:\\/\\/x.y\\/z — café é 😀\\n\\\"quoted\\\" \\\\ back\\/slash\\ttab\",\"body\":\"{\\\"mentions\\\":[\\\"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2\\\"],\\\"attachments\\\":[{\\\"width\\\":4032,\\\"hash\\\":\\\"abababababababababababababababababababababababababababababababab\\\",\\\"height\\\":3024,\\\"name\\\":\\\"IMG_0001.jpg\\\",\\\"key\\\":\\\"0011223344556677\\\",\\\"size\\\":2345678,\\\"mime\\\":\\\"image\\\\\\/jpeg\\\"},{\\\"width\\\":1920,\\\"hash\\\":\\\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\\\",\\\"height\\\":1080,\\\"duration\\\":12.48,\\\"name\\\":\\\"clip.mov\\\",\\\"key\\\":\\\"8899aabbccddeeff\\\",\\\"size\\\":12000000,\\\"mime\\\":\\\"video\\\\\\/quicktime\\\"},{\\\"hash\\\":\\\"efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef\\\",\\\"key\\\":\\\"\\\",\\\"mime\\\":\\\"application\\\\\\/octet-stream\\\",\\\"size\\\":3}],\\\"reply\\\":\\\"fb1039a339a999566388ff4dccb38d13\\\",\\\"text\\\":\\\"See https:\\\\\\/\\\\\\/x.y\\\\\\/z — café é 😀\\\\n\\\\\\\"quoted\\\\\\\" \\\\\\\\ back\\\\\\/slash\\\\ttab\\\",\\\"thread\\\":\\\"fb1038a339a997a301c079074bfe0928\\\"}\",\"seq\":3,\"reply\":\"fb1039a339a999566388ff4dccb38d13\",\"at\":1792191121.909131,\"id\":\"fb1037a339a995f09ff7f2c0cb48853d\",\"lamport\":3,\"thread\":\"fb1038a339a997a301c079074bfe0928\"},{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"message\",\"text\":\"hi\",\"seq\":4,\"at\":1792191121,\"id\":\"fb103ea339a9a1d53e2f6c7a4a930152\",\"lamport\":4,\"body\":\"{\\\"text\\\":\\\"hi\\\"}\"}]}}",
       "joiner" : false,
       "key" : "AwoRGB8mLTQ7QklQV15lbHN6gYiPlp2kq7K5wMfO1dw=",
       "name" : "sealed",
       "nonce" : "AwoRGB8mLTQ7QklQ",
-      "packet" : "{\"nonce\":\"AwoRGB8mLTQ7QklQ\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"body\":\"s4OE1UEUWSXwS9UWx9R5V2pH3lcQC1Sy9+9vhcDjC4oNHXa7ynJJF\\/pmqqlgl3lgbO9AhkFlYGSA10GdbiuxLD23HUYuXT6gPDQ7UnYSmN2yrEZrHiCh65JJbjNEg2ZBbVpP4sp\\/Ie+UFhdn7Nm2aaWjgZV57xBz2Ry2hU5UhQkd0Gx1zPzrDHDnClxnyApjR9Rn5UQy0Kmnh38oGe9SDOE7XPs7Le8lAT56z7JJtmY1o6Yg+nb\\/mVwETK23BsyF4CCimWA0ulMFucEU+7IqZvsO1LF8+5\\/NvoGc4bK8Z4qdLN6MDnv2b5Seti9Y9p+0xwbUKma2V5fZi9NZlF3TNpYygBySOwc1QmBmkh8uuBkum1U4rhpdKnoeiviCGMEJGlicAWI73fy\\/dErWx6IVxVcWk855SufoO6TBVPBaJ\\/Z0oksrL3zffG7sc0PDMBT1TeRbK21HwrjkKaikGrSz0DErPgwehPGiIUFOtWyvUYzwAT3ZVTTDQDoBjyO+zr0heVgPbLo6p5Xfnn4UhUvLlksZ6MtiD3+e+\\/YJHIsmMBT4YmOt\\/VaXQCnYWoOEfIOGd0yB9W4T1ZWA1D5+5EYKhkBpYO7LKnh\\/4\\/d\\/+GKWILaZJBS4PU\\/YsfG\\/0jtEgGwJiHgzgck+ctl8yp2KY5t48umnjxqwF7FHCjkX3pJ\\/LXLbJfQHe92LX\\/p1yTpWAwQju7r9c\\/axOnGSu21Z1baMynKyxMBVn6NHQ3vy0sl2BnDYYEdPcblfAsusGfn5zEDOYNL9fUx7\\/q7aO5kkEo8XuwqU5GXB71WwJCzz52rtYfhQoJ\\/KMlkqKU0Y8G+agxdm2tyfujAaK2qsRr5tpio2SwMe8\\/iKlNyiKiO9TRwP4O8e3S9P9aFTW84Y\\/RSSrqW\\/ZydEnrAByoHL7Q6xUfrrHzBmj0fAMsi6\\/27\\/Oce2Ke2HsNkWS2ojuNQiCMiwLVOqjVYk+99abyhHkTjF7e7\\/RleHKD8wEirTzIngCu79zsyen1grhq\\/bEXL3AaXTT5SXFIjAj2HS1NyhHJ3pIXxGasRpqOYfXWygeLWj+VTaPzd+xQd06xOHoRu7Mhg7kiPJn9nywR0PE4U1WqYrrfODAxlnLLI0GklA4xfSINcyEJTL2tq+2waGlnRlNDtfnBS7otAwac+wxPPxUT4IVfxAEpy9HtWHsG8Nwlq10UEi+E0\\/ahDe\\/vpoEctwI3ZSyQK79uLEhia3ynqFq9hiov1CGJAedWSjOQAdGHOdrZJntd5XddfgwIQTmvWfhF6MQA6on8\\/vuGxX03shWUZKvao\\/JXwsMTa3p\\/osHNGzGB466Xs1msrig0S9UUI5AyOoSOcm3uo9GEZdCsPk27bO1ksS7\\/jHqdctCc7fiR\\/tf57TRVDUuKVTKItyQSqAbAJOvr0GugFWhBI+QRQoaWtI4jd50Crq3Ztlp7ZK1dMihO4rWnZq8ZbVVoLpMj7kRDswtc8XItoZCNaiWQ2iXs+ZxqDn7fYcACNPfpue\\/tSuVLLRtnSV38RQ3IhWpMTWcWRgROk5tDHk6EzeTqNjyACbWloGtBds8\\/xfJLU\\/Sqi+9AlNcDHHlUnH5W7OSGJkw1+Hqpixi9sKmlMt\\/kAoks3j4f5MPuUWQs\\/uVCSuvi94O9Y7\\/X2Hdv554W2ouVdegfP+cKgw+gox1BxYcvkdnWEIXkSYXvZ8Lyb06vN5jQIpA2rLVQT4IeTYmNY3M+Fa2Esyn5IVSHgoI2\\/A+wUlVdOjB1kDdmz1OrfcUSRjmlp77Vh4JpHLpNjN67V1DbXFhdy4R8GaLE7LtGUeVYMDK0MLmVZXCTiIAuY1ii4rwx8PPePhM8qXz2WddC5A0eJLDSEdFef6RqGeBtHqHZOVNr2VyljZaf2Sb9ryUcoxFfak\\/gwvN17dMnjOswBBwKUntRHbMgXMd0A6q6oagIrLvFXTYcOVnHt6b42nfuTNZB79+WvZqd41zkT1BI4OHw2t5sihHmMXtheyt5Fj7C0WMsk7cJFLdymihLqOnKxoQv9diR0ZIuwLKX26JcC0b05P6E9zf4jOL7LEZrFeI2mBq5AbHHAPgpaIJi1B5cNCPi4s5pI+PtTRq+5tNCCEF7z83rm5suAPXQmRyqbVRZufsVIHNMFYCz5pmXQFcZwFI1TGl1eJLv0rrJjhsretP+0SGCb08wpbSGhT4yhGdqb51Tni6y5WtD\\/X10kfxzsRldepb\\/6HNQCMwDP0J+LIQo9dRN\\/11wRJePHfSKDbVjAW\\/kT5sRCh8FWOg8exYhmXDcKRkxt3Tg7Z\\/S1gP2lXtF1VvEUNeFFj5Cf9wvMWdlvxbk4ijMCll+G8KqTI9fW3IrayAmHWv+wNKHnU3Iq+p3RaCJg9cqXUGX3Psw==\",\"v\":2}"
+      "packet" : "{\"nonce\":\"AwoRGB8mLTQ7QklQ\",\"v\":2,\"body\":\"s4OE1UEUWSXwS9UWx9R5V2pH3kcQBUnzqO8GwsbwAM0aXmay9W52C+F7sMYs3jqxj0gD1kMwwP7DJ4uO\\/YdKnwLqIlc8GzLnOmMEQzV9p86z\\/kYzITyxtJAJZVwS2yVAIBgbop85PvvIAgoNqJ21L6\\/su4ElhVQj3RvggBED0AxChzN6k\\/+7DCXpVAxnygg2QoAy60Y1hcPjnUU8Hq1AW+RlV6gzb75VAXFS0ZxJ5yEtzuUrx2WumAwEH67lBJmAtCT1njYyh0BI1IJL++4uC7gF6aJUh7mj74DN4f3ndtygP5PhTSL2LZ3z9SRl5Z\\/nhEiXPH6kU9eCy99ehkzTM5JyzVyHPB4jATgloxsp+RM7jUQp9SQTFDQExeO\\/VdpLmbppQ2A42l13NugdhjDWf\\/sW3+UyX+bvE+OfPOJJSYYI4kItLUeYe16vOhivdlS4c+QaYGJN+uP8T6i2K\\/e50AMDC0wah8jnRzg+yyzuWsT3b33RBTWVR24E1Wzwh4MxcA8UAvoymYWFlCUfhhjLxkpI7p1lWHvKxeZHcst6M0v\\/DCOlw0aWHiKaFty3KIKIBzLC6XsB3qHPiwwo9H5L2Hh2X6jfJ39v6M8+pjXCcODWHFW0P1jTibDh7X1Ghm4Pin4xh8s4cN9+zJ+MYZ169OuhjRyyEbNBCD8V2K8\\/YEyYMPwBbte2H6EmkWoHTTljvq3ucOO6NH2v+zYKu7qUrnyGg8FXnrBzFR3j2MpyEhzWUgRPfYgYZLW0DJbI+hSbP7+PSxNt1+WVDM8mGpMXuxyU5CaYpAHeNCXx4W7oZP5Wp9W6aylUYFsI1ij8\\/Q8Iy8T2rmpLalPSCe1c4RdkATNV+fSfmtaQKiPOCAMJ89ZIjXBA2+ZFX\\/ZOuRSS\\/PX1PUtK+M5LzpTG10ntaL7tHTZkiUXGMM64+Wz5O8G0L++Bst8UTWglutIgDsq2L1Woi1Qi+dlYaSpBkz7H6+z5RFGFLj02EBWVg7GhHeTj97KQ+Uk+vurgW3LOW+u+XZb7GoeHjjTIwdy4AMnpXxpYBLYBv7JtBl6dSf+F+4wGiXRxzRGZL1wyVBln8aLQqwb74b\\/ywVRCRcgxX5gVkrLHOyBeFvQKWQZ3nTjndcECU92StLb6n1fU+noVSnRCmQOC4Y4waYOFgvD8PFJnQuwGSMa3U4XdtAAfjhX+ulp6rgo1UFfUm+o1K4w6GjJaygmp+uvPkx\\/zlUe87982palFTJdKcjCkbQdJHyea+ZUzsopQIdC0x9AUzvLLgwqLFAn8mJvo7GsD7WtvNwYTuuEBNSRCcVj3ucQ8E4qCXx9l8Qs1iN\\/jzRftHBQiCT2YbZkzk+8rTAJDQNalje7Cs1AHhuyC85VwM4rR3gHTMfHJUwSX9vAtf8JLEW7Yf1NM5u1UuFkG3BpmRUMvO2IRtTB81XjojslsorYYuJA\\/uf0+Dm8vzIWOO8GLNmqlHS51pI1MT+d0RrufNEPrEYfntt6r+LiIoo1Ne8yeCxu48S2XcI07Oa5qhLI8ntDBMm0iR7sD3gvwribkJJl1zFeeB2Bsjg55qfsaKt8FCLrp8GMJagvThxfTti2GNiQ76RSCrYu7moBYylN3rBoixp+z4qwcbeFMQZvpVXGovXV5YLl6szyYN75\\/oyyh6UgfwPW9f+Jx80tk1R4LcqNPzWFSDB6SBPBoNTe4q+V6m1xoDW2LHgGud+TYmN4nM+FJiRAxnpgTGHkqNDfJ+wFwVMbnCApHfi2jO+TYWis3mg1goEMgZ9XBrImS7uJ+X7SU1sa5T82Ye13LtGUeVYMDK0MLmVZXCTiIAuY1ii4rwx8PPePhM8qXz2WddC5A0eJLDSEdFef6RqGeBtHqHZOVNr2VyljJafOPLoXyA4FwCrf18ls1JgfMKheP9AYK18pmvC7KOV\\/zZl4r5LsK1pja5VKccNXVmjo7Zsz1LLafNkyvqzmL+4xnnBanVtxcDEC+5JauWSAc9UDl4MY0u3pBZZ5sJ8YcIH710+3Zy\\/s\\/FagK3kpOdbtcfirtMYqgahdHqAt\\/O9ief+KUNuEOcznR+8BLTCBf0sacbDlSoMAGeiJoscVpaYOG\\/Lk6Y3fTQOurie7u5bdYCl7GnfGCEszI5gVQY5ZLRi1szWNdc8hGKBeUxQXbfK95\\/sqz4OX\\/bb9ASje74h0RWz4S6mkYcObphz20qjEX8zmcwFhG1jBL1MjoL\\/jFdAnb33KmMPORQNtXVMLukkwLLP\\/HA6mcH2ER+xDrrlepp0SNwJiyYk2RW8aQxhR1QA7c+CFgamoEsBxO\\/x0NLBI8p2bt2usYNU28MAY3j9Dv8vL5fe2Qi7vsE+S1GUnW+PoNKHnUz6mOvHwDtHlaaaZMyU2PAA==\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\"}"
     },
     {
       "conv" : "f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6",
-      "frame" : "{\"events\":{\"_0\":[{\"text\":\"Weekend\",\"body\":\"{\\\"creator\\\":{\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"name\\\":\\\"Ana Zoë\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\",\\\"devices\\\":[{\\\"kind\\\":\\\"mac\\\",\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\",\\\"addedAt\\\":1792100000.25,\\\"name\\\":\\\"Ana's Mac\\\"},{\\\"kind\\\":\\\"iphone\\\",\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\",\\\"addedAt\\\":1792100500,\\\"name\\\":\\\"Ana's iPhone\\\"}]},\\\"history\\\":\\\"members\\\",\\\"kind\\\":\\\"chat\\\",\\\"name\\\":\\\"Weekend\\\"}\",\"seq\":1,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"type\":\"create\",\"id\":\"fb1039a339a999566388ff4dccb38d13\",\"at\":1792191121.909131,\"lamport\":1},{\"text\":\"add\",\"body\":\"{\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"card\\\":{\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"name\\\":\\\"Ana Zoë\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\",\\\"devices\\\":[{\\\"kind\\\":\\\"mac\\\",\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\",\\\"addedAt\\\":1792100000.25,\\\"name\\\":\\\"Ana's Mac\\\"},{\\\"kind\\\":\\\"iphone\\\",\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\",\\\"addedAt\\\":1792100500,\\\"name\\\":\\\"Ana's iPhone\\\"}]},\\\"action\\\":\\\"add\\\",\\\"admin\\\":false}\",\"seq\":10,\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"type\":\"member\",\"id\":\"462b565afb2fa85269db9feed5850a7f\",\"at\":1792191121.909131,\"lamport\":10}]}}",
+      "frame" : "{\"events\":{\"_0\":[{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"create\",\"text\":\"Weekend\",\"seq\":1,\"at\":1792191121.909131,\"id\":\"fb1039a339a999566388ff4dccb38d13\",\"lamport\":1,\"body\":\"{\\\"history\\\":\\\"members\\\",\\\"kind\\\":\\\"chat\\\",\\\"creator\\\":{\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\",\\\"devices\\\":[{\\\"name\\\":\\\"Ana's Mac\\\",\\\"kind\\\":\\\"mac\\\",\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\",\\\"addedAt\\\":1792100000.25},{\\\"name\\\":\\\"Ana's iPhone\\\",\\\"kind\\\":\\\"iphone\\\",\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\",\\\"addedAt\\\":1792100500}],\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"name\\\":\\\"Ana Zoë\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\"},\\\"name\\\":\\\"Weekend\\\"}\"},{\"device\":\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"user\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"type\":\"member\",\"text\":\"add\",\"seq\":10,\"at\":1792191121.909131,\"id\":\"462b565afb2fa85269db9feed5850a7f\",\"lamport\":10,\"body\":\"{\\\"admin\\\":false,\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\",\\\"card\\\":{\\\"peerCard\\\":\\\"+\\\\\\/\\\\\\/+AAECA3+Avw==\\\",\\\"devices\\\":[{\\\"name\\\":\\\"Ana's Mac\\\",\\\"kind\\\":\\\"mac\\\",\\\"id\\\":\\\"c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3\\\",\\\"addedAt\\\":1792100000.25},{\\\"name\\\":\\\"Ana's iPhone\\\",\\\"kind\\\":\\\"iphone\\\",\\\"id\\\":\\\"d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4\\\",\\\"addedAt\\\":1792100500}],\\\"avatar\\\":\\\"9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a\\\",\\\"name\\\":\\\"Ana Zoë\\\",\\\"fingerprint\\\":\\\"69520 35782 29323 61379 13572 62617 79357 24415 21141 60707 48621 74057\\\",\\\"user\\\":\\\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\\\"},\\\"action\\\":\\\"add\\\"}\"}]}}",
       "joiner" : true,
       "key" : "AwoRGB8mLTQ7QklQV15lbHN6gYiPlp2kq7K5wMfO1dw=",
       "name" : "sealed-joiner",
       "nonce" : "AwoRGB8mLTQ7QklQ",
-      "packet" : "{\"key\":\"AwoRGB8mLTQ7QklQV15lbHN6gYiPlp2kq7K5wMfO1dw=\",\"nonce\":\"AwoRGB8mLTQ7QklQ\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\",\"body\":\"s4OE1UEUWSXwS9UWx9R5V2pH3lcQC1Sy9+9rhcCoBpAdTymj9DJxQaBy8Y4TzzrwiRoUilJfgffbSMrc6NVdzROFY14DCmi1YDFeEW8v\\/ZzprBxhe27r5spbPw4Jlj5CdhdU4Zx6YayXVVVa98rqePC75NZ60gt0gky\\/105Uj1sd0GwtzKiBGG+DEFRgkQtcBowI\\/2FtgtXfxOChJLkKMaAmQvsnBb5DfyZAhY9avDItzuUrx2WumAwEH67lBJmAtCT1njYyh0BI1IJL++4uC7gF6aJUh7mj74DN4f3ndtygP5PhTSL2LZ3zyDcoiNywzwrSLXWkRJzWne4Zz2OQYs5l007TalNgGzAnwkd\\/60hvzwVp+EEceShJ3KjDTJJdSg3dVDpqian+JB+Al\\/Vp1Up7hYgwGKO3V7HbVPhfJ+sItxd+cyzrKh6SawCWZ1KacLRSHiIYwrj1KdaRWImI6UJcI2Ixt9X2ViIUnnPhZNS5AT2HAnGeFmlF63yo7ppfMFYfXvxc2Y27hCpMh3aL2HRY5ctbSCOkhbcWI5orYhquXXL0khfHT3PLR43YaezHaHOQ\\/jwDjqqRjVE\\/tEFagRBuMOmbLSh4s\\/Av\\/zKRcLHJI0S\\/bUiItqGHk3N7xm4Jj3k0pN4GM4cumcfcMc8rprrzwkzmX44BBzwZ35J\\/O3LbE\\/MCKMb3MKEnrCobAyNd\\/aTmfOaEdyWSuz4Yj\\/fWlwLMyvQSn6BzFR2MypxyWnSQCAEWfOBeao2iIe\\/rkUCfa7rFFQc+7\\/PdZIl5G94vrUL8oiLMoVTYYiKm4T7pNfwEpIbSLTFsdkxVyHn8\\/Rlm2pGn\\/DgXB3usRr4As3J0Cl9HpanO0e\\/uGB6MBy9OrtZIsTJaoLcSX8JSvibVmuaxUgZK+M5LxpTa5BmuaL60JXdtj0zHMd+vxiq2A4C7JeWGip5Kci4lttAwMYz5FxSiiV0kwZgGVmx1kjjI7eb+fBCcb3V3BxOAwu\\/zVaXy2PXOh1F0urLmAmejGODuXM\\/6V+rE2yCLwZmwXsaEHBEIB\\/kE5q9QFVHNRau46NdryiZ8lQCGIwIlOVp6zLHa\\/x6WorTP0k5WXpI\\/UIxVy\\/PFaSMNFqQwTUwd2X3oOcJoF9HFsOD8yVGC\\/DB\\/Di9NwgDopYIKfZPagKP1VmgNC6sVF8PqQdrW5zoLlQ\\/j0B4k7VV\\/aBCYrqs1b9N+HGdcnw\\/8\\/L7JxhmmkxK6utljo\\/xDGZEfdGWiOAEcGXKcrJNmtN9WdNbhwYUSm\\/SehV+NQQ+pns7uuW1W0nogWAZU\\/ewkZ3s8aSa25\\/1\\/CobNFmEur3Uty8nxkE69RAF4VWqlCPwlybppGk5WVcTjjOzMjUETvv\\/CuMM3DtzJ1025JJ\\/aGFDWqLhfZMguAjuLYkETvuEX5BITxxluDVliKi5MqyJqiznqiJ526qVJi9Zqx+VoEEt55dTRFb\\/6aVOnFGtg5Z9HcopJWIbyCV3yDp+Ki7Pls\\/lbQygMKczJqYP5A+WG4SPCiJMHi98B85OBJjM3E75u42azvxuJGfQ0n2rfQGASsUB4ocZLePgFXq\\/+80tKNAvTySOD6i3bCz9gjFfdroPqkNkAmFkv9EIikMfh6\\/xGPO8USM3kVi6stC1yOdw593+NdPR762+iu11ci\\/H0cqIy8Ag71nMZbcYMkDMGCHuJB5l8Qmrhs9lzbJNXTCPkBBDsIbSomIUPM7pJ3xhinsATSHp6K2\\/IowEiVIv0AF8EdW70OOSJWH1nyA848BsoM4KQpI7FuLUtDeXG1cPgRpmafk6Gp2hOWcIwext1gQMSRSuFAvMmh2JlvVtXUPHkMp6WzHzPeCBPgvFJBXEfEf78QKbLWZTrF5SaJuCPg0ycO6XRdNPlDoMhDeD3pEhkJFXLeATa91IJg9kxt3vLa0ynYQ0tsNRLyafL9gSaMfWHi20Ed5Waba6gWXOzlFa058QVvmCHJIxEbxrrusScDS569UK28Jkx6G8rIZJRavwILSH9gdfNl5F7Tq9f5F4EH\\/8DfECpPbC0bxJCrQ56Pt2beueRM+QLdjzU\\/sVOSSVa18Pdc3gUsJYXa3t5s8dra4GE\\/rs4YXXRQumpi+zs57VaCFzEn\\/OAEPHbq2gTM5MeQnhMiF5OKMgQIESUlASKff5mrc7+jaagbeNEJzetnEspRToXo2s4dPbGxCf980EX7DWK0CZezgQAn5SiM\\/PRChHDr3KuII2JS7BMAsezlxkNeeeBXqmKQXcTrUXv+QasoBOAxZW3Z02QDJfGlEYiE1uMrXxnPm9VtlpWuUUIdQZnsSar1LsAcxu3YCM3ma62z7TpffGlo8X0dffqSSfFtehFRTSF+t3C1I2U8yzes376ScUS5MSnrE50nlSYHzzvqOH6VYbQElSZGM9Vk8BUxieuVaoKT8YcmhJT9iRYpovYQPjtYU27a7Q2pPkdrTZ0HHqR9h1ox9O6ybT\\/TQvMb+m9CKupyzha0Llrj5\\/y\\/8aLjdEPDf2VbUhQuFMM8WyVqS70ioGHvoBKLjwCu9XeRDy\\/B7ljCUSsu\\/vIFkfRnq1jpbbUz7ff3Zvq\\/8hZok8fFPf4uYZOrKYeZYuOg73VlYO49HPouSPv9dte+k8Gm+Lnh3R7mCW4Pr1AEZ8Q9cJIGWs9lZHVLW46h955geK07NN1d9TXxuF\\/y1p2\\/jZ7aq8RdolStt+4NmTUJlQVuXnQpuTbUOH9VEa+AeD5dqoSdlTmXjptq48pWIcIloBzeTlQ8bsmkeGrGtBJzEdaKIwlOg5LRCnO\\/7eBPhWD6uJywCvBCXkGvE+2NVg9vTTwrRmckRX+RysgGcSzr7fqwEXK1Jpy6l5vTEc0pWm4ik9SiDmzTgcH9kAqeN4XFa5Q4xsvLsbz7JP3pClid7aseLc=\",\"v\":2}"
+      "packet" : "{\"key\":\"AwoRGB8mLTQ7QklQV15lbHN6gYiPlp2kq7K5wMfO1dw=\",\"nonce\":\"AwoRGB8mLTQ7QklQ\",\"v\":2,\"body\":\"s4OE1UEUWSXwS9UWx9R5V2pH3kcQBUnzqO8GwsbwAM0aXmay9W52C+F7sMYs3jqxj0gD1kMwwP7DJ4uO\\/YdKnwLqIlc8GzLnOmMEQzV9p86z\\/kYzITyxtJAJZVwS2yVAIBgbop85PvvIAgoNqJ21L6\\/su4ElhVQj3RvggBED0AxChzN6k\\/+7DCXpVAxnygg2QoAy60Y1hcPjnUU8Hq1AW+RlV6gzb75VAXFS0ZxJ5yEtzuUrx2WumAwEH67lBJmAtCT1njYyh0BI1IJL++4uC7gF6aJUh7mj74DN4f3ndtygP5PhTSL2LZ3z9SRl5Z\\/nhEiXPH6kU9eCy9FJkF7GMdV8wwqWIRJ1GSBQlRsnvBUr2xh4vB1NaiFNx7iCDoJRSg3EUTJgja\\/sJwWNlvl41Epmk9B0DKmiAeTKUPNQdOkbuUJ3fyKCPgT9cUiVZBS9cqVUcThGr6n8WaihFrik2h8DQBlF2LanEgcby3T+Q6q3NXaQE2iFDFAUjQKw2IRucFgEQ8Qi1+vFzS5DgHaLznRY78dmHkXai4gHI9stMA3yTB21mw+oDjDNEZyoa63ABzKZwS1L4ZX+wT4A2w1Co2JIQMubZVpt964hwCPeH\\/CeJQG1PU7IibDh6iR7xmEMhnkMx5AGM\\/xxz9mdILJ69dbhwCLxGLtNDQFWgJJ\\/bE+aDr9PU5e+GZxmylRETGti7Ky8cbG7Znz9+mQL1PuLkW2N1csDlfdMBETji8slDSPHX1ZBK7cJPdr1dri8xhfIPO2SQlBpuKSKM94uTLZptXrqp3LM8FStckrg72vqaPpRoNLWeTUmcB0cgDb8\\/VtblZWfumcvZE6eBaNCpCIWUwAZ9cXc0e\\/uHRaPBi9OrtZImSxT6KpXarAWjWrZopjuNSdEwNhHm4Oa71+zAPi6HWFk3kWRMJm4rmyuO5a0eO\\/WsogUGmhyuoUgWcrhLwKo3FR1+Y5YPioWk2nHvOyuRAaFeQV3WCrTgbGmHOPG38yen1ph4rG2AzanSeHyMIKXFLrTizXb0vTzVfuXREFQV6FUvv8IRQmdHfvguI87knYkxVjWe1J9aQIqlOGCr0bG+uSXglUbRZBpX8MWyLCaPnxaSfNvGhNKhiq3bvh8XbuB6OenyjvG8AprKXdK1DyxAB8wadmwxPP6DmleH+0BSMuoe86KjX4Lygy31lgh+k5lPlXc\\/vtifslqTmcIlUz+rLidx1qjwhfovppn+fwVHdIeI2LwPkIdS3DLrtBj59sFcJXmmoBDmbea0lzbRTC40aGv\\/30AwxVhUXhavqk8Jn8vMjW0pPkvH9KOCyJ2qmZ22M6iwE\\/vTAF6B2KlAKQtnb0+GBdfUpO22e6ejkNK66\\/A+950XsnajE3vLPHJXE27uOcQMJ1LETLmbDQauucC5QQ7x159DVliKj5MpT8r1DmxzplnpbRI19EghuwpWHRo85TXVIDrMDzmRjkyt80VINgbCtSgWw+gXM3Y2eG34asJEXpee56b+9GrUbfUs3GQ2sEUxswDrZzGZTh0ROk5tDHk6EzeTqNjyACbWloGtBds8\\/xfJLU\\/Sqi+9AlNcDHHlUnH5SrUDDBng1DSqYztn94Pn1Yo+0Utl8jm5L9Tf6MGFN7\\/DTWsvC16OdQ5\\/3+FdPx742+qu1Vcg\\/H8cqoy+Agz1h5acPsfn2MKXEaaXPQ\\/MmWx8rJ9nlk6Dz7ZFwSuJfeVi95iM\\/daylBzyoMYCyZ+d2ycsBJvR56gGRpHfi2kPbHKRT4lzE97+0spfpGQ4c3O6LN1DrXOhcOzRtaSL0bWpThTGpoIew0Ll1NJSXnWReIyjD53gEFYPuXrb8mdmjmZKSJPheEaCyQPDvymEPiMD8auBpucJOyb0xXJdafcb5uMG8J3VL2ozUpscwWTOkHAm0dMx5x302\\/DBk7xZFwp5rkI1JrY51CectfXmDg5ZM73LrSdNE6tqTuJ+Y5lnhSlVN5eT139tpjxTjNH5kfi58EzvH1GYplrIMEbGmq\\/uamMzL89f+wGwyAKM7gPal\\/qdYjKLht9vEYVAbLXFdj+f\\/wpBBqk3MUGOzAeic3iYjd78cERLnEptYdUetjs5tR5PHePRIbogtP9xehYHEzXsaGAf4\\/V2xZaO5keez43oCABc5p7O1r5hl3eEexyw9mx4uf9b71CSHako1oLGDgDs3gWJvaphWmyu34G5G+HhxlPl2tBxYf5P67XZVDckGOkd7KYEt8NVZDkwE5aLrDWNu+SeWEW\\/UW++XO8yFWOkJbqYRiUWJOSkAwkQhLE4kRxNDpc52JA5y1OAAwy8mHviY9ceEG2CF056dD\\/x77pRLfei7u\\/P66yHnCop\\/QsV23N+t2W6cKVm2rQi2jfE8AB89CqyEIvlAWgCSWGsfnCQ4OHAgmSQvdDzagSkyf+bbxCJ4BJmkterBxO+NndGO+8eFvzfaNnifkLwCQ5WmuH9y4+odPhyeL3Hgudbr28WeeV1gVJ0P5ryp+xwtXQ4JIHDfWVZUhYuFsM+WydqSb0goGPvohKJjwKu93eTDy3B7FjAUSk+O6LTEmGibY4vrHbyLjY0pzl+MderUgQE\\/j\\/08JUlrIWMoDduamJ\\/8fP\\/CSu1SoaOLEa4HUSm73v1nc\\/jmG3Zq8qVZMq4ZJHSm8vmYCEfyBhxIliiPLk\\/4Z3J9CN1bN\\/nV4n7WN6P61FZd1Y5tnsJTXTcVZDqijS9OOJQ7T+AEXqErfyI6tAZQDhDTw5xM42Z5Ye1oYyBzdI2eA3xaKgWYxNkEQOO59oKQYeByKN+uCCPRHU7uIlwyjGWSAC70juYFs1umD0+E2VxRT+QSwzVNez6vThkEOS18p6h00gUTUv9DP90BEQ9nfof1UJ4FBUYJIFFa5Q46GwbHYNNRnkOERJQIsnV2I=\",\"conv\":\"f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6\"}"
     },
     {
       "conv" : null,
@@ -370,7 +386,191 @@
       "key" : null,
       "name" : "open",
       "nonce" : null,
-      "packet" : "{\"body\":\"eyJ3YW50Ijp7Il8wIjoiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYiJ9fQ==\",\"v\":2}"
+      "packet" : "{\"v\":2,\"body\":\"eyJ3YW50Ijp7Il8wIjoiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYiJ9fQ==\"}"
+    }
+  ],
+  "sentences" : [
+    {
+      "after" : "0 seconds",
+      "by" : "Ana",
+      "line" : "Ana turned off disappearing messages",
+      "seconds" : 0,
+      "short" : "0s"
+    },
+    {
+      "after" : "0 seconds",
+      "by" : "You",
+      "line" : "You turned off disappearing messages",
+      "seconds" : 0,
+      "short" : "0s"
+    },
+    {
+      "after" : "1 second",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 1 second after they're read",
+      "seconds" : 1,
+      "short" : "1s"
+    },
+    {
+      "after" : "1 second",
+      "by" : "You",
+      "line" : "You set messages to disappear 1 second after they're read",
+      "seconds" : 1,
+      "short" : "1s"
+    },
+    {
+      "after" : "45 seconds",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 45 seconds after they're read",
+      "seconds" : 45,
+      "short" : "45s"
+    },
+    {
+      "after" : "45 seconds",
+      "by" : "You",
+      "line" : "You set messages to disappear 45 seconds after they're read",
+      "seconds" : 45,
+      "short" : "45s"
+    },
+    {
+      "after" : "1 minute",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 1 minute after they're read",
+      "seconds" : 60,
+      "short" : "1m"
+    },
+    {
+      "after" : "1 minute",
+      "by" : "You",
+      "line" : "You set messages to disappear 1 minute after they're read",
+      "seconds" : 60,
+      "short" : "1m"
+    },
+    {
+      "after" : "5 minutes",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 5 minutes after they're read",
+      "seconds" : 300,
+      "short" : "5m"
+    },
+    {
+      "after" : "5 minutes",
+      "by" : "You",
+      "line" : "You set messages to disappear 5 minutes after they're read",
+      "seconds" : 300,
+      "short" : "5m"
+    },
+    {
+      "after" : "1 hour",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 1 hour after they're read",
+      "seconds" : 3600,
+      "short" : "1h"
+    },
+    {
+      "after" : "1 hour",
+      "by" : "You",
+      "line" : "You set messages to disappear 1 hour after they're read",
+      "seconds" : 3600,
+      "short" : "1h"
+    },
+    {
+      "after" : "8 hours",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 8 hours after they're read",
+      "seconds" : 28800,
+      "short" : "8h"
+    },
+    {
+      "after" : "8 hours",
+      "by" : "You",
+      "line" : "You set messages to disappear 8 hours after they're read",
+      "seconds" : 28800,
+      "short" : "8h"
+    },
+    {
+      "after" : "1 day",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 1 day after they're read",
+      "seconds" : 86400,
+      "short" : "1d"
+    },
+    {
+      "after" : "1 day",
+      "by" : "You",
+      "line" : "You set messages to disappear 1 day after they're read",
+      "seconds" : 86400,
+      "short" : "1d"
+    },
+    {
+      "after" : "2 days",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 2 days after they're read",
+      "seconds" : 172800,
+      "short" : "2d"
+    },
+    {
+      "after" : "2 days",
+      "by" : "You",
+      "line" : "You set messages to disappear 2 days after they're read",
+      "seconds" : 172800,
+      "short" : "2d"
+    },
+    {
+      "after" : "1 week",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 1 week after they're read",
+      "seconds" : 604800,
+      "short" : "1w"
+    },
+    {
+      "after" : "1 week",
+      "by" : "You",
+      "line" : "You set messages to disappear 1 week after they're read",
+      "seconds" : 604800,
+      "short" : "1w"
+    },
+    {
+      "after" : "4 weeks",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 4 weeks after they're read",
+      "seconds" : 2419200,
+      "short" : "4w"
+    },
+    {
+      "after" : "4 weeks",
+      "by" : "You",
+      "line" : "You set messages to disappear 4 weeks after they're read",
+      "seconds" : 2419200,
+      "short" : "4w"
+    },
+    {
+      "after" : "90 seconds",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 90 seconds after they're read",
+      "seconds" : 90,
+      "short" : "90s"
+    },
+    {
+      "after" : "90 seconds",
+      "by" : "You",
+      "line" : "You set messages to disappear 90 seconds after they're read",
+      "seconds" : 90,
+      "short" : "90s"
+    },
+    {
+      "after" : "90 minutes",
+      "by" : "Ana",
+      "line" : "Ana set messages to disappear 90 minutes after they're read",
+      "seconds" : 5400,
+      "short" : "90m"
+    },
+    {
+      "after" : "90 minutes",
+      "by" : "You",
+      "line" : "You set messages to disappear 90 minutes after they're read",
+      "seconds" : 5400,
+      "short" : "90m"
     }
   ],
   "wireVersion" : 2

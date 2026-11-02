@@ -185,6 +185,8 @@ pub struct Conversation {
     pub pinned: Vec<EventId>,
     /// A chat with exactly two members and no name.
     pub is_direct: bool,
+    /// Disappearing messages: how many seconds a message written now lasts after it is read; 0 is off.
+    pub disappear: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -464,6 +466,8 @@ pub enum Change {
     Replied { user: UserId },
     /// A reply I made stopped waiting unopened (it ran out, or their link went to someone else).
     ReplyLapsed { user: UserId },
+    /// These disappearing messages went from this device: their notifications go too.
+    Expired { conv: ConversationId, events: Vec<EventId> },
 }
 
 /// Where someone in a chat is, while they share it (`Places.swift`). Times in ms.

@@ -42,6 +42,9 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 	/// Where the people sharing with me are, by chat and person; my own latest fix (Places.swift).
 	var heldPlaces: [ConversationId: [UserId: Place]] = [:]
 	var lastFix: (lat: Double, lon: Double, accuracy: Double, at: Double)?
+	/// The sweep that waits for the next disappearing message due to go, and when that is (Disappear.swift).
+	var expiryTimer: Task<Void, Never>?
+	var expiryDue: Double?
 	public var isDemo = false
 
 	/// `dir` nil keeps everything in memory (tests, demo people).
@@ -61,6 +64,8 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 			store.run("insert or ignore into people(user,name,fingerprint) values(?,?,?)", [user, name, fingerprint(user)])
 			store.run("insert or ignore into devices(id,user,name,kind,added_at) values(?,?,?,?,?)", [device, user, deviceName, kind.rawValue, Date()])
 		}
+		// What came due while baud was closed goes now; the rest waits for its time.
+		expire()
 	}
 
 	public var named: Bool { !user.isEmpty }
@@ -176,7 +181,7 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 				?? store.query("select c.* from conversations c join members m on m.conv=c.id where m.user=? and c.kind<>'home'", [user])
 			let shown = rows.filter { r in
 				guard let id = r.string("id"), let cut = cutoff("hidden:", id) else { return true }
-				return store.int("select coalesce(max(lamport),0) as n from events where conv=? and type='message'", [id]) > cut
+				return store.int("select coalesce(max(lamport),0) as n from events where conv=? and type='message' and body<>'{}'", [id]) > cut
 			}
 			return collapse(shown.map(conversation(row:))).sorted { $0.lastAt > $1.lastAt }
 		}
@@ -298,7 +303,7 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 			return Array(all.sorted { ($0.at, $0.id) < ($1.at, $1.id) }.suffix(limit))
 		}
 		return lock.withLock {
-			var sql = "select * from events where conv=? and type in ('message','member','state','create') and thread is null and id not in (select target from events where conv=? and type='redact') and not (type='state' and body like '%\"key\":\"profile.%')"
+			var sql = "select * from events where conv=? and type in ('message','member','state','create') and thread is null and id not in (select target from events where conv=? and type='redact') and not (type='state' and body like '%\"key\":\"profile.%') and not (type='message' and body='{}')"
 			var args: [Bindable?] = [conv, conv]
 			if let cut = cutoff("cleared:", conv) { sql += " and lamport > ?"; args.append(cut) }
 			if let before, let b = store.one("select lamport from events where id=?", [before]) {
@@ -311,7 +316,7 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 
 	private func pageByTime(_ conv: ConversationId, before: Date?, limit: Int) -> [Event] {
 		lock.withLock {
-			var sql = "select * from events where conv=? and type in ('message','member','state','create') and thread is null and id not in (select target from events where conv=? and type='redact') and not (type='state' and body like '%\"key\":\"profile.%')"
+			var sql = "select * from events where conv=? and type in ('message','member','state','create') and thread is null and id not in (select target from events where conv=? and type='redact') and not (type='state' and body like '%\"key\":\"profile.%') and not (type='message' and body='{}')"
 			var args: [Bindable?] = [conv, conv]
 			if let before { sql += " and at < ?"; args.append(before) }
 			sql += " order by at desc, id desc limit ?"; args.append(limit)
@@ -321,7 +326,7 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 
 	public func thread(_ conv: ConversationId, _ root: EventId, before: EventId?, limit: Int) -> [Event] {
 		lock.withLock {
-			let rows = store.query("select * from events where conv=? and (id=? or thread=?) and id not in (select target from events where conv=? and type='redact') order by lamport, id", [conv, root, root, conv])
+			let rows = store.query("select * from events where conv=? and (id=? or thread=?) and id not in (select target from events where conv=? and type='redact') and not (type='message' and body='{}') order by lamport, id", [conv, root, root, conv])
 			return resolve(rows, conv: conv)
 		}
 	}
@@ -331,7 +336,9 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 		var attachments: [Attachment] = []
 		for url in draft.attachments { attachments.append(try addBlob(url)) }
 		let text = draft.text.trimmingCharacters(in: .whitespacesAndNewlines)
-		let body = MessageBody(text: text.isEmpty ? nil : text, attachments: attachments.isEmpty ? nil : attachments, reply: draft.reply, thread: draft.thread, mentions: draft.mentions.isEmpty ? nil : draft.mentions)
+		// While the conversation's messages disappear, this one carries its own time.
+		let ttl = lock.withLock { store.one("select disappear from conversations where id=?", [conv])?.int("disappear") ?? 0 }
+		let body = MessageBody(text: text.isEmpty ? nil : text, attachments: attachments.isEmpty ? nil : attachments, reply: draft.reply, thread: draft.thread, mentions: draft.mentions.isEmpty ? nil : draft.mentions, ttl: ttl > 0 ? ttl : nil)
 		let e = try write(conv, .message, body: encode(body), text: body.text, reply: draft.reply, thread: draft.thread)
 		queueBigTransfers(conv, attachments)
 		return event(e.id)!
@@ -432,6 +439,13 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 	public func setTopic(_ conv: ConversationId, _ t: String) throws {
 		guard isAdmin(conv) || conversation(conv)?.kind == .chat else { throw CoreError.notAdmin }
 		_ = try write(conv, .state, body: encode(StateBody(key: "topic", value: t)), text: "topic")
+	}
+	/// Disappearing messages: each message written from now on carries this many seconds and goes
+	/// that long after it is read (its writer's copies, after it is sent); 0 turns it off. Anyone in
+	/// a chat changes it, only an admin in a channel. A state line, resolved like the name.
+	public func setDisappear(_ conv: ConversationId, _ seconds: Int) throws {
+		guard isAdmin(conv) || conversation(conv)?.kind == .chat else { throw CoreError.notAdmin }
+		_ = try write(conv, .state, body: encode(StateBody(key: "disappear", value: String(max(0, seconds)))), text: "disappear")
 	}
 
 	public func createChat(_ users: [UserId]) throws -> Conversation {
@@ -551,16 +565,17 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 	func conversation(row r: Row) -> Conversation {
 		let id = r.string("id")!
 		let members = store.query("select user, admin from members where conv=?", [id])
-		let last = store.one("select id, text, user, at from events where conv=? and type='message' and thread is null order by lamport desc, id desc limit 1", [id])
+		// A message gone (body '{}') is not a last line, unread, or counted.
+		let last = store.one("select id, text, user, at from events where conv=? and type='message' and thread is null and body<>'{}' order by lamport desc, id desc limit 1", [id])
 		let created = r.date("created_at") ?? Date()
 		let readL = store.one("select lamport from reads where conv=?", [id])?.int("lamport") ?? -1
-		let unread = store.int("select count(*) as n from events where conv=? and type='message' and thread is null and user<>? and lamport>?", [id, user, readL])
+		let unread = store.int("select count(*) as n from events where conv=? and type='message' and thread is null and user<>? and lamport>? and body<>'{}'", [id, user, readL])
 		let mentions = unread == 0 ? 0 : store.int("select count(*) as n from events where conv=? and type='message' and user<>? and lamport>? and body like ?", [id, user, readL, "%\"\(user)\"%"])
-		let count = store.int("select count(*) as n from events where conv=? and type='message'", [id])
+		let count = store.int("select count(*) as n from events where conv=? and type='message' and body<>'{}'", [id])
 		return Conversation(id: id, kind: Kind(rawValue: r.string("kind") ?? "chat") ?? .chat, name: r.string("name"), topic: r.string("topic"), space: r.string("space"),
 			members: members.map { $0.string("user")! }, admins: members.filter { $0.bool("admin") }.map { $0.string("user")! }, createdAt: created,
 			lastAt: last?.date("at") ?? created, lastText: last?.string("text"), lastUser: last?.string("user"), lastEvent: last?.string("id"), unread: unread, mentions: mentions, eventCount: count,
-			isDefault: r.bool("is_default"), pinned: store.query("select event from pins where conv=?", [id]).compactMap { $0.string("event") })
+			isDefault: r.bool("is_default"), pinned: store.query("select event from pins where conv=?", [id]).compactMap { $0.string("event") }, disappear: r.int("disappear") ?? 0)
 	}
 
 	func device(row r: Row) -> Device {
@@ -603,7 +618,7 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 			reacts[b.target] = byKey
 		}
 		var threads: [EventId: (Int, [UserId])] = [:]
-		for t in store.query("select thread, count(*) as n, group_concat(user) as users from (select thread, user from events \(byThread) where thread in \(inPage) and conv=? and type='message' order by lamport) group by thread", pageArgs + [conv]) {
+		for t in store.query("select thread, count(*) as n, group_concat(user) as users from (select thread, user from events \(byThread) where thread in \(inPage) and conv=? and type='message' and body<>'{}' order by lamport) group by thread", pageArgs + [conv]) {
 			let users = (t.string("users") ?? "").split(separator: ",").map(String.init)
 			var seen: [UserId] = []
 			for u in users.reversed() where !seen.contains(u) { seen.append(u); if seen.count == 3 { break } }
@@ -656,6 +671,7 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 				case "topic": e.system = "\(nameOf(u)) set the topic: \(b?.value ?? "")"
 				case "pin": e.system = (b?.value.hasPrefix("-") == true) ? "\(nameOf(u)) unpinned a message" : "\(nameOf(u)) pinned a message"
 				case "call": e.system = decode(CallRecord.self, b?.value).map { $0.line(mine: u == user, caller: nameOf(u)) }
+				case "disappear": if let s = b.flatMap({ Int($0.value) }), s >= 0 { e.system = disappearLine(by: nameOf(u), seconds: s) }
 				default: e.system = nil
 				}
 			case .create:
@@ -710,6 +726,7 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 	@discardableResult
 	func apply(_ e: WireEvent, carriedBy: DeviceId?) -> Bool {
 		var joined: [(ConversationId, UserId)] = []
+		var expires: Double?
 		let fresh: Bool = lock.withLock {
 			if store.int("select count(*) as n from events where id=?", [e.id]) > 0 { return false }
 			// How it came (theirs) or how it is leaving (mine), as the paths are right now.
@@ -719,8 +736,13 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 			switch e.type {
 			case .message:
 				if let t = e.text { store.run("insert into fts(text,event,conv,user) values(?,?,?,?)", [t, e.id, e.conv, e.user]) }
+				// A disappearing message: when it goes here, if that is known yet.
+				expires = expiry(of: e)
+				if let x = expires { store.run("update events set expires_at=? where id=?", [x, e.id]) }
 			case .edit:
-				if let t = e.text, let target = e.target { store.run("delete from fts where event=?", [target]); store.run("insert into fts(text,event,conv,user) values(?,?,?,?)", [t, target, e.conv, e.user]) }
+				// An edit of a message already gone from here goes with it: it carries the words too.
+				if let target = e.target, gone(target) { store.run("update events set text=null, body='{}' where id=?", [e.id]) }
+				else if let t = e.text, let target = e.target { store.run("delete from fts where event=?", [target]); store.run("insert into fts(text,event,conv,user) values(?,?,?,?)", [t, target, e.conv, e.user]) }
 			case .redact:
 				if let target = e.target { store.run("delete from fts where event=?", [target]); store.run("update events set text=null, body='{}' where id=?", [target]) }
 			case .create:
@@ -743,9 +765,10 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 					switch b.key {
 					case "name": store.run("update conversations set name=? where id=?", [b.value, e.conv])
 					case "topic": store.run("update conversations set topic=? where id=?", [b.value, e.conv])
+					case "disappear": if let s = Int(b.value), s >= 0 { store.run("update conversations set disappear=? where id=?", [s, e.conv]) }
 					case "pin":
 						if b.value.hasPrefix("-") { store.run("delete from pins where conv=? and event=?", [e.conv, String(b.value.dropFirst())]) }
-						else { store.run("insert or ignore into pins(conv,event) values(?,?)", [e.conv, b.value]) }
+						else if !gone(b.value) { store.run("insert or ignore into pins(conv,event) values(?,?)", [e.conv, b.value]) }
 					case "channels":
 						for ch in decode([ChannelRef].self, b.value) ?? [] {
 							store.run("insert or ignore into conversations(id,kind,name,space,created_at,is_default) values(?,?,?,?,?,?)", [ch.conv, Kind.channel.rawValue, ch.name, e.conv, e.at, ch.isDefault])
@@ -764,8 +787,11 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 			return true
 		}
 		guard fresh else { return false }
+		// Past its time already (it was read on another device of mine, or written long ago): it
+		// goes now, before anyone sees it; else the sweep waits for it.
+		if let x = expires { if x <= Date().timeIntervalSince1970 { expire() } else { scheduleExpiry() } }
 		for (c, u) in joined { onMember?(c, u) }
-		if e.type == .create || e.type == .member || e.type == .state && e.text == "channels" { emit(.conversations) }
+		if e.type == .create || e.type == .member || e.type == .state && (e.text == "channels" || e.text == "disappear") { emit(.conversations) }
 		// A cutoff from another device of mine: the list and that chat redraw.
 		if e.type == .state, e.user == user, let b = decode(StateBody.self, e.body), b.key.hasPrefix("profile.hidden.") || b.key.hasPrefix("profile.cleared.") {
 			emit(.conversations); emit(.conversation(String(b.key.split(separator: ".", maxSplits: 2).last ?? "")))

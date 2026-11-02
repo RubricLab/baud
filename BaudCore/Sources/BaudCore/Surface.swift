@@ -101,8 +101,10 @@ public struct Conversation: Identifiable, Hashable, Sendable {
 	public var eventCount: Int
 	public var isDefault: Bool
 	public var pinned: [EventId]
-	public init(id: ConversationId, kind: Kind, name: String? = nil, topic: String? = nil, space: ConversationId? = nil, members: [UserId], admins: [UserId], createdAt: Date, lastAt: Date, lastText: String? = nil, lastUser: UserId? = nil, lastEvent: EventId? = nil, unread: Int = 0, mentions: Int = 0, eventCount: Int = 0, isDefault: Bool = false, pinned: [EventId] = []) {
-		self.id = id; self.kind = kind; self.name = name; self.topic = topic; self.space = space; self.members = members; self.admins = admins; self.createdAt = createdAt; self.lastAt = lastAt; self.lastText = lastText; self.lastUser = lastUser; self.lastEvent = lastEvent; self.unread = unread; self.mentions = mentions; self.eventCount = eventCount; self.isDefault = isDefault; self.pinned = pinned
+	/// Disappearing messages: how many seconds a message written now lasts after it is read; 0 is off.
+	public var disappear: Int
+	public init(id: ConversationId, kind: Kind, name: String? = nil, topic: String? = nil, space: ConversationId? = nil, members: [UserId], admins: [UserId], createdAt: Date, lastAt: Date, lastText: String? = nil, lastUser: UserId? = nil, lastEvent: EventId? = nil, unread: Int = 0, mentions: Int = 0, eventCount: Int = 0, isDefault: Bool = false, pinned: [EventId] = [], disappear: Int = 0) {
+		self.id = id; self.kind = kind; self.name = name; self.topic = topic; self.space = space; self.members = members; self.admins = admins; self.createdAt = createdAt; self.lastAt = lastAt; self.lastText = lastText; self.lastUser = lastUser; self.lastEvent = lastEvent; self.unread = unread; self.mentions = mentions; self.eventCount = eventCount; self.isDefault = isDefault; self.pinned = pinned; self.disappear = disappear
 	}
 	/// A DM is a chat with exactly two members and no name.
 	public var isDirect: Bool { kind == .chat && name == nil && members.count == 2 }
@@ -341,6 +343,8 @@ public enum Change: Sendable {
 	case typing(ConversationId)
 	/// Someone in this chat started, moved or stopped sharing where they are; or I did.
 	case places(ConversationId)
+	/// These disappearing messages went from this device: their notifications go too.
+	case expired(ConversationId, [EventId])
 }
 
 public protocol Subscription: Sendable { func cancel() }
@@ -377,6 +381,8 @@ public protocol CoreSurface: AnyObject, Sendable {
 	func leave(_ conv: ConversationId) throws
 	func setName(_ conv: ConversationId, _ name: String) throws
 	func setTopic(_ conv: ConversationId, _ topic: String) throws
+	/// Messages written from now on disappear this many seconds after they're read; 0 turns it off.
+	func setDisappear(_ conv: ConversationId, _ seconds: Int) throws
 	func delivery(_ conv: ConversationId, _ event: EventId) -> Delivery
 	func createChat(_ users: [UserId]) throws -> Conversation
 	func createGroup(_ name: String, users: [UserId]) throws -> Conversation

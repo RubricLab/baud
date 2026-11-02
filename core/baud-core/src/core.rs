@@ -52,6 +52,9 @@ pub(crate) struct State {
     pub held_places: HashMap<ConversationId, HashMap<UserId, WirePlace>>,
     pub last_fix: Option<(f64, f64, f64, f64)>,
     pub trace: VecDeque<String>,
+    /// The sweep that waits for the next disappearing message due to go, and when (disappear.rs).
+    pub expiry_task: Option<tokio::task::JoinHandle<()>>,
+    pub expiry_due: Option<f64>,
 }
 
 type Callback = Arc<dyn Fn(Change) + Send + Sync>;
@@ -71,8 +74,8 @@ pub struct Core {
 }
 
 /// What the timeline shows: messages and the lines for joins, names and creation, not threads'
-/// replies, nothing redacted, never my settings.
-const TIMELINE: &str = "select * from events where conv=? and type in ('message','member','state','create') and thread is null and id not in (select target from events where conv=? and type='redact' and target is not null) and not (type='state' and body like '%\"key\":\"profile.%')";
+/// replies, nothing redacted or gone (a message whose body is '{}'), never my settings.
+const TIMELINE: &str = "select * from events where conv=? and type in ('message','member','state','create') and thread is null and id not in (select target from events where conv=? and type='redact' and target is not null) and not (type='state' and body like '%\"key\":\"profile.%') and not (type='message' and body='{}')";
 
 impl Core {
     /// Open or create: peer first (the identity is its), then the store, then the network's
@@ -99,6 +102,8 @@ impl Core {
         }
         core.adopt_identity();
         core.adopt_contacts();
+        // What came due while baud was closed goes now; the rest waits for its time.
+        core.expire(now());
         // Redirects that came while the app was closed.
         for r in core.net.peer.redirects() {
             core.redirect(&r.from.to_hex(), &r.to.to_hex());
@@ -389,7 +394,7 @@ impl Core {
                 let Some(id) = r.string("id") else { return false };
                 match self.cutoff("hidden:", &id) {
                     None => true,
-                    Some(cut) => self.store.int("select coalesce(max(lamport),0) as n from events where conv=? and type='message'", &[&id]) > cut,
+                    Some(cut) => self.store.int("select coalesce(max(lamport),0) as n from events where conv=? and type='message' and body<>'{}'", &[&id]) > cut,
                 }
             })
             .collect();
@@ -575,7 +580,7 @@ impl Core {
 
     pub fn thread(&self, conv: &str, root: &str, _before: Option<&str>, _limit: u32) -> Vec<Event> {
         let rows = self.store.query(
-            "select * from events where conv=? and (id=? or thread=?) and id not in (select target from events where conv=? and type='redact' and target is not null) order by lamport, id",
+            "select * from events where conv=? and (id=? or thread=?) and id not in (select target from events where conv=? and type='redact' and target is not null) and not (type='message' and body='{}') order by lamport, id",
             &[&conv, &root, &root, &conv],
         );
         self.resolve(&rows, conv, true)
@@ -590,12 +595,15 @@ impl Core {
             attachments.push(self.add_blob(FsPath::new(p))?);
         }
         let text = draft.text.trim().to_owned();
+        // While the conversation's messages disappear, this one carries its own time.
+        let ttl = self.store.one("select disappear from conversations where id=?", &[&conv]).and_then(|r| r.int("disappear")).unwrap_or(0);
         let body = MessageBody {
             text: (!text.is_empty()).then(|| text.clone()),
             attachments: (!attachments.is_empty()).then_some(attachments),
             reply: draft.reply.clone(),
             thread: draft.thread.clone(),
             mentions: (!draft.mentions.is_empty()).then(|| draft.mentions.clone()),
+            ttl: (ttl > 0).then_some(ttl),
         };
         let e = self.write(conv, EventType::Message, encode(&body), body.text.clone(), draft.reply, draft.thread, None)?;
         self.event(&e.id, true).ok_or(Error::NotFound)
@@ -733,6 +741,15 @@ impl Core {
             return Err(Error::NotAdmin);
         }
         self.write(conv, EventType::State, encode(&StateBody { key: "topic".into(), value: t.into() }), Some("topic".into()), None, None, None).map(|_| ())
+    }
+    /// Disappearing messages: each message written from now on carries this many seconds and
+    /// goes that long after it is read (its writer's copies, after it is sent); 0 turns it off.
+    /// Anyone in a chat changes it, only an admin in a channel. A state line, resolved like the name.
+    pub fn set_disappear(&self, conv: &str, seconds: u32) -> Result<()> {
+        if !(self.is_admin(conv) || self.conversation(conv).map(|c| c.kind) == Some(Kind::Chat)) {
+            return Err(Error::NotAdmin);
+        }
+        self.write(conv, EventType::State, encode(&StateBody { key: "disappear".into(), value: seconds.to_string() }), Some("disappear".into()), None, None, None).map(|_| ())
     }
 
     pub fn create_chat(&self, users: &[String]) -> Result<Conversation> {
@@ -917,12 +934,13 @@ impl Core {
         let me = self.user();
         let id = r.string("id").unwrap_or_default();
         let members = self.store.query("select user, admin from members where conv=?", &[&id]);
-        let last = self.store.one("select id, text, user, at from events where conv=? and type='message' and thread is null order by lamport desc, id desc limit 1", &[&id]);
+        // A message gone (body '{}') is not a last line, unread, or counted.
+        let last = self.store.one("select id, text, user, at from events where conv=? and type='message' and thread is null and body<>'{}' order by lamport desc, id desc limit 1", &[&id]);
         let created = r.ms("created_at").unwrap_or_else(sentences::now_ms);
         let read_l = self.store.one("select lamport from reads where conv=?", &[&id]).and_then(|r| r.int("lamport")).unwrap_or(-1);
-        let unread = self.store.int("select count(*) as n from events where conv=? and type='message' and thread is null and user<>? and lamport>?", &[&id, &me, &read_l]);
+        let unread = self.store.int("select count(*) as n from events where conv=? and type='message' and thread is null and user<>? and lamport>? and body<>'{}'", &[&id, &me, &read_l]);
         let mentions = if unread == 0 { 0 } else { self.store.int("select count(*) as n from events where conv=? and type='message' and user<>? and lamport>? and body like ?", &[&id, &me, &read_l, &format!("%\"{me}\"%")]) };
-        let count = self.store.int("select count(*) as n from events where conv=? and type='message'", &[&id]);
+        let count = self.store.int("select count(*) as n from events where conv=? and type='message' and body<>'{}'", &[&id]);
         let kind = Kind::parse(&r.string("kind").unwrap_or_default()).unwrap_or(Kind::Chat);
         let name = r.string("name");
         let member_ids: Vec<String> = members.iter().filter_map(|m| m.string("user")).collect();
@@ -944,6 +962,7 @@ impl Core {
             event_count: count as u32,
             is_default: r.bool("is_default"),
             pinned: self.store.query("select event from pins where conv=?", &[&id]).iter().filter_map(|p| p.string("event")).collect(),
+            disappear: r.int("disappear").unwrap_or(0).clamp(0, u32::MAX as i64) as u32,
             id,
         }
     }
@@ -1008,7 +1027,7 @@ impl Core {
             }
         }
         let mut threads: HashMap<String, (u32, Vec<UserId>)> = HashMap::new();
-        for t in self.store.query(&format!("select thread, count(*) as n, group_concat(user) as users from (select thread, user from events where thread in ({marks}) and conv=? and type='message' order by lamport) group by thread"), &page) {
+        for t in self.store.query(&format!("select thread, count(*) as n, group_concat(user) as users from (select thread, user from events where thread in ({marks}) and conv=? and type='message' and body<>'{{}}' order by lamport) group by thread"), &page) {
             let users = t.string("users").unwrap_or_default();
             let mut seen: Vec<UserId> = vec![];
             for u in users.split(',').rev() {
@@ -1119,6 +1138,7 @@ impl Core {
                             Some("topic") => Some(format!("{by} set the topic: {}", b.as_ref().unwrap().value)),
                             Some("pin") => Some(if b.as_ref().unwrap().value.starts_with('-') { format!("{by} unpinned a message") } else { format!("{by} pinned a message") }),
                             Some("call") => decode::<CallRecord>(&b.as_ref().unwrap().value).map(|c| c.line(u == me, &by)),
+                            Some("disappear") => b.as_ref().unwrap().value.parse::<i64>().ok().filter(|s| *s >= 0).map(|s| sentences::disappear_line(&by, s)),
                             _ => None,
                         };
                     }
@@ -1209,14 +1229,23 @@ impl Core {
             return false;
         }
         let mut joined: Vec<(ConversationId, UserId)> = vec![];
+        let mut expires: Option<f64> = None;
         match e.kind {
             EventType::Message => {
                 if let Some(t) = &e.text {
                     self.store.run("insert into fts(text,event,conv,user) values(?,?,?,?)", &[t, &e.id, &e.conv, &e.user]);
                 }
+                // A disappearing message: when it goes here, if that is known yet.
+                expires = self.expiry_of(e);
+                if let Some(x) = expires {
+                    self.store.run("update events set expires_at=? where id=?", &[&x, &e.id]);
+                }
             }
             EventType::Edit => {
-                if let (Some(t), Some(target)) = (&e.text, &e.target) {
+                // An edit of a message already gone from here goes with it: it carries the words too.
+                if e.target.as_deref().is_some_and(|t| self.gone(t)) {
+                    self.store.run("update events set text=null, body='{}' where id=?", &[&e.id]);
+                } else if let (Some(t), Some(target)) = (&e.text, &e.target) {
                     self.store.run("delete from fts where event=?", &[target]);
                     self.store.run("insert into fts(text,event,conv,user) values(?,?,?,?)", &[t, target, &e.conv, &e.user]);
                 }
@@ -1257,10 +1286,15 @@ impl Core {
                         "topic" => {
                             self.store.run("update conversations set topic=? where id=?", &[&b.value, &e.conv]);
                         }
+                        "disappear" => {
+                            if let Some(s) = b.value.parse::<i64>().ok().filter(|s| *s >= 0) {
+                                self.store.run("update conversations set disappear=? where id=?", &[&s, &e.conv]);
+                            }
+                        }
                         "pin" => {
                             if let Some(t) = b.value.strip_prefix('-') {
                                 self.store.run("delete from pins where conv=? and event=?", &[&e.conv, &t]);
-                            } else {
+                            } else if !self.gone(&b.value) {
                                 self.store.run("insert or ignore into pins(conv,event) values(?,?)", &[&e.conv, &b.value]);
                             }
                         }
@@ -1292,10 +1326,19 @@ impl Core {
             }
             _ => {}
         }
+        // Past its time already (it was read on another device of mine, or written long ago): it
+        // goes now, before anyone sees it; else the sweep waits for it.
+        if let Some(x) = expires {
+            if x <= now() {
+                self.expire(now());
+            } else {
+                self.schedule_expiry();
+            }
+        }
         for (c, u) in joined {
             self.admit(&c, &u);
         }
-        if e.kind == EventType::Create || e.kind == EventType::Member || (e.kind == EventType::State && e.text.as_deref() == Some("channels")) {
+        if e.kind == EventType::Create || e.kind == EventType::Member || (e.kind == EventType::State && matches!(e.text.as_deref(), Some("channels" | "disappear"))) {
             self.emit(Change::Conversations);
         }
         // A cutoff from another device of mine: the list and that chat redraw.

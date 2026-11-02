@@ -226,9 +226,10 @@ impl Core {
         }
     }
 
-    /// Files in arriving messages, small enough to come along: fetched now.
+    /// Files in arriving messages, small enough to come along: fetched now. Not a disappearing
+    /// message's that was gone the moment it arrived.
     pub(crate) fn prefetch(&self, events: &[WireEvent]) {
-        for e in events.iter().filter(|e| e.kind == EventType::Message) {
+        for e in events.iter().filter(|e| e.kind == EventType::Message && !self.gone(&e.id)) {
             for a in decode::<MessageBody>(&e.body).and_then(|b| b.attachments).unwrap_or_default() {
                 if a.size <= PREFETCH_LIMIT && !self.blob_path(&a.hash).exists() {
                     let core = self.arc();

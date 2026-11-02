@@ -195,6 +195,8 @@ pub struct Conversation {
     pub is_default: bool,
     pub pinned: Vec<String>,
     pub is_direct: bool,
+    #[uniffi(default = 0)]
+    pub disappear: u32,
 }
 
 #[uniffi::remote(Record)]
@@ -383,6 +385,7 @@ pub enum Change {
     Places { conv: String },
     Replied { user: String },
     ReplyLapsed { user: String },
+    Expired { conv: String, events: Vec<String> },
 }
 
 #[uniffi::remote(Record)]
@@ -647,6 +650,11 @@ impl Baud {
     }
     pub fn set_topic(&self, conv: String, topic: String) -> Result<(), BaudError> {
         fallible(|| self.core.set_topic(&conv, &topic))
+    }
+    /// Disappearing messages: each message written from now on goes this many seconds after it
+    /// is read (mine, after it is sent); 0 turns it off. Anyone in a chat, an admin in a channel.
+    pub fn set_disappear(&self, conv: String, seconds: u32) -> Result<(), BaudError> {
+        fallible(|| self.core.set_disappear(&conv, seconds))
     }
     /// Per device of everyone else in it: sent, carried by, delivered, read; and the sentence.
     pub fn delivery(&self, conv: String, event: String) -> Delivery {

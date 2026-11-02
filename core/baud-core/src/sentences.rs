@@ -139,6 +139,34 @@ pub fn carrying(envelopes: u32, bytes: u64, budget: u64, held: &[Held]) -> Strin
     format!("Holding {envelopes} {} ({} of {}){whom}.", if envelopes == 1 { "envelope" } else { "envelopes" }, bytes_text(bytes), bytes_text(budget))
 }
 
+/// How long a disappearing message lasts, in the largest unit that fits it whole: "5 minutes",
+/// "1 hour", "8 hours", "1 day", "1 week", "4 weeks".
+pub fn disappear_after(seconds: i64) -> String {
+    let (n, unit) = disappear_unit(seconds);
+    format!("{n} {unit}{}", if n == 1 { "" } else { "s" })
+}
+
+/// The same, short, for a conversation's header: "5m", "1h", "8h", "1d", "1w", "4w".
+pub fn disappear_short(seconds: i64) -> String {
+    let (n, unit) = disappear_unit(seconds);
+    format!("{n}{}", &unit[..1])
+}
+
+fn disappear_unit(seconds: i64) -> (i64, &'static str) {
+    for (size, unit) in [(604_800, "week"), (86_400, "day"), (3600, "hour"), (60, "minute")] {
+        if seconds >= size && seconds % size == 0 {
+            return (seconds / size, unit);
+        }
+    }
+    (seconds, "second")
+}
+
+/// The timeline's line when someone changes the setting: "Ana set messages to disappear 1 day
+/// after they're read" · "You turned off disappearing messages".
+pub fn disappear_line(by: &str, seconds: i64) -> String {
+    if seconds > 0 { format!("{by} set messages to disappear {} after they're read", disappear_after(seconds)) } else { format!("{by} turned off disappearing messages") }
+}
+
 /// "a, b and c"
 pub fn list(items: &[String]) -> String {
     match items.len() {

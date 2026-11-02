@@ -67,7 +67,9 @@ indirect enum Frame: Codable, Hashable {
 }
 
 // Payload bodies, one per event type.
-struct MessageBody: Codable { var text: String?; var attachments: [Attachment]?; var reply: EventId?; var thread: EventId?; var mentions: [UserId]? }
+/// `ttl`: written while the conversation's messages disappear, the seconds this one lasts after
+/// it is read (after it is sent, for its writer); absent otherwise.
+struct MessageBody: Codable { var text: String?; var attachments: [Attachment]?; var reply: EventId?; var thread: EventId?; var mentions: [UserId]?; var ttl: Int? }
 struct EditBody: Codable { var target: EventId; var text: String }
 struct ReactionBody: Codable { var target: EventId; var key: String; var on: Bool }
 struct RedactBody: Codable { var target: EventId }

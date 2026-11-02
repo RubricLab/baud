@@ -53,6 +53,7 @@ Every call is on the caller's thread and returns in milliseconds (SQLite on the 
 | `react`, `edit`, `redact`, `pin`, `markRead` | the same names |
 | `typing(conv)`, `typingNow(conv)` | the same |
 | `members`, `addMember`, `removeMember`, `leave`, `setName(conv)`, `setTopic` | `members`, `addMember`, `removeMember`, `leave`, `rename(conv, name)`, `setTopic` |
+| `setDisappear(conv, seconds)` | `setDisappear(conv, seconds)`, and `Conversation.disappear` (seconds, 0 off) |
 | `delivery(conv, event)` | `delivery(conv, event): Delivery` (per device, plus `sentence` and `best`) |
 | `createChat(users)`, `createGroup(name, users)` | the same |
 | `search(query, scope)` | `search(query, conv?)` |
@@ -80,6 +81,8 @@ had as callbacks:
 - `Places(conv)`: someone's place in that chat changed, or my share in it did: re-read `places(conv)`
 - `Replied(user)`: a reply I made was opened by its link's maker; we met (`Contacts` comes too)
 - `ReplyLapsed(user)`: a reply I made stopped waiting unopened
+- `Expired(conv, events)`: these disappearing messages went from this device; take their
+  notifications away (`Conversation(conv)` and `Conversations` come too)
 
 Listeners are called on the core's threads; never block in one.
 
@@ -121,6 +124,17 @@ fix (the app throttles: 25 m or 20 s). `places(conv): List<Place>` is everyone s
 that chat, newest first; a share whose `until` has passed is gone (re-read it on a timer for the
 "2 min ago" line). A fix goes straight to the chat's online devices, sealed with the chat's key,
 never to carriers or a server; a device that comes online gets my latest at once.
+
+## Disappearing messages
+
+`setDisappear(conv, seconds)` (0 is off) is a state line in the conversation, so its system line
+("Ana set messages to disappear 1 day after they're read") comes in `events`; anyone in a chat
+may set it, only an admin in a channel. `Conversation.disappear` is the setting now. Each message
+written while it's on carries its own time: mine go that long after I sent them, everyone else's
+that long after any device of mine first read them (`markRead`), and an unread one waits. The
+core does the rest on this device: the message leaves the timeline, threads, search and the
+list's last line, its files leave the store, and `Change.Expired` names it so its notification
+can go. Nothing to schedule in the app.
 
 ## Waking iPhones
 

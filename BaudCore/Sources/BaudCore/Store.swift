@@ -20,6 +20,11 @@ public final class Store: @unchecked Sendable {
 		exec("alter table people add column peer_card blob")
 		exec("alter table people add column vouched integer default 0")
 		exec("alter table events add column via text")
+		// Disappearing messages: the conversation's setting in seconds (0, off), and when each
+		// message goes on this device, once that is known.
+		exec("alter table conversations add column disappear int default 0")
+		exec("alter table events add column expires_at real")
+		exec("create index if not exists events_expires on events(expires_at) where expires_at is not null")
 	}
 	deinit { sqlite3_close(handle) }
 

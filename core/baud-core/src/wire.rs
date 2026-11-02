@@ -270,6 +270,10 @@ pub struct MessageBody {
     pub thread: Option<EventId>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub mentions: Option<Vec<UserId>>,
+    /// Written while the conversation's messages disappear: the seconds this one lasts after it
+    /// is read (after it is sent, for its writer). Absent otherwise, so the bytes are as before.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub ttl: Option<i64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

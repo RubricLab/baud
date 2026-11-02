@@ -104,6 +104,30 @@ public extension Carrying {
 	}
 }
 
+/// How long a disappearing message lasts, in the largest unit that fits it whole: "5 minutes",
+/// "1 hour", "8 hours", "1 day", "1 week", "4 weeks".
+public func disappearAfter(_ seconds: Int) -> String {
+	let (n, unit) = disappearUnit(seconds)
+	return "\(n) \(unit)\(n == 1 ? "" : "s")"
+}
+
+/// The same, short, for a conversation's header: "5m", "1h", "8h", "1d", "1w", "4w".
+public func disappearShort(_ seconds: Int) -> String {
+	let (n, unit) = disappearUnit(seconds)
+	return "\(n)\(unit.prefix(1))"
+}
+
+private func disappearUnit(_ seconds: Int) -> (Int, String) {
+	for (size, unit) in [(604_800, "week"), (86_400, "day"), (3600, "hour"), (60, "minute")] where seconds >= size && seconds % size == 0 { return (seconds / size, unit) }
+	return (seconds, "second")
+}
+
+/// The timeline's line when someone changes the setting: "Ana set messages to disappear 1 day
+/// after they're read" · "You turned off disappearing messages".
+public func disappearLine(by who: String, seconds: Int) -> String {
+	seconds > 0 ? "\(who) set messages to disappear \(disappearAfter(seconds)) after they're read" : "\(who) turned off disappearing messages"
+}
+
 /// "a, b and c"
 public func list(_ items: [String]) -> String {
 	switch items.count {

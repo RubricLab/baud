@@ -164,6 +164,8 @@ extension LocalCore {
 			store.run("insert or replace into reads(conv,event,lamport) values(?,?,?)", [r.conv, r.event, r.lamport])
 			return true
 		}
+		// Read by me, here or on another device of mine: disappearing messages start their clocks.
+		if r.kind == "read", r.user == user { startClocks(r.conv, upTo: r.lamport, at: r.at) }
 		emit(.delivery(r.conv))
 		if readHere { emit(.conversations) }
 	}

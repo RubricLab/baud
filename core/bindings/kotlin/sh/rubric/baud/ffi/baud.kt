@@ -824,6 +824,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_baud_ffi_checksum_method_baud_set_avatar(
     ): Int
+    external fun uniffi_baud_ffi_checksum_method_baud_set_disappear(
+    ): Int
     external fun uniffi_baud_ffi_checksum_method_baud_set_name(
     ): Int
     external fun uniffi_baud_ffi_checksum_method_baud_set_online(
@@ -977,6 +979,8 @@ internal object UniffiLib {
     external fun uniffi_baud_ffi_fn_method_baud_send(`ptr`: Long,`conv`: RustBuffer.ByValue,`draft`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_baud_ffi_fn_method_baud_set_avatar(`ptr`: Long,`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_baud_ffi_fn_method_baud_set_disappear(`ptr`: Long,`conv`: RustBuffer.ByValue,`seconds`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_baud_ffi_fn_method_baud_set_name(`ptr`: Long,`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1286,6 +1290,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_baud_ffi_checksum_method_baud_set_avatar() and 0xFFFF) != 18695) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_baud_ffi_checksum_method_baud_set_disappear() and 0xFFFF) != 10487) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_baud_ffi_checksum_method_baud_set_name() and 0xFFFF) != 53698) {
@@ -2039,6 +2046,12 @@ public interface BaudInterface {
      * A photo (a file path) onto my card.
      */
     fun `setAvatar`(`path`: kotlin.String)
+    
+    /**
+     * Disappearing messages: each message written from now on goes this many seconds after it
+     * is read (mine, after it is sent); 0 turns it off. Anyone in a chat, an admin in a channel.
+     */
+    fun `setDisappear`(`conv`: kotlin.String, `seconds`: kotlin.UInt)
     
     /**
      * First run: the name makes the person. Later: a new name, told to everyone who knows me.
@@ -2922,6 +2935,25 @@ open class Baud: Disposable, AutoCloseable, BaudInterface
         it,
         
         FfiConverterString.lower(`path`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Disappearing messages: each message written from now on goes this many seconds after it
+     * is read (mine, after it is sent); 0 turns it off. Anyone in a chat, an admin in a channel.
+     */
+    @Throws(BaudException::class)override fun `setDisappear`(`conv`: kotlin.String, `seconds`: kotlin.UInt)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(BaudException) { _status ->
+    UniffiLib.uniffi_baud_ffi_fn_method_baud_set_disappear(
+        it,
+        
+        FfiConverterString.lower(`conv`),
+        FfiConverterUInt.lower(`seconds`),_status)
 }
     }
     
@@ -4551,6 +4583,8 @@ data class Conversation (
     var `pinned`: List<kotlin.String>
     , 
     var `isDirect`: kotlin.Boolean
+    , 
+    var `disappear`: kotlin.UInt = 0u 
     
 ){
     
@@ -4585,6 +4619,7 @@ public object FfiConverterTypeConversation: FfiConverterRustBuffer<Conversation>
             FfiConverterBoolean.read(buf),
             FfiConverterSequenceString.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterUInt.read(buf),
         )
     }
 
@@ -4606,7 +4641,8 @@ public object FfiConverterTypeConversation: FfiConverterRustBuffer<Conversation>
             FfiConverterUInt.allocationSize(value.`eventCount`) +
             FfiConverterBoolean.allocationSize(value.`isDefault`) +
             FfiConverterSequenceString.allocationSize(value.`pinned`) +
-            FfiConverterBoolean.allocationSize(value.`isDirect`)
+            FfiConverterBoolean.allocationSize(value.`isDirect`) +
+            FfiConverterUInt.allocationSize(value.`disappear`)
     )
 
     override fun write(value: Conversation, buf: ByteBuffer) {
@@ -4628,6 +4664,7 @@ public object FfiConverterTypeConversation: FfiConverterRustBuffer<Conversation>
             FfiConverterBoolean.write(value.`isDefault`, buf)
             FfiConverterSequenceString.write(value.`pinned`, buf)
             FfiConverterBoolean.write(value.`isDirect`, buf)
+            FfiConverterUInt.write(value.`disappear`, buf)
     }
 }
 
@@ -5702,6 +5739,16 @@ sealed class Change {
         companion object
     }
     
+    data class Expired(
+        val `conv`: kotlin.String, 
+        val `events`: List<kotlin.String>) : Change()
+        
+    {
+        
+
+        companion object
+    }
+    
 
     
 
@@ -5752,6 +5799,10 @@ public object FfiConverterTypeChange : FfiConverterRustBuffer<Change>{
                 )
             15 -> Change.ReplyLapsed(
                 FfiConverterString.read(buf),
+                )
+            16 -> Change.Expired(
+                FfiConverterString.read(buf),
+                FfiConverterSequenceString.read(buf),
                 )
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
@@ -5860,6 +5911,14 @@ public object FfiConverterTypeChange : FfiConverterRustBuffer<Change>{
                 + FfiConverterString.allocationSize(value.`user`)
             )
         }
+        is Change.Expired -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`conv`)
+                + FfiConverterSequenceString.allocationSize(value.`events`)
+            )
+        }
     }
 
     override fun write(value: Change, buf: ByteBuffer) {
@@ -5934,6 +5993,12 @@ public object FfiConverterTypeChange : FfiConverterRustBuffer<Change>{
             is Change.ReplyLapsed -> {
                 buf.putInt(15)
                 FfiConverterString.write(value.`user`, buf)
+                Unit
+            }
+            is Change.Expired -> {
+                buf.putInt(16)
+                FfiConverterString.write(value.`conv`, buf)
+                FfiConverterSequenceString.write(value.`events`, buf)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }

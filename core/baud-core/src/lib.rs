@@ -13,6 +13,7 @@ pub mod wire;
 
 mod carry;
 mod core;
+mod disappear;
 mod files;
 mod net;
 mod places;

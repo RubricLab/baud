@@ -1,12 +1,14 @@
 //! Golden vectors from the Swift apps (`BaudCore/Tests/BaudCoreTests/VectorTests.swift` writes
 //! `vectors/swift.json`): every frame, body and packet decodes here and re-encodes to the same
-//! JSON, ids and links compute alike. Then the reverse: this writes `vectors/rust.json`, which the
-//! Swift test decodes. Swift orders keys at random per process, so JSON is compared as values,
-//! with keys sorted and written the Swift way (`\/`, `1e+16`): the same bytes but for order.
+//! JSON, ids, links and the disappearing lines compute alike. Then the reverse: this writes
+//! `vectors/rust.json`, which the Swift test decodes. Swift orders keys at random per process, so
+//! JSON is compared as values, with keys sorted and written the Swift way (`\/`, `1e+16`): the
+//! same bytes but for order.
 
 use baud_core::ids::{fingerprint, home_id, stable_id};
 use baud_core::json::{decode, encode};
 use baud_core::link::parse_code;
+use baud_core::sentences::{disappear_after, disappear_line, disappear_short};
 use baud_core::types::LinkKind;
 use baud_core::wire::*;
 use serde_json::Value;
@@ -160,7 +162,38 @@ fn links_parse_alike() {
     }
 }
 
-/// The reverse: frames and packets as this side writes them, for the Swift test to read.
+/// Disappearing messages: a message's own `ttl` and the setting's state line read as Swift
+/// wrote them, and the line the timeline shows for it is the same sentence on both sides.
+#[test]
+fn disappearing_reads_alike() {
+    let v = vectors();
+    let frame = |name: &str| -> WireEvent {
+        let f = v["frames"].as_array().unwrap().iter().find(|f| str_of(f, "name") == name).unwrap_or_else(|| panic!("{name}"));
+        match decode::<Frame>(str_of(f, "json")) {
+            Some(Frame::Events(es)) => es[0].clone(),
+            other => panic!("{name}: {other:?}"),
+        }
+    };
+    let m = frame("events-message-ttl");
+    assert_eq!(decode::<MessageBody>(&m.body).and_then(|b| b.ttl), Some(86_400));
+    for (name, value) in [("events-state-disappear", "86400"), ("events-state-disappear-off", "0")] {
+        let s = decode::<StateBody>(&frame(name).body).unwrap();
+        assert_eq!((s.key.as_str(), s.value.as_str()), ("disappear", value), "{name}");
+    }
+    let body = v["bodies"].as_array().unwrap().iter().find(|b| str_of(b, "name") == "MessageBody-ttl").unwrap();
+    assert_eq!(decode::<MessageBody>(str_of(body, "json")).and_then(|b| b.ttl), Some(300));
+    assert!(!encode(&MessageBody { text: Some("x".into()), ..Default::default() }).contains("ttl"), "off: no key at all");
+    let rows = v["sentences"].as_array().expect("sentences");
+    assert!(rows.len() >= 20);
+    for r in rows {
+        let (by, s) = (str_of(r, "by"), r["seconds"].as_i64().unwrap());
+        assert_eq!(disappear_line(by, s), str_of(r, "line"), "{r}");
+        assert_eq!(disappear_after(s), str_of(r, "after"), "{r}");
+        assert_eq!(disappear_short(s), str_of(r, "short"), "{r}");
+    }
+}
+
+/// The reverse: frames, packets and sentences as this side writes them, for the Swift test to read.
 #[test]
 fn write_rust_vectors() {
     let v = vectors();
@@ -184,7 +217,16 @@ fn write_rust_vectors() {
         serde_json::json!({ "name": "open", "key": null, "nonce": null, "conv": null, "joiner": false,
             "frame": encode(&want), "packet": String::from_utf8(seal_packet(&want, None, false, nonce)).unwrap() }),
     ];
-    let out = serde_json::json!({ "frames": frames, "packets": packets });
+    let sentences: Vec<Value> = v["sentences"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| {
+            let (by, s) = (str_of(r, "by"), r["seconds"].as_i64().unwrap());
+            serde_json::json!({ "by": by, "seconds": s, "line": disappear_line(by, s), "after": disappear_after(s), "short": disappear_short(s) })
+        })
+        .collect();
+    let out = serde_json::json!({ "frames": frames, "packets": packets, "sentences": sentences });
     let p = concat!(env!("CARGO_MANIFEST_DIR"), "/../vectors/rust.json");
     std::fs::write(p, serde_json::to_string_pretty(&out).unwrap() + "\n").unwrap();
 }
