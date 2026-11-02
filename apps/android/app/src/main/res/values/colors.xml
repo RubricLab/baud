@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="surface">#FFFFFF</color>
+    <color name="icon_tile">#141414</color>
+    <color name="icon_mark">#F5F5F5</color>
+</resources>

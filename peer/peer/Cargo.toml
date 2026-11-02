@@ -1,0 +1,44 @@
+[package]
+name = "peer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "One network layer for every Rubric app: identity, cards, links, records, finding, helpers, policy, transports"
+publish = false
+
+[dependencies]
+iroh.workspace = true
+iroh-blobs.workspace = true
+iroh-mdns-address-lookup.workspace = true
+iroh-relay.workspace = true
+portmapper.workspace = true
+igd-next.workspace = true
+netwatch.workspace = true
+n0-future.workspace = true
+n0-watcher.workspace = true
+tokio.workspace = true
+ed25519-dalek.workspace = true
+x25519-dalek.workspace = true
+chacha20poly1305.workspace = true
+hkdf.workspace = true
+sha2.workspace = true
+blake3.workspace = true
+postcard.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
+data-encoding.workspace = true
+rand.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+bytes.workspace = true
+
+# Windows has no system OpenSSL for SQLCipher; vendor it there only (Apple uses CommonCrypto, Linux its libssl).
+[target.'cfg(windows)'.dependencies]
+rusqlite = { workspace = true, features = ["bundled-sqlcipher-vendored-openssl"] }
+
+[dev-dependencies]
+anyhow.workspace = true
+tempfile.workspace = true
+tracing-subscriber.workspace = true

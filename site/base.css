@@ -1,0 +1,134 @@
+/* baud.rubric.sh: one stylesheet for every page. One colour, baud's own: each visit wears one of
+   the app's eight, and every tone here is that colour at some lightness, solid, solved for contrast
+   by the same math the app uses (hue.js writes them before the first paint). No gradients, no
+   veils, no glow: colour, ink, and a shadow where something sits above the page. One typeface
+   (Geist, served from here). The mark is two dots and a line: two people, nothing in between. */
+@font-face { font-family: "Geist"; src: url("fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
+/* Light: the page is the colour at full strength, under near-black ink (orange, amber) or white
+   (the deep ones). Dark: the colour's own near-black, and the colour, still at full strength, is
+   what's loud on it. The band is the loud fill run edge to edge, for the one line that matters. */
+:root {
+  color-scheme: light;
+  --bg: var(--l-bg, #0b5bd3); --fg: var(--l-fg, #fff); --fg-2: var(--l-fg2, #cfe0ff);
+  --loud: var(--l-loud, #fff); --on-loud: var(--l-onloud, #0b3a80); --on-loud-2: var(--l-onloud2, #3d6fb8);
+  --card: var(--l-card, #2f72db); --on-card: var(--l-oncard, #fff); --line: var(--l-line, #4f8ae8);
+  --band-fg: var(--l-bandfg, #0b5bd3); --deep: var(--l-deep, #084bb0); --shade: var(--l-shade, #031a40);
+  /* A section that turns the page over: `turn` the next tone along the ramp, `flip` its far end.
+     Light: the colour, then paper, then ink. Dark: near-black, then the colour, then paper. */
+  --turn-bg: var(--l-turnbg); --turn-fg: var(--l-turnfg); --turn-fg-2: var(--l-turnfg2); --turn-line: var(--l-turnline); --turn-solid: var(--l-turnsolid); --turn-on-solid: var(--l-turnonsolid); --flip-bg: var(--l-flipbg); --flip-fg: var(--l-flipfg); --flip-fg-2: var(--l-flipfg2); --flip-line: var(--l-flipline); --flip-solid: var(--l-flipsolid); --flip-on-solid: var(--l-fliponsolid);
+  --sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: var(--sans);
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --wrap: 1160px;
+  --gutter: 24px;
+  /* Lifted: a contact shadow where it touches, a soft one under it, both the hue's own deep ink. */
+  --lift: 0 1px 1px color-mix(in oklch, var(--shade) 45%, transparent), 0 12px 28px -12px color-mix(in oklch, var(--shade) 60%, transparent);
+  --lift-hi: 0 1px 1px color-mix(in oklch, var(--shade) 45%, transparent), 0 22px 44px -16px color-mix(in oklch, var(--shade) 70%, transparent);
+  /* The names the other pages use. */
+  --fg-3: var(--fg-2); --line-2: var(--line); --btn: var(--loud); --btn-fg: var(--on-loud); --accent: var(--loud); --bg-2: var(--deep); --shadow: var(--lift);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: var(--d-bg); --fg: var(--d-fg); --fg-2: var(--d-fg2); --loud: var(--d-loud); --on-loud: var(--d-onloud); --on-loud-2: var(--d-onloud2);
+    --card: var(--d-card); --on-card: var(--d-oncard); --line: var(--d-line); --band-fg: var(--d-bandfg); --deep: var(--d-deep); --shade: var(--d-shade);
+    --turn-bg: var(--d-turnbg); --turn-fg: var(--d-turnfg); --turn-fg-2: var(--d-turnfg2); --turn-line: var(--d-turnline); --turn-solid: var(--d-turnsolid); --turn-on-solid: var(--d-turnonsolid); --flip-bg: var(--d-flipbg); --flip-fg: var(--d-flipfg); --flip-fg-2: var(--d-flipfg2); --flip-line: var(--d-flipline); --flip-solid: var(--d-flipsolid); --flip-on-solid: var(--d-fliponsolid);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: var(--d-bg); --fg: var(--d-fg); --fg-2: var(--d-fg2); --loud: var(--d-loud); --on-loud: var(--d-onloud); --on-loud-2: var(--d-onloud2);
+  --card: var(--d-card); --on-card: var(--d-oncard); --line: var(--d-line); --band-fg: var(--d-bandfg); --deep: var(--d-deep); --shade: var(--d-shade);
+  --turn-bg: var(--d-turnbg); --turn-fg: var(--d-turnfg); --turn-fg-2: var(--d-turnfg2); --turn-line: var(--d-turnline); --turn-solid: var(--d-turnsolid); --turn-on-solid: var(--d-turnonsolid); --flip-bg: var(--d-flipbg); --flip-fg: var(--d-flipfg); --flip-fg-2: var(--d-flipfg2); --flip-line: var(--d-flipline); --flip-solid: var(--d-flipsolid); --flip-on-solid: var(--d-fliponsolid);
+}
+
+* { box-sizing: border-box; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); position: relative;
+  font: 400 16px/1.55 var(--sans); letter-spacing: -0.011em;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  transition: background-color .35s ease, color .35s ease;
+}
+a { color: inherit; text-decoration: none; }
+img, svg { display: block; }
+::selection { background: var(--loud); color: var(--on-loud); }
+:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; border-radius: 10px; }
+
+.wrap { width: 100%; max-width: calc(var(--wrap) + var(--gutter) * 2); margin: 0 auto; padding: 0 var(--gutter); }
+
+/* The bar: the page's own colour, solid, a line under it once the page moves under it. */
+.bar { position: sticky; top: 0; z-index: 20; background: var(--bg); box-shadow: 0 1px 0 transparent; transition: box-shadow .25s, background-color .35s; }
+.bar.scrolled { box-shadow: 0 1px 0 var(--line); }
+.bar.over { margin-bottom: -64px; }
+.bar .wrap { display: flex; align-items: center; height: 64px; gap: 20px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font: 800 20px/1 var(--display); letter-spacing: -0.05em; }
+.brand svg.logo { width: 28px; height: 28px; flex: none; }
+.bar nav { display: flex; gap: 26px; margin-left: auto; font-size: 14px; font-weight: 600; color: var(--fg-2); }
+.bar nav a { transition: color .15s; }
+.bar nav a:hover { color: var(--fg); }
+.bar .end { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.bar .btn { height: 38px; padding: 0 18px; font-size: 15px; }
+
+/* Buttons: the loud fill, lifted; the quiet one is a solid outline in the ink. A press settles. */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 54px; padding: 0 28px; border-radius: 999px;
+  font: 700 16px/1 var(--sans); letter-spacing: -0.02em; white-space: nowrap;
+  background: var(--loud); color: var(--on-loud); border: 0; cursor: pointer; box-shadow: var(--lift);
+  transition: transform .15s ease, box-shadow .2s ease, background-color .35s ease, color .35s ease; }
+.btn:hover { transform: translateY(-2px); box-shadow: var(--lift-hi); }
+.btn:active { transform: translateY(0) scale(.98); box-shadow: none; }
+.btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 2px var(--fg); }
+.btn.ghost:hover { background: var(--fg); color: var(--bg); box-shadow: inset 0 0 0 2px var(--fg); }
+.btn svg { width: 17px; height: 17px; flex: none; }
+
+/* Type */
+.eyebrow { font: 500 14px/1.3 var(--mono); letter-spacing: -.01em; color: var(--fg-2); }
+h1, h2, h3 { font-family: var(--display); font-weight: 800; margin: 0; color: var(--fg); }
+h1 { font-size: clamp(48px, 8vw, 96px); line-height: .95; letter-spacing: -0.055em; }
+h2 { font-size: clamp(36px, 5.4vw, 64px); line-height: 1; letter-spacing: -0.05em; }
+h3 { font-size: 18px; line-height: 1.25; letter-spacing: -0.025em; font-weight: 700; }
+.lede { font-size: clamp(17px, 1.6vw, 20px); line-height: 1.5; color: var(--fg-2); letter-spacing: -0.015em; font-weight: 450; }
+.dim { color: var(--fg-2); }
+.faint { color: var(--fg-2); }
+h1, h2 { text-wrap: balance; }
+.lede { text-wrap: pretty; }
+
+/* Footer */
+.foot { padding: 48px 0 calc(56px + env(safe-area-inset-bottom)); font-size: 14px; color: var(--fg-2); border-top: 2px solid var(--line); }
+.foot .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; }
+.foot .brand { color: var(--fg); }
+.foot nav { display: flex; flex-wrap: wrap; gap: 10px 24px; font-weight: 600; }
+.foot nav a { color: var(--fg-2); transition: color .15s; }
+.foot nav a:hover { color: var(--fg); }
+.foot .note { flex-basis: 100%; margin: 0; }
+
+@media (max-width: 720px) {
+  :root { --gutter: 18px; }
+  .bar nav a.hide-sm { display: none; }
+  .bar nav { gap: 18px; }
+  .btn { height: 54px; }
+}
+/* Reduced motion: nothing travels; what a page shows still changes, by fades (each page says how). */
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } .btn, .btn:hover { transition: none; transform: none; } body { transition: none; } }
+
+/* The light/dark switch in the bar */
+.theme { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 999px; border: 0; background: transparent; color: var(--fg); cursor: pointer; transition: color .15s, background-color .15s; }
+.theme:hover { color: var(--on-loud); background: var(--loud); }
+.theme svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.theme .moon { display: none; }
+:root[data-theme="dark"] .theme .sun { display: none; } :root[data-theme="dark"] .theme .moon { display: block; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .theme .sun { display: none; } :root:not([data-theme="light"]) .theme .moon { display: block; } }
+
+/* The mark: the loud fill, the two lights and the line in what reads on it. */
+.logo > rect:first-child { fill: var(--loud); transition: fill .35s; }
+.logo > g { fill: var(--on-loud); transition: fill .35s; }
+
+/* Sections that turn the page over. Inside one, the page's own names point at its tones, so
+   buttons, cards and lines in it read on it without knowing where they are. */
+.turn, .flip { color: var(--fg); background: var(--bg); transition: background-color .35s, color .35s; }
+.turn { --bg: var(--turn-bg); --fg: var(--turn-fg); --fg-2: var(--turn-fg-2); --line: var(--turn-line); --loud: var(--turn-solid); --on-loud: var(--turn-on-solid); }
+.flip { --bg: var(--flip-bg); --fg: var(--flip-fg); --fg-2: var(--flip-fg-2); --line: var(--flip-line); --loud: var(--flip-solid); --on-loud: var(--flip-on-solid); }

@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>baud: talk directly to your friends</title>
+<meta name="description" content="baud is a free messenger that talks directly to your friends: straight from your phone to theirs, end-to-end encrypted. No servers, no account, no phone number. For iPhone, Mac and Android.">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta property="og:title" content="baud: talk directly to your friends">
+<meta property="og:description" content="Messages and calls straight from your phone to theirs. No servers, no account, no phone number. Free.">
+<meta property="og:image" content="https://baud.rubric.sh/icon.png">
+<link rel="preload" href="fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<script src="hue.js"></script>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* ---------- Hero: the claim, set huge; the two phones joined by one line ---------- */
+  .hero { position: relative; overflow-x: clip; text-align: center; padding: clamp(124px, 15vh, 164px) 0 clamp(64px, 8vw, 104px); }
+  .pill { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px 0 12px; margin-bottom: clamp(22px, 2.6vw, 32px); border-radius: 999px;
+    font: 650 14px/1 var(--sans); letter-spacing: -.01em; color: var(--on-card); background: var(--card); box-shadow: var(--lift); transition: transform .15s, box-shadow .2s; }
+  .pill:hover { transform: translateY(-1px); box-shadow: var(--lift-hi); }
+  .pill .net { width: 15px; height: 15px; }
+  .pill .arr { width: 12px; height: 12px; transition: transform .15s; }
+  .pill:hover .arr { transform: translateX(2px); }
+  .hero h1 { font-size: clamp(46px, 9.6vw, 144px); font-weight: 850; letter-spacing: -0.062em; line-height: .88; }
+  .hero .lede { text-wrap: balance; margin: clamp(22px, 2.4vw, 30px) auto 0; max-width: 27em; font-size: clamp(18px, 1.9vw, 23px); }
+  .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: clamp(28px, 3.4vw, 40px); }
+  .ios .not-ios, .android .not-ios, .only-ios, .only-android { display: none; }
+  .ios .only-ios, .android .only-android { display: inline-flex; }
+
+  /* ---------- A phone: titanium, a thin black border, the island, baud on the screen ---------- */
+  :root {
+    --ti: linear-gradient(135deg, #eceded 0%, #b8babd 16%, #f7f7f7 34%, #a6a8ac 54%, #dcdddf 74%, #9d9fa3 100%);
+    --ti-btn: linear-gradient(90deg, #8f9195, #d4d5d7 60%, #a3a5a9); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ti: linear-gradient(135deg, #6a6b6f 0%, #2c2d30 18%, #7a7b7f 36%, #26272a 58%, #55565a 78%, #1e1f22 100%);
+    --ti-btn: linear-gradient(90deg, #2a2b2e, #6d6e72 60%, #3a3b3e); } }
+  :root[data-theme="dark"] {
+    --ti: linear-gradient(135deg, #6a6b6f 0%, #2c2d30 18%, #7a7b7f 36%, #26272a 58%, #55565a 78%, #1e1f22 100%);
+    --ti-btn: linear-gradient(90deg, #2a2b2e, #6d6e72 60%, #3a3b3e); }
+  .phone { --r: calc(var(--pw) * .185); position: relative; width: var(--pw); aspect-ratio: 71.9 / 150; flex: none; border-radius: var(--r); padding: calc(var(--pw) * .014);
+    background: var(--ti); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45), 0 2px 2px color-mix(in oklch, var(--shade) 40%, transparent), 0 40px 70px -34px var(--shade); text-align: left; }
+  .phone::before, .phone::after { content: ""; position: absolute; width: calc(var(--pw) * .012); border-radius: 2px; background: var(--ti-btn); }
+  .phone::before { left: calc(var(--pw) * -.009); top: 18%; height: 4%; box-shadow: 0 calc(var(--pw) * .15) 0 0 #a3a5a9, 0 calc(var(--pw) * .29) 0 0 #a3a5a9; }
+  .phone::after { right: calc(var(--pw) * -.009); top: 26%; height: 9.5%; }
+  .bezel { position: relative; height: 100%; border-radius: calc(var(--r) - var(--pw) * .014); background: #030303; padding: calc(var(--pw) * .021); }
+  .bezel::after { content: ""; position: absolute; inset: calc(var(--pw) * -.04); border-radius: calc(var(--r) + var(--pw) * .02); pointer-events: none; opacity: 0;
+    box-shadow: 0 0 0 3px var(--fg); animation-duration: 10s; animation-iteration-count: infinite; animation-fill-mode: both; }
+  /* The screen is the app as it is now: the page's own colour, their words on cards, mine loud. */
+  .screen { position: relative; height: 100%; border-radius: calc(var(--r) - var(--pw) * .035); overflow: hidden; background: var(--bg); color: var(--fg);
+    font-size: calc(var(--pw) * .047); display: flex; flex-direction: column; letter-spacing: -.01em; transition: background-color .35s; }
+  .island { position: absolute; z-index: 2; top: 1.6%; left: 50%; width: 31%; height: 4%; transform: translateX(-50%); border-radius: 999px; background: #000; }
+  .sb { display: flex; justify-content: space-between; align-items: center; height: 7.4%; padding: 0 9% 0 11%; flex: none; font: 700 .82em/1 var(--sans); }
+  .sb .ic { display: flex; gap: .3em; align-items: center; }
+  .sb svg { height: .78em; width: auto; fill: currentColor; }
+  .top { display: flex; align-items: center; gap: .5em; padding: .5em 5% .55em; border-bottom: 1px solid var(--line); flex: none; }
+  .top .chev { width: .55em; height: .95em; flex: none; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .top b { display: block; font-size: 1.24em; font-weight: 800; letter-spacing: -.035em; line-height: 1.1; }
+  .top small { display: flex; align-items: center; gap: .35em; font-size: .68em; font-weight: 600; }
+  .top small::before { content: ""; width: .6em; height: .6em; border-radius: 50%; background: var(--loud); }
+  .top .acts { margin-left: auto; display: flex; gap: .9em; }
+  .top .acts svg { width: 1em; height: 1em; fill: currentColor; }
+  .thread { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 5% 3%; animation: thread 10s infinite both; }
+  .msg { display: flex; padding-top: .4em; }
+  .msg.mine { justify-content: flex-end; }
+  .msg > div { min-width: 0; max-width: 80%; display: flex; flex-direction: column; align-items: flex-start; gap: .3em; }
+  .msg.mine > div { align-items: flex-end; }
+  .msg p { margin: 0; line-height: 1.28; }
+  .msg .txt { font-size: .96em; padding: .5em .85em; border-radius: 1.2em; background: var(--card); color: var(--on-card);
+    box-shadow: 0 .05em .05em color-mix(in oklch, var(--shade) 40%, transparent), 0 .4em .8em -.4em color-mix(in oklch, var(--shade) 70%, transparent); }
+  .msg.mine .txt { background: var(--loud); color: var(--on-loud); }
+  .msg .pic { display: block; width: 9.5em; aspect-ratio: 3 / 2; border-radius: 1em; background: url("img/tram.webp") center / cover; box-shadow: 0 .4em .8em -.4em var(--shade); }
+  .react { display: inline-flex; align-items: center; gap: .25em; padding: .15em .5em; border-radius: 999px; background: var(--card); color: var(--on-card); font-size: .7em; font-weight: 600; }
+  .state { display: flex; justify-content: flex-end; align-items: center; gap: .3em; margin: .4em 0 0; font-size: .66em; font-weight: 700; }
+  .state svg { width: 1.25em; height: 1.25em; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .grow { display: grid; grid-template-rows: 0fr; opacity: 0; animation-duration: 10s; animation-iteration-count: infinite; animation-fill-mode: both; }
+  .grow > div { min-height: 0; overflow: hidden; }
+  .comp { display: flex; align-items: center; gap: .5em; margin: 0 4% 9%; padding: .5em .5em .5em .8em; border-radius: 999px; background: var(--card); color: var(--on-card); font-size: .8em; flex: none;
+    box-shadow: 0 .4em .8em -.4em color-mix(in oklch, var(--shade) 70%, transparent); }
+  .comp .plus { font-weight: 700; }
+  .comp .f { position: relative; flex: 1; height: 1.3em; }
+  .comp .f em { position: absolute; inset: 0; font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation-duration: 10s; animation-iteration-count: infinite; animation-fill-mode: both; }
+  .comp .ph { font-weight: 500; opacity: .75; }
+  .comp .go { width: 1.75em; height: 1.75em; border-radius: 50%; display: grid; place-items: center; background: var(--loud); color: var(--on-loud); flex: none; }
+  .comp .go svg { width: .8em; height: .8em; stroke: currentColor; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- The stage: two people, one direct line ---------- */
+  .stage { --pw: clamp(146px, 20vw, 290px); --gap: clamp(44px, 20vw, 330px);
+    display: flex; justify-content: center; align-items: flex-end; margin: clamp(56px, 7vw, 92px) auto 0; }
+  .person { margin: 0; flex: none; display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 1.6vw, 20px); }
+  .who { display: inline-flex; align-items: center; gap: .55em; font: 750 clamp(13px, 1.3vw, 17px)/1 var(--sans); letter-spacing: -.02em; }
+  .who i { width: 2.1em; height: 2.1em; border-radius: 50%; display: grid; place-items: center; font: 800 .82em/1 var(--sans); font-style: normal; background: var(--loud); color: var(--on-loud); }
+  .ana .bezel::after { animation-name: land-ana; }
+  .me .bezel::after { animation-name: land-me; }
+
+  /* The line: baud's mark drawn big, two lights and the line between them, at the height where
+     the new message lands. A light runs it when a message goes. */
+  .link { position: relative; flex: none; width: var(--gap); align-self: stretch; }
+  .link .beam { position: absolute; left: calc(var(--pw) * -.02); right: calc(var(--pw) * -.02); bottom: 27%; height: 4px; margin-bottom: -2px; border-radius: 4px; background: var(--fg); }
+  .link .beam::before, .link .beam::after { content: ""; position: absolute; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--fg); }
+  .link .beam::before { left: -7px; } .link .beam::after { right: -7px; }
+  .link .run { position: absolute; left: 0; right: 0; bottom: 27%; height: 0; z-index: 2; }
+  .spark { position: absolute; top: 0; left: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--loud); opacity: 0;
+    box-shadow: 0 0 0 4px var(--bg), 0 0 0 7px var(--fg); animation-duration: 10s; animation-iteration-count: infinite; animation-fill-mode: both; }
+  .spark.go { animation-name: go; }
+  .spark.back { animation-name: back; }
+  .cap { position: absolute; left: 50%; bottom: calc(27% - 40px); transform: translateX(-50%); font: 750 14px/1 var(--sans); letter-spacing: -.01em;
+    white-space: nowrap; opacity: 0; animation: cap 10s infinite both; }
+
+  /* Ten seconds: Maya sends; it runs the line; Ana has it; Delivered. Ana answers; it runs back. */
+  @keyframes thread { 0% { opacity: 0 } 3%, 94% { opacity: 1 } 98%, 100% { opacity: 0 } }
+  @keyframes sent { 0%, 5% { grid-template-rows: 0fr; opacity: 0 } 7.5%, 100% { grid-template-rows: 1fr; opacity: 1 } }
+  @keyframes arrive { 0%, 17% { grid-template-rows: 0fr; opacity: 0 } 19.5%, 100% { grid-template-rows: 1fr; opacity: 1 } }
+  @keyframes delivered { 0%, 20% { grid-template-rows: 0fr; opacity: 0 } 22%, 54% { grid-template-rows: 1fr; opacity: 1 } 56.5%, 100% { grid-template-rows: 0fr; opacity: 0 } }
+  @keyframes reply { 0%, 44% { grid-template-rows: 0fr; opacity: 0 } 46.5%, 100% { grid-template-rows: 1fr; opacity: 1 } }
+  @keyframes answer { 0%, 56% { grid-template-rows: 0fr; opacity: 0 } 58.5%, 100% { grid-template-rows: 1fr; opacity: 1 } }
+  @keyframes typed-me { 0%, 4.5% { opacity: 1 } 5.5%, 100% { opacity: 0 } }
+  @keyframes ph-me { 0%, 4.5% { opacity: 0 } 5.5%, 100% { opacity: 1 } }
+  @keyframes typed-ana { 0%, 33% { opacity: 0 } 34%, 43.5% { opacity: 1 } 44.5%, 100% { opacity: 0 } }
+  @keyframes ph-ana { 0%, 33% { opacity: 1 } 34%, 43.5% { opacity: 0 } 44.5%, 100% { opacity: 1 } }
+  @keyframes go { 0%, 6.9% { left: 0; opacity: 0; transform: scale(.4) } 7% { left: 0; opacity: 1; transform: scale(1); animation-timing-function: cubic-bezier(.6, 0, .3, 1) } 15% { left: 100%; opacity: 1; transform: scale(1) } 15.8%, 100% { left: 100%; opacity: 0; transform: scale(.4) } }
+  @keyframes back { 0%, 45.9% { left: 100%; opacity: 0; transform: scale(.4) } 46% { left: 100%; opacity: 1; transform: scale(1); animation-timing-function: cubic-bezier(.6, 0, .3, 1) } 54% { left: 0; opacity: 1; transform: scale(1) } 54.8%, 100% { left: 0; opacity: 0; transform: scale(.4) } }
+  @keyframes cap { 0%, 14% { opacity: 0 } 17%, 38% { opacity: 1 } 42%, 100% { opacity: 0 } }
+  @keyframes land-ana { 0%, 14.8% { opacity: 0; transform: scale(.98) } 16% { opacity: 1; transform: scale(1) } 26%, 100% { opacity: 0; transform: scale(1.02) } }
+  @keyframes land-me { 0%, 53.8% { opacity: 0; transform: scale(.98) } 55% { opacity: 1; transform: scale(1) } 65%, 100% { opacity: 0; transform: scale(1.02) } }
+  .me .a-sent { animation-name: sent; } .ana .a-in { animation-name: arrive; } .me .a-deliv { animation-name: delivered; }
+  .ana .a-reply { animation-name: reply; } .me .a-in { animation-name: answer; }
+  .me .typed { animation-name: typed-me; } .me .ph { animation-name: ph-me; } .ana .typed { animation-name: typed-ana; } .ana .ph { animation-name: ph-ana; }
+
+  /* The colour: baud comes in eight; this visit wears one. A pick repaints everything at once. */
+  .hues { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: clamp(44px, 5vw, 68px); }
+  .hues span { font: 700 15px/1 var(--sans); margin-right: 8px; }
+  .hues button { width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: var(--c); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px transparent; transition: transform .15s ease, box-shadow .15s ease; }
+  .hues button:hover { transform: scale(1.15); }
+  .hues button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--fg); }
+
+  /* ---------- Sections: one bold claim, one plain line, one picture ---------- */
+  section h2 { font-size: clamp(42px, 6.8vw, 96px); font-weight: 850; letter-spacing: -0.062em; line-height: .92; }
+  section .lede { max-width: 30em; margin: clamp(20px, 2.4vw, 28px) 0 0; font-size: clamp(18px, 1.8vw, 22px); }
+
+  /* The band: the loud fill, edge to edge, for the three things baud doesn't have. */
+  .say { background: var(--loud); color: var(--band-fg); padding: clamp(96px, 12vw, 168px) 0; transition: background-color .35s, color .35s; }
+  .say .big { margin: 0; font: 850 clamp(38px, 10.4vw, 150px)/.9 var(--display); letter-spacing: -0.065em; }
+  .say .big span { display: block; }
+  .say .lede { color: var(--band-fg); font-weight: 550; max-width: 32em; }
+  /* The warm end of it, said as loud as the rest. */
+  .say .lede b { display: block; margin-top: .7em; font: 800 clamp(26px, 3vw, 40px)/1.12 var(--display); letter-spacing: -.035em; }
+
+  .feature { padding: clamp(88px, 10vw, 144px) 0; overflow-x: clip; }
+  .feature .wrap { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: clamp(32px, 6vw, 96px); }
+  .feature.swap .copy { order: 2; }
+  .feature .pics { display: flex; justify-content: center; align-items: center; gap: clamp(14px, 2.4vw, 32px); position: relative; }
+
+  /* Meet: Ana shows her code; Maya's camera finds it; they're friends. */
+  .meet { --pw: clamp(140px, 15vw, 220px); }
+  .meet .phone:first-child { transform: rotate(-4deg) translateY(4%); }
+  .meet .phone:last-child { transform: rotate(4deg); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; top: 30%; border-radius: 1.2em 1.2em 0 0; background: var(--card); color: var(--on-card);
+    display: flex; flex-direction: column; align-items: center; padding-top: 1.1em; box-shadow: 0 -.5em 1.5em -.5em var(--shade); }
+  .scrim { position: absolute; inset: 0; background: var(--shade); opacity: .35; }
+  .sheet b { font-size: .96em; font-weight: 800; }
+  .sheet .code { width: 62%; aspect-ratio: 1; margin-top: .9em; padding: .55em; border-radius: .7em; background: #fff; }
+  .sheet .code img { width: 100%; height: 100%; }
+  .sheet .share { margin-top: .9em; padding: .5em 1.2em; border-radius: 999px; background: var(--loud); color: var(--on-loud); font-size: .74em; font-weight: 750; }
+  .sheet small { margin-top: .7em; font-size: .66em; font-weight: 600; }
+  .list { padding: .2em 5% 0; }
+  .list .row { display: flex; align-items: center; gap: .55em; padding: .5em 0; font-size: .86em; font-weight: 700; }
+  .list .row i { width: 1.9em; height: 1.9em; border-radius: 50%; display: grid; place-items: center; background: var(--loud); color: var(--on-loud); font: 800 .7em/1 var(--sans); font-style: normal; }
+  .list .row span { display: block; font-size: .78em; font-weight: 500; color: var(--fg-2); }
+  .cam { position: absolute; inset: 0; background: #17171a; display: grid; place-items: center; }
+  .cam .seen { width: 52%; aspect-ratio: 1; padding: .4em; border-radius: .5em; background: #fff; transform: perspective(300px) rotateX(10deg) rotateZ(-6deg); box-shadow: 0 10px 30px #000; }
+  .cam .seen img { width: 100%; height: 100%; }
+  .cam .frame { position: absolute; width: 66%; aspect-ratio: 1; animation: find 6s infinite both; }
+  .cam .frame i { position: absolute; width: 22%; height: 22%; border: 4px solid var(--hue); }
+  .cam .frame i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: .5em 0 0 0; }
+  .cam .frame i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 .5em 0 0; }
+  .cam .frame i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 .5em; }
+  .cam .frame i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 .5em 0; }
+  .cam .hint { position: absolute; top: 14%; left: 0; right: 0; text-align: center; color: #fff; font-size: .8em; font-weight: 700; }
+  .met { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 1.2em 1.2em 0 0; background: var(--bg); color: var(--fg); padding: 1.4em 0 2.2em; display: flex; flex-direction: column; align-items: center; gap: .5em;
+    transform: translateY(100%); animation: met 6s infinite both; }
+  .met i { width: 2.8em; height: 2.8em; border-radius: 50%; display: grid; place-items: center; background: var(--loud); color: var(--on-loud); font: 800 1em/1 var(--sans); font-style: normal; }
+  .met b { font-size: 1em; font-weight: 800; }
+  .met small { font-size: .68em; font-weight: 600; color: var(--fg-2); }
+  .met span { margin-top: .3em; padding: .5em 1.3em; border-radius: 999px; background: var(--loud); color: var(--on-loud); font-size: .76em; font-weight: 750; }
+  @keyframes find { 0%, 30% { transform: scale(1.18); opacity: .7 } 42%, 100% { transform: scale(.86); opacity: 1 } }
+  @keyframes met { 0%, 48% { transform: translateY(100%) } 56%, 92% { transform: translateY(0) } 100% { transform: translateY(100%) } }
+
+  /* Call: the call screen, straight between the two of you, in the colour's own dark. */
+  .call { --pw: clamp(160px, 17vw, 250px); }
+  .call .screen { background: var(--d-bg); color: var(--d-fg); align-items: center; }
+  .call .sb { width: 100%; }
+  .call .face { margin-top: 30%; width: 34%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: var(--d-loud); color: var(--d-onloud); font: 800 2.2em/1 var(--sans);
+    box-shadow: 0 0 0 .35em var(--d-bg), 0 0 0 .6em var(--d-loud); animation: talk 2.4s ease-in-out infinite; }
+  .call b { margin-top: 1.2em; font-size: 1.35em; font-weight: 800; letter-spacing: -.035em; }
+  .call small { margin-top: .35em; font-size: .74em; font-weight: 600; color: var(--d-fg2); }
+  .call .keys { margin-top: auto; margin-bottom: 14%; display: flex; gap: 1em; }
+  .call .keys span { width: 2.5em; height: 2.5em; border-radius: 50%; display: grid; place-items: center; background: var(--d-card); }
+  .call .keys span:last-child { background: #e5484d; }
+  .call .keys svg { width: 1.1em; height: 1.1em; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes talk { 0%, 100% { box-shadow: 0 0 0 .35em var(--d-bg), 0 0 0 .6em var(--d-loud) } 50% { box-shadow: 0 0 0 .5em var(--d-bg), 0 0 0 .85em var(--d-loud) } }
+
+  /* ---------- Away: a friend you both trust holds it, sealed ---------- */
+  .away { position: relative; overflow: clip; padding: clamp(88px, 11vw, 150px) 0; text-align: center; background: var(--deep); transition: background-color .35s; }
+  .away .lede { max-width: 28em; margin-left: auto; margin-right: auto; }
+  .trio { --n: clamp(64px, 9vw, 112px); display: flex; align-items: flex-start; justify-content: center; margin: clamp(56px, 7vw, 88px) auto 0; }
+  .node { width: calc(var(--n) * 1.5); flex: none; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .node .dev { width: var(--n); height: var(--n); border-radius: 28%; display: grid; place-items: center; background: var(--card); color: var(--on-card); box-shadow: var(--lift); position: relative; }
+  .node .dev svg { width: 50%; height: 50%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .node b { font: 800 clamp(15px, 1.4vw, 18px)/1.2 var(--sans); letter-spacing: -.025em; }
+  .node small { position: relative; display: block; height: 1.3em; width: 100%; font: 650 clamp(13px, 1.1vw, 14px)/1.3 var(--sans); color: var(--fg-2); }
+  .node small span { position: absolute; inset: 0; animation-duration: 10s; animation-iteration-count: infinite; animation-fill-mode: both; }
+  .seg { position: relative; flex: 1; max-width: 220px; min-width: 24px; height: var(--n); }
+  .seg .beam { position: absolute; left: -8%; right: -8%; top: 50%; height: 4px; margin-top: -2px; background: var(--fg); border-radius: 4px; }
+  .seg .beam.dash { background: none; border-top: 4px dotted var(--fg-2); height: 0; animation: dash 10s infinite both; }
+  .seg .beam.solid { opacity: 0; animation: solid 10s infinite both; }
+  .seg .spark { top: 50%; left: 0; margin-top: -11px; }
+  .s1 .spark { animation-name: hop1; } .s2 .spark { animation-name: hop2; }
+  .lock { position: absolute; top: -10px; right: -10px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--loud); color: var(--on-loud);
+    box-shadow: 0 0 0 3px var(--deep); opacity: 0; transform: scale(.6); animation: lock 10s infinite both; }
+  .lock svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .n3 .dev { animation: wake 10s infinite both; }
+  .n3 .a-away { animation-name: show-away; } .n3 .a-back { animation-name: show-back; color: var(--fg); font-weight: 800; }
+  .n2 .a-hold { animation-name: show-hold; }
+  @keyframes hop1 { 0%, 7.9% { left: 0; opacity: 0 } 8% { left: 0; opacity: 1; animation-timing-function: cubic-bezier(.6, 0, .3, 1) } 16% { left: 100%; opacity: 1 } 16.6%, 100% { left: 100%; opacity: 0 } }
+  @keyframes hop2 { 0%, 61.9% { left: 0; opacity: 0 } 62% { left: 0; opacity: 1; animation-timing-function: cubic-bezier(.6, 0, .3, 1) } 70% { left: 100%; opacity: 1 } 70.6%, 100% { left: 100%; opacity: 0 } }
+  @keyframes lock { 0%, 17% { opacity: 0; transform: scale(.6) } 20%, 62% { opacity: 1; transform: scale(1) } 66%, 100% { opacity: 0; transform: scale(.6) } }
+  @keyframes wake { 0%, 56% { opacity: .45 } 60%, 95% { opacity: 1 } 99%, 100% { opacity: .45 } }
+  @keyframes dash { 0%, 56% { opacity: 1 } 60%, 95% { opacity: 0 } 99%, 100% { opacity: 1 } }
+  @keyframes solid { 0%, 56% { opacity: 0 } 60%, 95% { opacity: 1 } 99%, 100% { opacity: 0 } }
+  @keyframes show-away { 0%, 70% { opacity: 1 } 73%, 96% { opacity: 0 } 99%, 100% { opacity: 1 } }
+  @keyframes show-back { 0%, 70% { opacity: 0 } 73%, 96% { opacity: 1 } 99%, 100% { opacity: 0 } }
+  @keyframes show-hold { 0%, 18% { opacity: 0 } 21%, 64% { opacity: 1 } 67%, 100% { opacity: 0 } }
+
+  /* ---------- The pen: marks drawn by hand over the page (scribble.js), in each section's own ink:
+     underlines, a circle, a data center crossed out, notes in Shantell Sans with arrows. ---------- */
+  @font-face { font-family: "Shantell Sans"; src: url("fonts/ShantellSans-Variable.woff2") format("woff2"); font-weight: 300 800; font-display: swap; }
+  :root { --pen: var(--loud); }
+  .say { --pen: var(--band-fg); }
+  [data-pen], .doodle { position: relative; display: inline-block; }
+  svg.pen { position: absolute; overflow: visible; pointer-events: none; z-index: 3; }
+  svg.pen path { fill: none; stroke: var(--pen); stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 2; stroke-dashoffset: 1; transition: stroke-dashoffset .55s cubic-bezier(.6, .1, .3, 1); }
+  svg.pen.on path { stroke-dashoffset: 0; }
+  .note { position: absolute; z-index: 3; font: 650 clamp(19px, 1.8vw, 27px)/1.05 "Shantell Sans", var(--sans); font-variation-settings: "INFM" 100, "BNCE" 50; font-style: normal; letter-spacing: 0;
+    color: var(--pen); white-space: nowrap; pointer-events: none; transform: rotate(var(--r, -4deg)) scale(.85); opacity: 0; transition: opacity .3s ease, transform .5s cubic-bezier(.3, 1.6, .5, 1); }
+  .note.on { opacity: 1; transform: rotate(var(--r, -4deg)); }
+  .note .ch { display: inline-block; transform: translateY(var(--y)) rotate(var(--a)) scale(var(--s)); font-weight: var(--w); }
+  .note .doodle { width: .95em; height: .85em; margin-left: .2em; vertical-align: -.12em; }
+  .link .note { left: 50%; bottom: calc(27% + 78px); translate: -50% 0; }
+  .hues { position: relative; }
+  .hues .note { position: relative; margin-left: 74px; top: -26px; }
+  .say .wrap { position: relative; }
+  .say .doodle.rack { position: absolute; right: 2%; bottom: -2%; width: clamp(120px, 14vw, 200px); height: clamp(136px, 16vw, 228px); }
+  .say .note { right: 0; bottom: -15%; }
+  .meet .note { left: -9%; top: 40%; }
+  .call .doodle.waves { position: absolute; left: calc(50% + var(--pw) / 2 + 14px); top: 15%; width: clamp(40px, 4vw, 60px); height: clamp(64px, 6.4vw, 96px); }
+  .call .note { left: calc(50% + var(--pw) / 2 + 22px); top: calc(15% + clamp(76px, 7.6vw, 112px)); }
+  @media (max-width: 860px) { .meet .note { left: 6%; top: -9%; } }
+  @media (max-width: 720px) { .wide { display: none !important; } }
+  @media (prefers-reduced-motion: reduce) { svg.pen path, .note { transition: none; } }
+
+  /* ---------- Get ---------- */
+  .get { padding: clamp(88px, 10vw, 144px) 0 clamp(72px, 9vw, 120px); }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: clamp(36px, 4vw, 56px); }
+  .card { position: relative; display: flex; flex-direction: column; gap: 6px; padding: clamp(26px, 3vw, 40px); border-radius: 28px; background: var(--card); color: var(--on-card);
+    box-shadow: var(--lift); transition: transform .2s ease, box-shadow .2s ease, background-color .35s; overflow: hidden; }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--lift-hi); }
+  .card:active { transform: translateY(0) scale(.99); }
+  .card.lead { background: var(--loud); color: var(--on-loud); }
+  .card .dev { width: 44px; height: 44px; margin-bottom: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .card b { font: 850 clamp(28px, 3.2vw, 40px)/1 var(--display); letter-spacing: -.055em; }
+  .card span { font-size: 15px; font-weight: 500; }
+  .card em { margin-top: 26px; display: inline-flex; align-items: center; gap: 8px; font: 750 16px/1 var(--sans); font-style: normal; letter-spacing: -.02em; }
+  .card em svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease; }
+  .card:hover em svg { transform: translateX(3px); }
+  .rel { margin-top: 28px; color: var(--fg-2); font-size: 15px; }
+  .rel summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--fg); }
+  .rel summary::-webkit-details-marker { display: none; }
+  .rel summary::after { content: "+"; font: 700 15px/1 var(--mono); }
+  .rel[open] summary::after { content: "−"; }
+  .rel ol { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; max-width: 46em; }
+  .rel li { display: grid; grid-template-columns: 4.2em 1fr; gap: 12px; line-height: 1.5; }
+  .rel li b { font: 600 14px/1.5 var(--mono); color: var(--fg); }
+
+  @media (max-width: 860px) {
+    .cards { grid-template-columns: 1fr; }
+    .feature .wrap { grid-template-columns: 1fr; }
+    .feature.swap .copy { order: 0; }
+    .meet { --pw: min(160px, 40vw); }
+    .call { --pw: min(190px, 52vw); }
+    .steps { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 720px) {
+    .hero { padding-top: 108px; }
+    .ctas .btn { width: 100%; }
+    .stage { --gap: 44px; --pw: min(172px, calc((100vw - 2 * var(--gutter) - var(--gap)) / 2)); }
+    .cap { display: none; }
+    .spark { width: 14px; height: 14px; margin: -7px 0 0 -7px; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--fg); }
+    .card { border-radius: 24px; }
+    .hues { flex-wrap: wrap; gap: 10px; }
+    .hues span { flex-basis: 100%; margin: 0 0 6px; }
+  }
+  /* Reduced motion: the stories still play as fades; nothing travels. */
+  @media (prefers-reduced-motion: reduce) {
+    .spark, .seg .spark { display: none; }
+    .thread { animation: none; opacity: 1; }
+    .grow { animation: none; opacity: 1; grid-template-rows: 1fr; }
+    .lock { transform: none; }
+    .cam .frame { animation: none; transform: scale(.86); }
+    .call .face { animation: none; }
+    .steps li { animation: none; }
+    body, .say, .away, .screen, .card { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar over" id="bar">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="baud, home"><svg class="logo" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7.5"/><g><circle cx="7.9" cy="13" r="1.85"/><circle cx="18.1" cy="13" r="1.85"/><rect x="10.5" y="12.1" width="5" height="1.8" rx=".9"/></g></svg>baud</a>
+    <div class="end">
+      <button class="theme" type="button" aria-label="Switch light or dark"><svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg><svg class="moon" viewBox="0 0 24 24"><path d="M20.5 14.6A8.5 8.5 0 1 1 9.4 3.5a7 7 0 0 0 11.1 11.1z"/></svg></button>
+      <a class="btn" href="#get">Get baud</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero" aria-labelledby="h-hero">
+    <div class="wrap">
+      <a class="pill" href="https://sovereign.rubric.sh">
+        <svg class="net" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><circle cx="8" cy="3" r="1.6"/><circle cx="3" cy="12" r="1.6"/><circle cx="13" cy="12" r="1.6"/><path d="M7.2 4.4 3.8 10.6M8.8 4.4l3.4 6.2M4.6 12h6.8"/></svg>
+        Built on the sovereign network
+        <svg class="arr" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg>
+      </a>
+      <h1 id="h-hero">Talk <span data-pen="under" data-delay=".5">directly</span><br>to your <span data-pen="spark" data-delay="1.1">friends.</span></h1>
+      <p class="lede">baud sends your messages straight from your phone to theirs. No servers in between. No account. No phone number. Free.</p>
+      <div class="ctas">
+        <a class="btn primary not-ios" href="/download/mac"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/></svg>Download for Mac</a>
+        <a class="btn ghost not-ios" href="/iphone">Get it on iPhone</a>
+        <a class="btn primary only-ios" href="/iphone">Get it on iPhone</a>
+        <a class="btn primary only-android" href="/android">Get it on Android</a>
+      </div>
+    </div>
+
+    <div class="stage" role="img" aria-label="Maya’s phone and Ana’s phone, side by side, joined by one direct line. Maya sends “dinner at 8?”. It runs straight along the line to Ana’s phone, and Maya’s phone says Delivered. Ana replies “yes! I’ll bring dessert”, and it runs straight back.">
+      <figure class="person me" aria-hidden="true">
+        <span class="who"><i>M</i>Maya</span>
+        <div class="phone"><div class="bezel"><div class="screen">
+          <span class="island"></span>
+          <div class="sb"><span>9:41</span><span class="ic"><svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg viewBox="0 0 16 12"><path d="M8 11.5 5.6 8.9a3.4 3.4 0 0 1 4.8 0zM3.4 6.7a6.5 6.5 0 0 1 9.2 0l-1.4 1.4a4.5 4.5 0 0 0-6.4 0zM1.2 4.5a9.6 9.6 0 0 1 13.6 0l-1.4 1.4a7.6 7.6 0 0 0-10.8 0z"/></svg><svg viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2.2" y="2.2" width="18.6" height="7.6" rx="1.8"/><rect x="23.8" y="4" width="1.7" height="4" rx=".8" opacity=".45"/></svg></span></div>
+          <div class="top"><svg class="chev" viewBox="0 0 8 14"><path d="M6.5 1.5 1.5 7l5 5.5"/></svg><div><b>Ana</b><small>Online</small></div>
+            <span class="acts"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg><svg viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg></span></div>
+          <div class="thread">
+            <div class="msg"><div><p class="txt">boarding! back tonight</p></div></div>
+            <div class="msg mine"><div><p class="txt">safe flight ✈️</p></div></div>
+            <div class="msg"><div><p class="txt">landed 🛬</p></div></div>
+            <div class="msg"><div><span class="pic"></span><span class="react">😍 1</span></div></div>
+            <div class="msg mine"><div><p class="txt">welcome home!! that light</p></div></div>
+            <div class="msg"><div><p class="txt">around tonight?</p></div></div>
+            <div class="grow a-sent"><div><div class="msg mine"><div><p class="txt">dinner at 8?</p></div></div></div></div>
+            <div class="grow a-deliv"><div><p class="state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12.5 6.5 17l9-10M10 15l2 2 9-10"/></svg>Delivered</p></div></div>
+            <div class="grow a-in"><div><div class="msg"><div><p class="txt">yes! I’ll bring dessert</p></div></div></div></div>
+          </div>
+          <div class="comp"><span class="plus">+</span><span class="f"><em class="typed">dinner at 8?</em><em class="ph">Message Ana</em></span><span class="go"><svg viewBox="0 0 12 12"><path d="M6 10V2M2.5 5.5 6 2l3.5 3.5"/></svg></span></div>
+        </div></div></div>
+      </figure>
+
+      <div class="link" aria-hidden="true">
+        <i class="beam"></i><i class="note wide" aria-hidden="true" data-to=".beam" data-bend="-.35" data-delay=".5" style="--r: -5deg">nobody in between!</i><span class="run"><i class="spark go"></i><i class="spark back"></i></span>
+        <span class="cap">Phone to phone · 18 ms</span>
+      </div>
+
+      <figure class="person ana" aria-hidden="true">
+        <span class="who"><i>A</i>Ana</span>
+        <div class="phone"><div class="bezel"><div class="screen">
+          <span class="island"></span>
+          <div class="sb"><span>9:41</span><span class="ic"><svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg viewBox="0 0 16 12"><path d="M8 11.5 5.6 8.9a3.4 3.4 0 0 1 4.8 0zM3.4 6.7a6.5 6.5 0 0 1 9.2 0l-1.4 1.4a4.5 4.5 0 0 0-6.4 0zM1.2 4.5a9.6 9.6 0 0 1 13.6 0l-1.4 1.4a7.6 7.6 0 0 0-10.8 0z"/></svg><svg viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="1.8"/><rect x="23.8" y="4" width="1.7" height="4" rx=".8" opacity=".45"/></svg></span></div>
+          <div class="top"><svg class="chev" viewBox="0 0 8 14"><path d="M6.5 1.5 1.5 7l5 5.5"/></svg><div><b>Maya</b><small>Online</small></div>
+            <span class="acts"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg><svg viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg></span></div>
+          <div class="thread">
+            <div class="msg mine"><div><p class="txt">boarding! back tonight</p></div></div>
+            <div class="msg"><div><p class="txt">safe flight ✈️</p></div></div>
+            <div class="msg mine"><div><p class="txt">landed 🛬</p></div></div>
+            <div class="msg mine"><div><span class="pic"></span><span class="react">😍 1</span></div></div>
+            <div class="msg"><div><p class="txt">welcome home!! that light</p></div></div>
+            <div class="msg mine"><div><p class="txt">around tonight?</p></div></div>
+            <div class="grow a-in"><div><div class="msg"><div><p class="txt">dinner at 8?</p></div></div></div></div>
+            <div class="grow a-reply"><div><div class="msg mine"><div><p class="txt">yes! I’ll bring dessert</p></div></div></div></div>
+          </div>
+          <div class="comp"><span class="plus">+</span><span class="f"><em class="typed">yes! I’ll bring dessert</em><em class="ph">Message Maya</em></span><span class="go"><svg viewBox="0 0 12 12"><path d="M6 10V2M2.5 5.5 6 2l3.5 3.5"/></svg></span></div>
+        </div></div></div>
+      </figure>
+    </div>
+
+    
+    <div class="hues" role="group" aria-label="baud’s colour">
+      <span>baud comes in your colour.</span>
+      <button type="button" style="--c:#E5484D" data-hue="E5484D" aria-label="Red"></button>
+      <button type="button" style="--c:#F76B15" data-hue="F76B15" aria-label="Orange"></button>
+      <button type="button" style="--c:#FFB224" data-hue="FFB224" aria-label="Amber"></button>
+      <button type="button" style="--c:#30A46C" data-hue="30A46C" aria-label="Green"></button>
+      <button type="button" style="--c:#12A594" data-hue="12A594" aria-label="Teal"></button>
+      <button type="button" style="--c:#0090FF" data-hue="0090FF" aria-label="Blue"></button>
+      <button type="button" style="--c:#6E56CF" data-hue="6E56CF" aria-label="Violet"></button>
+      <button type="button" style="--c:#E93D82" data-hue="E93D82" aria-label="Pink"></button>
+      <i class="note wide" aria-hidden="true" data-to=".hues button:last-of-type" data-bend="-.55" style="--r: -7deg">try one!</i>
+    </div>
+  </section>
+
+  <section class="say" aria-label="No data centers, no accounts, no one listening">
+    <div class="wrap">
+      <span class="doodle rack wide" data-doodle="rack" aria-hidden="true"></span><i class="note wide" aria-hidden="true" data-to=".doodle.rack" data-bend=".3" style="--r: -6deg">bye bye, data center!</i>
+      <p class="big"><span>No data centers.</span><span>No accounts.</span><span>No one listening.</span></p>
+      <p class="lede">Everything you send is end-to-end encrypted, and only your friend can open it. Not us, not advertisers, not anyone who comes asking. <b>Your conversations are <span data-pen="under">nobody else’s</span> business.</b></p>
+    </div>
+  </section>
+
+  <section class="feature" aria-labelledby="h-meet">
+    <div class="wrap">
+      <div class="copy">
+        <h2 id="h-meet">Add friends in&nbsp;person.</h2>
+        <p class="lede">Scan each other’s code and you’re connected. Nobody can find you any other way: no phone number, no username, no search.</p>
+      </div>
+      <div class="pics meet" role="img" aria-label="Ana’s phone shows her baud code. Maya’s phone points its camera at it, finds it, and shows Ana, ready to message.">
+        <div class="phone" aria-hidden="true"><div class="bezel"><div class="screen">
+          <span class="island"></span>
+          <div class="sb"><span>9:41</span></div>
+          <div class="list">
+            <div class="row"><i>M</i><div>You<span>Your devices</span></div></div>
+            <div class="row"><i>W</i><div>weekend<span>Jo: who’s in for saturday?</span></div></div>
+            <div class="row"><i>S</i><div>Sam<span>see you saturday ✌️</span></div></div>
+          </div>
+          <span class="scrim"></span>
+          <div class="sheet"><b>New friend</b><span class="code"><img src="img/qr.svg" alt=""></span><span class="share">Share</span><small>Works once, for an hour</small></div>
+        </div></div></div>
+        <div class="phone" aria-hidden="true"><div class="bezel"><div class="screen">
+          <span class="island"></span>
+          <div class="cam"><span class="seen"><img src="img/qr.svg" alt=""></span><span class="frame"><i></i><i></i><i></i><i></i></span><span class="hint">Scan a friend’s code</span></div>
+          <div class="met"><i>A</i><b>Ana</b><small>Added just now</small><span>Message</span></div>
+        </div></div></div>
+        <i class="note" aria-hidden="true" data-to=".sheet .code" data-bend="-.3" style="--r: 5deg">scan me!</i>
+      </div>
+    </div>
+  </section>
+
+  <section class="feature swap" aria-labelledby="h-call">
+    <div class="wrap">
+      <div class="copy">
+        <h2 id="h-call">Call them, too.</h2>
+        <p class="lede">Voice and video calls go straight between your phones as well, end-to-end encrypted. Nobody else is on the line.</p>
+      </div>
+      <div class="pics call" role="img" aria-label="A baud voice call with Ana: direct, 4 minutes in.">
+        <div class="phone" aria-hidden="true"><div class="bezel"><div class="screen">
+          <span class="island"></span>
+          <div class="sb"><span>9:41</span></div>
+          <span class="face">A</span>
+          <b>Ana</b>
+          <small>Direct · 4:12</small>
+          <div class="keys">
+            <span><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+            <span><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></span>
+            <span><svg viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg></span>
+            <span><svg viewBox="0 0 24 24"><path d="M3 14.5c5-4.7 13-4.7 18 0l-2.4 2.4-3.6-1.6v-2.6a12 12 0 0 0-6 0v2.6l-3.6 1.6z"/></svg></span>
+          </div>
+        </div></div></div>
+        <span class="doodle waves" data-doodle="waves" aria-hidden="true"></span><i class="note wide" aria-hidden="true" style="--r: -4deg">just you two<span class="doodle" data-doodle="heart"></span></i>
+      </div>
+    </div>
+  </section>
+
+  <section class="away" aria-labelledby="h-away">
+    <div class="wrap">
+      <h2 id="h-away">Your friends have your&nbsp;back.</h2>
+      <p class="lede">If Ana’s phone is off, a friend you both trust holds your message on their Mac, sealed so only Ana can open it, and hands it over the moment she’s back.</p>
+      <div class="trio" role="img" aria-label="Maya sends a message while Ana’s phone is off. Jo’s Mac holds it, sealed. Ana comes back online and it arrives: Delivered.">
+        <div class="node n1" aria-hidden="true">
+          <span class="dev"><svg viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6"/><path d="M10.5 18.5h3"/></svg></span>
+          <b>Maya</b><small><span>Sends it</span></small>
+        </div>
+        <div class="seg s1" aria-hidden="true"><i class="beam"></i><i class="spark"></i></div>
+        <div class="node n2" aria-hidden="true">
+          <span class="dev"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="11.5" rx="1.8"/><path d="M1.5 19.5h21"/></svg>
+            <span class="lock"><svg viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7"/></svg></span></span>
+          <b>Jo’s Mac</b><small><span class="a-hold">Holding it, sealed</span></small>
+        </div>
+        <div class="seg s2" aria-hidden="true"><i class="beam dash"></i><i class="beam solid"></i><i class="spark"></i></div>
+        <div class="node n3" aria-hidden="true">
+          <span class="dev"><svg viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6"/><path d="M10.5 18.5h3"/></svg></span>
+          <b>Ana</b><small><span class="a-away">Phone off</span><span class="a-back">Delivered</span></small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="get" id="get" aria-labelledby="h-get">
+    <div class="wrap">
+      <h2 id="h-get">Get baud.</h2>
+      <p class="lede"><span data-pen="circle">Free</span> on iPhone, Mac and Android. Your own devices stay in sync, straight from one to the other.</p>
+      <div class="cards">
+        <a class="card lead" href="/iphone">
+          <svg class="dev" viewBox="0 0 40 40" aria-hidden="true"><rect x="11" y="3" width="18" height="34" rx="4"/><path d="M18 32.5h4"/></svg>
+          <b>iPhone</b><span>iOS 17 or later · beta on TestFlight</span>
+          <em>Get the beta <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></em>
+        </a>
+        <a class="card" href="/download/mac">
+          <svg class="dev" viewBox="0 0 40 40" aria-hidden="true"><rect x="5" y="8" width="30" height="20" rx="2.5"/><path d="M2 32.5h36"/></svg>
+          <b>Mac</b><span>macOS 14 or later · signed and notarized by Apple</span>
+          <em>Download <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v9M4.5 8 8 11.5 11.5 8M3 14h10"/></svg></em>
+        </a>
+        <a class="card" href="/android">
+          <svg class="dev" viewBox="0 0 40 40" aria-hidden="true"><rect x="11" y="3" width="18" height="34" rx="3.4"/><circle cx="20" cy="7" r="0.9"/></svg>
+          <b>Android</b><span>Android 8 or later · direct download</span>
+          <em>Get it <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></em>
+        </a>
+      </div>
+      <details class="rel" id="releases">
+        <summary>What’s new in 0.2.19</summary>
+        <ol>
+          <li><b>0.2.19</b><span>Links you send arrive whole. Messages, Mail and other apps cut baud’s long links short, and whoever opened one was told it wasn’t a baud link. Links are now half the length and made of letters, numbers and dashes alone, which nothing cuts; to open one you need 0.2.19 too. A link in a message is underlined and opens with a tap, and a link that did arrive cut short says so.</span></li>
+          <li><b>0.2.18</b><span>The words in the message field sit centred in it on iPhone and Android, and on the Mac the field comes back to one line, centred, after a long message.</span></li>
+          <li><b>0.2.17</b><span>baud looks right in any colour you pick, including pure black, which now makes the whole app black in light and dark. White and black sit beside the eight colours. On the Mac, a message’s time and React appear beside it on a hover instead of over it, and a two-finger swipe to the left shows every message’s time, as a drag does on the iPhone. Drop files anywhere on a chat to send them. Pins are gone. The network picture in Settings is now a clear map of your own devices and how each one is reached.</span></li>
+          <li><b>0.2.16</b><span>baud wears your colour boldly: solid tones of it everywhere, nothing washed out, and in dark mode your colour stays bright on your own messages. Every message you send says where it is with a mark that moves: a ring that turns while it’s on its way, a check while a friend’s device holds it, two once it’s delivered. You can see at a glance who’s online and how you reach them, and when someone’s typing. Video calls go up to 1080p at 60 frames a second when both of you have the connection for it, find the best your connection carries within a few seconds, and recover from a lost packet without freezing the picture. Android gets the same new look.</span></li>
+          <li><b>0.2.15</b><span>Adding a friend works in many more places. When a friend’s link can’t reach them, baud turns it around: it makes an answer for you to send back, or for them to scan, and when they open it, you meet. A friend who goes offline shows as offline within a minute. Your devices on the same Wi-Fi talk over it directly, even with a VPN like Tailscale on, and a friend you reach directly takes less background radio. A friend reached through another friend’s device shows that, not Unreachable, and the moment a connection goes direct, it says so.</span></li>
+          <li><b>0.2.14</b><span>Share where you are with the people in a chat, for an hour, until the end of the day or until you stop. It goes straight to them, sealed like a message, and nowhere else. baud now takes on the colour you pick: the whole app, deep and lit, in light and dark. Between friends who both have IPv6, baud talks over it directly. It keeps each friend in reach with about half the radio traffic it used before, and when the path to a friend dies under you, it finds another within two seconds. A phone woken for a call stays for it, and a ring that drops rings again.</span></li>
+          <li><b>0.2.13</b><span>A sleeping iPhone wakes for your messages and calls. When a friend’s message or call can’t reach your phone, their device asks Apple to wake it through baud’s wake relay, which never sees the message or who sent it, and keeps nothing. Your phone then fetches the message straight from them. Call audio recovers on its own when the speaker, AirPods or another call changes things mid-call.</span></li>
+          <li><b>0.2.12</b><span>baud is on Android. Messages find another way in seconds when a device on their path goes quiet, instead of waiting twenty, and a burst of messages to a friend who’s away all reach the device carrying them. Safety numbers now match on both sides when you compare them.</span></li>
+          <li><b>0.2.11</b><span>Sturdier: a fault deep in the network can no longer take baud down, and one that happens is recorded so it can be fixed.</span></li>
+          <li><b>0.2.10</b><span>A call ends on both sides within seconds when one side drops, freezes or hangs up without a network, never leaving anyone in a call alone. After someone changes networks, calls and messages find their new address at once instead of timing out.</span></li>
+          <li><b>0.2.9</b><span>Calls have sound: the audio starts whatever your Mac or iPhone is set to, and a call that can’t start says why, on both sides. A message only counts as sent once it’s there, so nothing is lost on a dying connection. Friends can add you while your phone sleeps, through your Mac. baud asks for notifications at once, and your Mac opens it at login.</span></li>
+          <li><b>0.2.8</b><span>Notifications: new messages and missed calls on your lock screen and your Mac, with your friend’s photo. On iPhone, baud checks in the background whenever iOS allows. Calls to an iPhone ring instead of being declined. A Mac carrying messages for friends no longer grinds to a halt, so messages don’t wait for a restart, and it keeps carrying with its window closed.</span></li>
+          <li><b>0.2.7</b><span>Voice and video calls, straight between you. baud reaches friends in more places: over IPv6, through most home routers, and with an introduction from a friend you share. Add your photo when you set up. Fixes an iPhone crash and slow sending.</span></li>
+          <li><b>0.2.6</b><span>Your iPhone shows Online too, and friends can add you from anywhere. A clearer status, and a phone joins its Mac on the first try.</span></li>
+          <li><b>0.2.5</b><span>Your devices stay in sync, and the status says how you’re connected.</span></li>
+          <li><b>0.2.4</b><span>Your Mac at home becomes the meeting place when your router allows it.</span></li>
+        </ol>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="baud, home"><svg class="logo" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7.5"/><g><circle cx="7.9" cy="13" r="1.85"/><circle cx="18.1" cy="13" r="1.85"/><rect x="10.5" y="12.1" width="5" height="1.8" rx=".9"/></g></svg>baud</a>
+    <nav>
+      <a href="https://sovereign.rubric.sh">Built on the sovereign network</a>
+      <a href="/privacy">Privacy</a>
+      <a href="https://rubriclab.com">Rubric Labs</a>
+    </nav>
+    <p class="note">No cookies, nothing loaded from anyone else. Tram photo by Aayush Gupta on Unsplash.</p>
+  </div>
+</footer>
+
+<script>
+  // The bar takes a line under it once the page moves under it.
+  const bar = document.getElementById('bar');
+  const onScroll = () => bar.classList.toggle('scrolled', scrollY > 8);
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // The colour: the one this visit wears is pressed; a pick repaints the page and is kept, in this browser only.
+  const dots = document.querySelectorAll('.hues button');
+  const mark = () => { const h = window.baud ? window.baud.current() : ''; dots.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.hue === h))); };
+  dots.forEach((b) => b.addEventListener('click', () => { if (window.baud) window.baud.hue(b.dataset.hue); mark(); }));
+  mark();
+</script>
+<script src="theme.js" defer></script>
+<script src="scribble.js" defer></script>
+</body>
+</html>

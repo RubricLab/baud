@@ -1,0 +1,1 @@
+{ "name": "@rubriclab/peer-link", "version": "0.1.0", "type": "module", "main": "parse-link.js", "license": "Unlicense" }

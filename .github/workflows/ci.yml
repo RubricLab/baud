@@ -1,0 +1,31 @@
+# The Rust tests on every push and pull request. The apps are built and shipped from a Mac by
+# hand (see docs/development.md). No job talks to any host but GitHub's and the crates index.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    name: ${{ matrix.workspace }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: [peer, core, wake]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.workspace }}
+      # peer's link tests also run the JavaScript link parser when a runtime is there.
+      - uses: oven-sh/setup-bun@v2
+        if: matrix.workspace == 'peer'
+      - run: cargo test --workspace
+        working-directory: ${{ matrix.workspace }}

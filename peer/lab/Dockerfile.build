@@ -1,0 +1,4 @@
+# Builds peer-node for Linux (the host's architecture) from a worktree mounted at /src.
+FROM rust:1.98-bookworm
+RUN apt-get update && apt-get install -y --no-install-recommends libssl-dev pkg-config && rm -rf /var/lib/apt/lists/*
+WORKDIR /src

@@ -1,0 +1,27 @@
+.DS_Store
+.env
+
+# Build output
+target/
+build/
+DerivedData/
+.build/
+.swiftpm/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Made by peer/scripts/build-swift.sh
+peer/swift/PeerKit/peerFFI.xcframework/
+peer/swift/PeerKit/Sources/PeerKit/PeerKit.swift
+
+# Made by core/scripts/build-android.sh
+apps/android/app/src/main/jniLibs/
+
+# Release downloads live on the site, not in git
+site/*.apk
+site/*.dmg
+
+# Local tool state
+.claude/
+.railway/
+site/.vercel/

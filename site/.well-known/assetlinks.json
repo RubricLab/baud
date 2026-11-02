@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "sh.rubric.baud",
+    "sha256_cert_fingerprints": ["0D:61:2A:2A:BE:22:ED:1F:FE:D6:74:74:CB:69:73:4E:06:72:60:AC:3D:29:06:A9:93:46:5C:38:36:83:8C:21"]
+  }
+}]

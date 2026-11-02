@@ -1,0 +1,64 @@
+[workspace]
+resolver = "2"
+members = ["peer", "peer-node", "peer-uniffi"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Unlicense"
+rust-version = "1.90"
+
+[workspace.dependencies]
+# iroh on presets::Minimal only. No DNS, no pkarr, no n0 relays: see SPEC.md "Release gate".
+iroh = { version = "1.3", default-features = false, features = ["tls-ring", "portmapper", "fast-apple-datapath"] }
+iroh-blobs = "0.103"
+iroh-mdns-address-lookup = "0.6"
+iroh-relay = { version = "1.3", default-features = false, features = ["server", "tls-ring"] }
+portmapper = "0.19"
+# UPnP directly, for what portmapper cannot do: name the external port, list and delete entries.
+igd-next = { version = "0.17", features = ["aio_tokio"] }
+# The default gateway, so UPnP talks to it and nothing else on the LAN.
+netwatch = "0.19"
+n0-future = "0.3"
+n0-watcher = "1"
+tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "fs"] }
+ed25519-dalek = "3"
+x25519-dalek = { version = "3", features = ["static_secrets"] }
+chacha20poly1305 = "0.11"
+hkdf = "0.13"
+sha2 = "0.11"
+blake3 = "1.8"
+postcard = { version = "1.1", features = ["alloc"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+rusqlite = { version = "0.40", features = ["bundled-sqlcipher"] }
+data-encoding = "2"
+rand = "0.9"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+bytes = "1"
+tempfile = "3"
+clap = { version = "4", features = ["derive"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+# iroh 1.3.0 with six fixes of ours (vendor/iroh, marked "peer:"), to drop once upstream has them:
+# an address waiting to be opened as a path is queued once, not once per connection per retry,
+# which grew without bound and ran baud out of memory on an iPhone; a remote's selected path is
+# chosen again when a connection closes, so new connections to a device that moved do not send
+# their handshake to where it was; the internet's IPv6 (not a VPN's or a LAN's) is preferred by
+# 15 ms, not 3, so it wins at equal round trips instead of whichever family validated first; only
+# the selected path is kept alive, every 20 s, not every path every 5 s; a new connection's
+# handshake goes to every known address, not only the selected path, so a redial gets round a
+# path that died without a word; and no upgrade round runs every 60 s on a pair already on the
+# best path it can have (a relayed pair keeps them: one of them takes it direct).
+# iroh-relay 1.3.0 with one hook of ours (vendor/iroh-relay, marked "peer:"): the access control
+# decides per datagram who may reach whom, so a meet-token holder reaches only its inviter.
+[patch.crates-io]
+iroh = { path = "vendor/iroh" }
+iroh-relay = { path = "vendor/iroh-relay" }

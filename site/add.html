@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>baud — you've been invited</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.png">
+<script src="hue.js"></script>
+<link rel="stylesheet" href="base.css">
+<style>
+  body { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; }
+  .top { padding: 20px var(--gutter); display: flex; justify-content: center; }
+  main { flex: 1; display: grid; place-items: center; padding: 24px var(--gutter) 64px; position: relative; isolation: isolate; overflow-x: clip; }
+  main::before { content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; width: 900px; height: 700px; transform: translate(-50%, -55%);
+    background: radial-gradient(closest-side, var(--glow), color-mix(in srgb, var(--glow) 40%, transparent) 50%, transparent); }
+  .card { width: 100%; max-width: 440px; text-align: center; }
+  .seal { width: 64px; height: 64px; margin: 0 auto 32px; border-radius: 18px; display: grid; place-items: center; background: var(--fg); box-shadow: var(--shadow); }
+  .seal svg { width: 34px; height: 34px; }
+  h1 { font-size: clamp(32px, 6vw, 40px); line-height: 1.1; letter-spacing: -0.035em; text-wrap: balance; }
+  #p { margin: 14px auto 0; max-width: 26em; color: var(--fg-2); font-size: 16.5px; line-height: 1.55; text-wrap: pretty; }
+  #actions { display: flex; flex-direction: column; gap: 10px; margin: 32px auto 0; max-width: 300px; }
+  #actions .btn { height: 48px; font-size: 15.5px; }
+  #actions .btn:not(.primary) { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-2); }
+  #actions .btn:not(.primary):hover { opacity: 1; background: var(--bg-2); }
+  small { display: block; margin: 36px auto 0; max-width: 26em; color: var(--fg-3); font-size: 13px; line-height: 1.55; }
+  code { font: 500 12.5px var(--mono); padding: 1px 5px; border-radius: 5px; background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg-2); }
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="/"><svg class="logo" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7.5" fill="currentColor"/><g fill="var(--bg)"><circle cx="7.9" cy="13" r="1.85"/><circle cx="18.1" cy="13" r="1.85"/><rect x="10.5" y="12.1" width="5" height="1.8" rx=".9"/></g></svg>baud</a></div>
+<main>
+  <div class="card">
+    <div class="seal" aria-hidden="true"><svg viewBox="0 0 24 24"><g fill="var(--bg)"><circle cx="5.6" cy="12" r="2.1"/><circle cx="18.4" cy="12" r="2.1"/><rect x="8.9" y="10.9" width="6.2" height="2.2" rx="1.1"/></g></svg></div>
+    <h1 id="h">Someone wants to talk.</h1>
+    <p id="p">This link adds you as a contact on baud. It works once, for an hour, and only on this page's device.</p>
+    <div id="actions"></div>
+    <small>The invite stays after the <code>#</code> in the address: your browser never sends it to this site.</small>
+  </div>
+</main>
+<script>
+  const frag = location.hash.slice(1);
+  const kind = location.pathname.endsWith('/link') ? 'link' : 'add';
+  const a = document.getElementById('actions');
+  if (!frag) {
+    document.getElementById('h').textContent = 'No invite here.';
+    document.getElementById('p').textContent = 'Ask your friend to send the whole link.';
+    a.innerHTML = '<a class="btn" href="/">What is baud?</a>';
+  } else {
+    const deep = `baud://${kind}#${frag}`;
+    const b64 = (s) => atob(s.replace(/-/g, '+').replace(/_/g, '/'));
+    // Grouped (0.2.19): base32 in dash-joined groups, any case, of 2 | kind | name length, name | …
+    const base32 = (s) => {
+      const t = decodeURIComponent(s).replace(/[-\s]/g, '').toUpperCase();
+      if (!/^[A-Z2-7]+$/.test(t)) return null;
+      const out = []; let acc = 0, bits = 0;
+      for (const c of t) { acc = ((acc << 5) | 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(c)) & 0xffff; bits += 5; if (bits >= 8) { bits -= 8; out.push((acc >> bits) & 0xff); } }
+      return Uint8Array.from(out);
+    };
+    // Grouped, dotted (peer1.f.name.…) or dotless (1 | kind | name length, name | …), and whether
+    // it came whole: a link from baud before 0.2.19 lost its end in Messages, Mail and others.
+    const [tag, name, whole] = (() => { try {
+      const g = base32(frag);
+      if (g && g[0] === 2) return [String.fromCharCode(g[1]), new TextDecoder().decode(g.slice(3, 3 + g[2])), g.length >= 3 + g[2] + 32 + 8 + 32 + 33];
+      if (frag.includes('.')) { const p = frag.split('.'); return [p[1], decodeURIComponent(escape(b64(p[2]))), p.length === 7]; }
+      const b = Uint8Array.from(b64(frag), (c) => c.charCodeAt(0));
+      return [String.fromCharCode(b[1]), new TextDecoder().decode(b.slice(3, 3 + b[2])), b[0] === 1 && b.length >= 3 + b[2] + 32 + 8 + 32 + 64];
+    } catch (e) { return ['', '', false]; } })();
+    if (!whole) {
+      document.getElementById('h').textContent = 'This link arrived cut short.';
+      document.getElementById('p').textContent = `The app it came through cut off its end. Ask ${name || 'whoever sent it'} to update baud and send a new one: links from baud 0.2.19 on arrive whole.`;
+    } else if (tag === 'm') {
+      document.getElementById('h').textContent = name ? `Make this device ${name}'s.` : 'Your other device made this link.';
+      document.getElementById('p').textContent = 'Open it in baud on this device and it becomes one of your devices: same name, same friends. It works once, for ten minutes.';
+    } else if (tag === 'r') {
+      document.getElementById('h').textContent = name ? `${name} answered your link.` : 'An answer to your link.';
+      document.getElementById('p').textContent = `Your link couldn't get through to you, so ${name || 'they'} sent this back. Open it in baud where you made the link and you'll meet. It works for fifteen minutes.`;
+    } else if (name) {
+      document.getElementById('h').textContent = `${name} wants to talk.`;
+      document.getElementById('p').textContent = `This link adds ${name} as a friend on baud. It works once, for an hour, and only on this device.`;
+    }
+    const mac = /Mac/.test(navigator.platform) && !('ontouchend' in document);
+    const ios = /iPhone|iPad/.test(navigator.userAgent);
+    const android = /Android/.test(navigator.userAgent);
+    const get = mac ? `<a class="btn" href="/download/mac">Get baud for Mac</a>` : ios ? `<a class="btn" href="/download/ios">Get baud for iPhone</a>` : android ? `<a class="btn" href="/download/android">Get baud for Android</a>` : `<a class="btn" href="/">Get baud</a>`;
+    a.innerHTML = whole ? `<a class="btn primary" href="${deep}">Open in baud</a>` + get : get;
+    if (whole) setTimeout(() => { location.href = deep; }, 400);
+  }
+</script>
+<script src="theme.js" defer></script>
+</body>
+</html>

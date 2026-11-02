@@ -1,0 +1,26 @@
+[package]
+name = "baud-ffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "baud-core for Kotlin (and later Swift), by UniFFI"
+
+[lib]
+name = "baud_ffi"
+crate-type = ["lib", "cdylib"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
+required-features = ["bindgen"]
+
+[features]
+bindgen = ["uniffi/cli"]
+
+[dependencies]
+baud-core = { path = "../baud-core" }
+peer.workspace = true
+uniffi.workspace = true
+tokio.workspace = true
+thiserror.workspace = true

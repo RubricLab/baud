@@ -1,0 +1,18 @@
+[package]
+name = "baud-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "A baud device in a terminal: the interop lab's other side"
+
+[[bin]]
+name = "baud"
+path = "src/main.rs"
+
+[dependencies]
+baud-core = { path = "../baud-core" }
+peer.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true

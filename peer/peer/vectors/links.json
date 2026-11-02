@@ -1,0 +1,448 @@
+{
+  "spec": "SPEC.md Links",
+  "now": 1791000000,
+  "cases": [
+    {
+      "name": "friend-via-helper-https",
+      "input": "https://baud.rubric.sh/add#peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791003600.Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "kind": "f",
+        "name": "Dexter",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "meetAddrs": [
+          "relay=http://203.0.113.7:4101",
+          "203.0.113.7:4101"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "friend-via-helper-scheme",
+      "input": "baud://add#peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791003600.Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "kind": "f",
+        "name": "Dexter",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "meetAddrs": [
+          "relay=http://203.0.113.7:4101",
+          "203.0.113.7:4101"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "friend-bare-fragment",
+      "input": "peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791003600.Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "kind": "f",
+        "name": "Dexter",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "meetAddrs": [
+          "relay=http://203.0.113.7:4101",
+          "203.0.113.7:4101"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "device-raw-addresses-unicode-name",
+      "input": "computer://add#peer1.m.RGV4dGVy4oCZcyBNYWM.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791003600.YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYjsxOTIuMTY4LjEuMjA6NTIxMTM7W2ZkN2E6MTE1YzphMWUwOjoxXTo1MjExMw.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "kind": "m",
+        "name": "Dexter’s Mac",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "abababababababababababababababababababababababababababababababab",
+        "meetAddrs": [
+          "192.168.1.20:52113",
+          "[fd7a:115c:a1e0::1]:52113"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "reply-raw-addresses-https",
+      "input": "https://baud.rubric.sh/add#peer1.r.RGV4dGVy4oCZcyBNYWM.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791003600.YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYjsxOTIuMTY4LjEuMjA6NTIxMTM7W2ZkN2E6MTE1YzphMWUwOjoxXTo1MjExMw.XFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFw",
+      "expect": {
+        "kind": "r",
+        "name": "Dexter’s Mac",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "abababababababababababababababababababababababababababababababab",
+        "meetAddrs": [
+          "192.168.1.20:52113",
+          "[fd7a:115c:a1e0::1]:52113"
+        ],
+        "secret": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+        "expired": false
+      }
+    },
+    {
+      "name": "expired-empty-name-no-addrs",
+      "input": "peer1.f..AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1790999999.YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYg.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "kind": "f",
+        "name": "",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1790999999,
+        "meetDevice": "abababababababababababababababababababababababababababababababab",
+        "meetAddrs": [],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": true
+      }
+    },
+    {
+      "name": "name-exactly-64-bytes",
+      "input": "peer1.f.eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eA.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791000001.YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYjsxMC4wLjAuMTox.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "kind": "f",
+        "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791000001,
+        "meetDevice": "abababababababababababababababababababababababababababababababab",
+        "meetAddrs": [
+          "10.0.0.1:1"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "six-fields",
+      "input": "peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791003600.Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx",
+      "expect": {
+        "error": "fields"
+      }
+    },
+    {
+      "name": "eight-fields",
+      "input": "peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791003600.Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI.extra",
+      "expect": {
+        "error": "fields"
+      }
+    },
+    {
+      "name": "wrong-version",
+      "input": "peer2.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791003600.Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "version"
+      }
+    },
+    {
+      "name": "unknown-kind",
+      "input": "peer1.z.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791000000.YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYg.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "kind"
+      }
+    },
+    {
+      "name": "name-65-bytes",
+      "input": "peer1.f.eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791000000.YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYg.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "name"
+      }
+    },
+    {
+      "name": "bad-base64-name",
+      "input": "peer1.f.not*base64.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791003600.Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "base64"
+      }
+    },
+    {
+      "name": "user-31-bytes",
+      "input": "peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHg.1791000000.YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYg.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "user"
+      }
+    },
+    {
+      "name": "secret-33-bytes",
+      "input": "peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791000000.YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYg.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkIA",
+      "expect": {
+        "error": "secret"
+      }
+    },
+    {
+      "name": "expires-not-decimal",
+      "input": "peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.soon.Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "expires"
+      }
+    },
+    {
+      "name": "expires-leading-zero",
+      "input": "peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.01791000000.Y2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "expires"
+      }
+    },
+    {
+      "name": "meet-device-not-hex",
+      "input": "peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791000000.eno7MTAuMC4wLjE6MQ.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "meet"
+      }
+    },
+    {
+      "name": "meet-addr-garbage",
+      "input": "peer1.f.RGV4dGVy.AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.1791000000.YWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYjtub3QtYW4tYWRkcg.QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "meet"
+      }
+    },
+    {
+      "name": "empty",
+      "input": "",
+      "expect": {
+        "error": "fields"
+      }
+    },
+    {
+      "name": "dotless-friend-via-helper-https",
+      "input": "https://baud.rubric.sh/add#AWYGRGV4dGVyAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8AAAAAasCL0EJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx",
+      "expect": {
+        "kind": "f",
+        "name": "Dexter",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "meetAddrs": [
+          "relay=http://203.0.113.7:4101",
+          "203.0.113.7:4101"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "dotless-device-unicode-name-bare",
+      "input": "AW0ORGV4dGVy4oCZcyBNYWMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHwAAAABqwIvQQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiOzE5Mi4xNjguMS4yMDo1MjExMztbZmQ3YToxMTVjOmExZTA6OjFdOjUyMTEz",
+      "expect": {
+        "kind": "m",
+        "name": "Dexter’s Mac",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "abababababababababababababababababababababababababababababababab",
+        "meetAddrs": [
+          "192.168.1.20:52113",
+          "[fd7a:115c:a1e0::1]:52113"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "dotless-expired-empty-name-no-addrs",
+      "input": "baud://add#AWYAAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8AAAAAasB9v0JCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYg",
+      "expect": {
+        "kind": "f",
+        "name": "",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1790999999,
+        "meetDevice": "abababababababababababababababababababababababababababababababab",
+        "meetAddrs": [],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": true
+      }
+    },
+    {
+      "name": "dotless-reply-raw-addresses-https",
+      "input": "https://baud.rubric.sh/add#AXIORGV4dGVy4oCZcyBNYWMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHwAAAABqwIvQXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiOzE5Mi4xNjguMS4yMDo1MjExMztbZmQ3YToxMTVjOmExZTA6OjFdOjUyMTEz",
+      "expect": {
+        "kind": "r",
+        "name": "Dexter’s Mac",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "abababababababababababababababababababababababababababababababab",
+        "meetAddrs": [
+          "192.168.1.20:52113",
+          "[fd7a:115c:a1e0::1]:52113"
+        ],
+        "secret": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+        "expired": false
+      }
+    },
+    {
+      "name": "dotless-cut-short",
+      "input": "AWYGRGV4dGVyAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8AAAAAasCL0EJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI",
+      "expect": {
+        "error": "fields"
+      }
+    },
+    {
+      "name": "dotless-wrong-version",
+      "input": "AmYGRGV4dGVyAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8AAAAAasCL0EJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx",
+      "expect": {
+        "error": "version"
+      }
+    },
+    {
+      "name": "dotless-unknown-kind",
+      "input": "AXoGRGV4dGVyAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8AAAAAasCL0EJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx",
+      "expect": {
+        "error": "kind"
+      }
+    },
+    {
+      "name": "dotless-name-65-bytes",
+      "input": "AWZBRGV4dGVyAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8AAAAAasCL0EJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx",
+      "expect": {
+        "error": "name"
+      }
+    },
+    {
+      "name": "dotless-meet-device-not-hex",
+      "input": "AWYGRGV4dGVyAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8AAAAAasCL0EJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCenpjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZGNkY2RjZDtyZWxheT1odHRwOi8vMjAzLjAuMTEzLjc6NDEwMTsyMDMuMC4xMTMuNzo0MTAx",
+      "expect": {
+        "error": "meet"
+      }
+    },
+    {
+      "name": "grouped-friend-via-helper-https",
+      "input": "https://baud.rubric.sh/add#ajtamrdfpb2gk4qaaebagbafaydqqcikbmga2dqpcaireeyu-culbogazdinryhi6d4aaaaaanlaixuccijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijbeeqscilg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxg43tonzxg42ak2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfungl-abyqoeafgyqacdnyaaaaaaaaaaaaaaaaaadrabjuycuacfaq-au",
+      "expect": {
+        "kind": "f",
+        "name": "Dexter",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "meetAddrs": [
+          "relay=http://203.0.113.7:4101/?m=zc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Qi8BqAAAAAFpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlo",
+          "relay=http://[2001:db8::7]:4101/?m=zc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Qi8BqAAAAAFpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlo",
+          "relay=http://192.168.1.20:4101/?m=zc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Qi8BqAAAAAFpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlo"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "grouped-friend-via-helper-scheme",
+      "input": "baud://add#ajtamrdfpb2gk4qaaebagbafaydqqcikbmga2dqpcaireeyu-culbogazdinryhi6d4aaaaaanlaixuccijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijbeeqscilg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxg43tonzxg42ak2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfungl-abyqoeafgyqacdnyaaaaaaaaaaaaaaaaaadrabjuycuacfaq-au",
+      "expect": {
+        "kind": "f",
+        "name": "Dexter",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "meetAddrs": [
+          "relay=http://203.0.113.7:4101/?m=zc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Qi8BqAAAAAFpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlo",
+          "relay=http://[2001:db8::7]:4101/?m=zc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Qi8BqAAAAAFpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlo",
+          "relay=http://192.168.1.20:4101/?m=zc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Qi8BqAAAAAFpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlo"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "grouped-device-raw-addresses-unicode-name-bare",
+      "input": "ajwq4rdfpb2gk4xcqcmxgicnmfrqaaicamcakbqhbaequcym-buha6earcijrifiwc4mbsgq3dqor4hyaaaaaa2warpieeqsc-ijbeeqscijbeeqscijbeeqscijbeeqscijbeeqscijbeeqvl-vov2xk5lvov2xk5lvov2xk5lvov2xk5lvov2xk5lvov2xk5l-vmabjqfiaekmxeieycuacfglsedp26qrlsq6aaaaaaaaaaaa-aaaads4raeaca4tfnrqxsplior2ha4z2f4xxezlmmf4s4zly-mfwxa3dffzrw63jp",
+      "expect": {
+        "kind": "m",
+        "name": "Dexter’s Mac",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "abababababababababababababababababababababababababababababababab",
+        "meetAddrs": [
+          "relay=http://192.168.1.20:52113/",
+          "192.168.1.20:52113",
+          "[fd7a:115c:a1e0::1]:52113",
+          "relay=https://relay.example.com/"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "grouped-reply-via-helper-https",
+      "input": "https://baud.rubric.sh/add#ajzagu3bnuaacaqdaqcqmbyibefawdanbyhraeiscmkbkfqx-damrugy4dupb6aaaaaagvqel2bbeeqscijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijbeftonzxg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxg43tonafnfuws2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2gtfqa4ih-cactmiabbw4aaaaaaaaaaaaaaaaaabyqau2mbkabcqiak",
+      "expect": {
+        "kind": "r",
+        "name": "Sam",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1791003600,
+        "meetDevice": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "meetAddrs": [
+          "relay=http://203.0.113.7:4101/?m=zc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Qi8BqAAAAAFpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlo",
+          "relay=http://[2001:db8::7]:4101/?m=zc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Qi8BqAAAAAFpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlo",
+          "relay=http://192.168.1.20:4101/?m=zc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Qi8BqAAAAAFpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlo"
+        ],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": false
+      }
+    },
+    {
+      "name": "grouped-expired-empty-name-no-addrs",
+      "input": "baud://add#ajtaaaabaibqibiga4eascqlbqgq4dyqcejbgfavcylrqgi2-dmob2hq7aaaaaadkyb636qscijbeeqscijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqsczxg43tonzxg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxgqa",
+      "expect": {
+        "kind": "f",
+        "name": "",
+        "user": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "expires": 1790999999,
+        "meetDevice": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "meetAddrs": [],
+        "secret": "4242424242424242424242424242424242424242424242424242424242424242",
+        "expired": true
+      }
+    },
+    {
+      "name": "grouped-cut-short",
+      "input": "ajtamrdfpb2gk4qaaebagbafaydqqcikbmga2dqpcaireeyu-culbogazdinryhi6d4aaaaaanlaixuccijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijba",
+      "expect": {
+        "error": "fields"
+      }
+    },
+    {
+      "name": "grouped-address-cut-short",
+      "input": "ajtamrdfpb2gk4qaaebagbafaydqqcikbmga2dqpcaireeyu-culbogazdinryhi6d4aaaaaanlaixuccijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijbeeqscilg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxg43tonzxg42ak2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfungl-abyqoeafgyqacdnyaaaaaaaaaaaaaaaaaadrabjuycuac",
+      "expect": {
+        "error": "meet"
+      }
+    },
+    {
+      "name": "grouped-unknown-kind",
+      "input": "aj5amrdfpb2gk4qaaebagbafaydqqcikbmga2dqpcaireeyu-culbogazdinryhi6d4aaaaaanlaixuccijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijbeeqscilg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxg43tonzxg42ak2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfungl-abyqoeafgyqacdnyaaaaaaaaaaaaaaaaaadrabjuycuacfaq-au",
+      "expect": {
+        "error": "kind"
+      }
+    },
+    {
+      "name": "grouped-name-65-bytes",
+      "input": "ajtecrdfpb2gk4qaaebagbafaydqqcikbmga2dqpcaireeyu-culbogazdinryhi6d4aaaaaanlaixuccijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijbeeqscilg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxg43tonzxg42ak2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfungl-abyqoeafgyqacdnyaaaaaaaaaaaaaaaaaadrabjuycuacfaq-au",
+      "expect": {
+        "error": "name"
+      }
+    },
+    {
+      "name": "grouped-unknown-token-form",
+      "input": "ajtamrdfpb2gk4qaaebagbafaydqqcikbmga2dqpcaireeyu-culbogazdinryhi6d4aaaaaanlaixuccijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijbeeqscilg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxg43tonzxg42b22ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfungl-abyqoeafgyqacdnyaaaaaaaaaaaaaaaaaadrabjuycuacfaq-au",
+      "expect": {
+        "error": "meet"
+      }
+    },
+    {
+      "name": "grouped-meet-addr-garbage",
+      "input": "ajtamrdfpb2gk4qaaebagbafaydqqcikbmga2dqpcaireeyu-culbogazdinryhi6d4aaaaaanlaixuccijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijbeeqscilg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxg43tonzxg42aabaadwoyls-mjqwozi",
+      "expect": {
+        "error": "meet"
+      }
+    },
+    {
+      "name": "grouped-mixed-case",
+      "input": "ajtamrdfpb2gk4qaaebagbafaydqqcikbmga2dqpcaireeyu-culbogazdinryhi6d4aaaaaanlaixuccijbeeqscijbeeqsc-ijbeeqscijbeeqscijbeeqscijbeeqscilg43tonzxg43ton-zxg43tonzxg43tonzxg43tonzxg43tonzxg42ak2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2-ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfuws2ljnfungl-abyqoeafgyqacdnyaaaaaaaaaaaaaaaaaadrabjuycuacfaq-auQ",
+      "expect": {
+        "error": "version"
+      }
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+name: baud
+options:
+  bundleIdPrefix: sh.rubric
+  deploymentTarget:
+    iOS: "17.0"
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    MARKETING_VERSION: "0.2.19"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: J43C4UHCR4
+    CODE_SIGN_STYLE: Automatic
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+packages:
+  BaudCore:
+    path: BaudCore
+  # The network layer's Swift package, built by peer/scripts/build-swift.sh.
+  PeerKit:
+    path: peer/swift/PeerKit
+targets:
+  Baud:
+    type: application
+    platform: iOS
+    sources:
+      - path: apps/ios
+      - path: apps/shared
+      - path: Resources
+    dependencies:
+      - package: BaudCore
+      - package: PeerKit
+    entitlements:
+      path: apps/ios/Baud.entitlements
+      properties:
+        com.apple.developer.usernotifications.communication: true
+        # Wakes through the wake relay (wake/): Xcode signs App Store and TestFlight builds for production.
+        aps-environment: development
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: sh.rubric.baud.ios
+        PRODUCT_NAME: baud
+        TARGETED_DEVICE_FAMILY: "1"
+        # The icon in the colour: one alternate per swatch (scripts/icon-alternates.sh).
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIcon-red AppIcon-orange AppIcon-amber AppIcon-green AppIcon-teal AppIcon-blue AppIcon-violet AppIcon-pink"
+    info:
+      path: apps/ios/Info.plist
+      properties:
+        CFBundleName: baud
+        CFBundleDisplayName: baud
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+        LSApplicationCategoryType: public.app-category.social-networking
+        NSLocalNetworkUsageDescription: So your iPhone can reach your Mac and your other devices on the same Wi-Fi, like at home. Away from home, baud doesn't use it.
+        NSBonjourServices: [_baud._udp, _peer-baud._udp]
+        NSCameraUsageDescription: For video calls, and to scan invite and link codes. Only while a call or the scanner is open.
+        NSPhotoLibraryAddUsageDescription: To save a photo or video from a chat to your library, when you choose Save.
+        NSMicrophoneUsageDescription: For your voice on calls. baud only listens during a call you place or answer.
+        NSLocationWhenInUseUsageDescription: To show the friends you choose where you are, only while you're sharing it in a chat. It goes straight to them, never to a server.
+        NSLocationAlwaysAndWhenInUseUsageDescription: So a share keeps going while baud is in the background, until it ends or you stop it. Your location goes only to the people in that chat.
+        # Background refresh (no push, no notifications): a wake at shared quarter-hour slots. Audio:
+        # a call carries on when the screen locks or another app comes up.
+        NSUserActivityTypes: [INSendMessageIntent, INStartCallIntent]
+        UIBackgroundModes: [fetch, audio, voip, processing, remote-notification, location]
+        BGTaskSchedulerPermittedIdentifiers: [sh.rubric.baud.refresh, sh.rubric.baud.catchup]
+        CFBundleURLTypes:
+          - CFBundleURLName: sh.rubric.baud
+            CFBundleURLSchemes: [baud]
+            CFBundleTypeRole: Viewer
+  BaudMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: apps/mac
+      - path: apps/shared
+      - path: Resources
+    dependencies:
+      - package: BaudCore
+      - package: PeerKit
+    entitlements:
+      path: apps/mac/BaudMac.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.network.client: true
+        com.apple.security.network.server: true
+        com.apple.security.files.user-selected.read-write: true
+        # Calls: the hardened runtime asks for both.
+        com.apple.security.device.camera: true
+        com.apple.security.device.audio-input: true
+        # Sharing where I am, with the people in a chat I choose.
+        com.apple.security.personal-information.location: true
+    settings:
+      base:
+        # Debug builds are sh.rubric.baud.mac.dev: a shipped baud and a local one can run side by side,
+        # with their own stores and keychain items. Only the shipped Release build carries the real id.
+        PRODUCT_BUNDLE_IDENTIFIER: sh.rubric.baud.mac$(BAUD_ID_SUFFIX)
+        BAUD_ID_SUFFIX: ""
+        PRODUCT_NAME: baud
+        # The peer crate ships arm64 only; so does baud.
+        ARCHS: arm64
+      configs:
+        Debug:
+          BAUD_ID_SUFFIX: .dev
+    info:
+      path: apps/mac/Info.plist
+      properties:
+        CFBundleName: baud
+        CFBundleDisplayName: baud
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSApplicationCategoryType: public.app-category.social-networking
+        NSHumanReadableCopyright: Rubric Labs Inc.
+        NSLocalNetworkUsageDescription: So this Mac can reach your iPhone and your other devices on the same network, like at home. Away from home, baud doesn't use it.
+        NSCameraUsageDescription: For video calls. The camera is on only while you're on one.
+        NSMicrophoneUsageDescription: For your voice on calls. baud only listens during a call you place or answer.
+        NSLocationUsageDescription: To show the friends you choose where you are, only while you're sharing it in a chat. It goes straight to them, never to a server.
+        NSLocationWhenInUseUsageDescription: To show the friends you choose where you are, only while you're sharing it in a chat. It goes straight to them, never to a server.
+        NSBonjourServices: [_baud._udp, _peer-baud._udp]
+        CFBundleURLTypes:
+          - CFBundleURLName: sh.rubric.baud
+            CFBundleURLSchemes: [baud]
+            CFBundleTypeRole: Viewer
+schemes:
+  Baud:
+    build: { targets: { Baud: all } }
+    run: { config: Debug }
+  BaudMac:
+    build: { targets: { BaudMac: all } }
+    run: { config: Debug }

@@ -1,0 +1,48 @@
+[workspace]
+resolver = "2"
+members = ["baud-core", "baud-ffi", "baud-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Unlicense"
+rust-version = "1.90"
+
+[workspace.dependencies]
+# The network layer, in this repo: ../peer.
+peer = { path = "../peer/peer" }
+tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "fs"] }
+chacha20poly1305 = "0.11"
+sha2 = "0.11"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+# The same rusqlite as peer's (one libsqlite3 in the process): SQLCipher, bundled.
+rusqlite = { version = "0.40", features = ["bundled-sqlcipher"] }
+base64 = "0.22"
+rand = "0.9"
+thiserror = "2"
+tracing = "0.1"
+anyhow = "1"
+tempfile = "3"
+uniffi = { version = "0.32", features = ["tokio"] }
+# The wake relay over HTTPS, with the same reqwest and rustls iroh builds (ring, Mozilla's roots:
+# no platform verifier, which on Android needs a JVM handle the core doesn't have).
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = "1"
+
+# Disk is tight: no debug info and no incremental state in the one target dir.
+[profile.dev]
+debug = 0
+incremental = false
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+# peer's patches, verbatim: iroh and iroh-relay with its fixes (see ../peer/Cargo.toml). Without
+# them this workspace would build a different iroh from the apps'.
+[patch.crates-io]
+iroh = { path = "../peer/vendor/iroh" }
+iroh-relay = { path = "../peer/vendor/iroh-relay" }

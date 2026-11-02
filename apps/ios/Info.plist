@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>sh.rubric.baud.refresh</string>
+		<string>sh.rubric.baud.catchup</string>
+	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>baud</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>baud</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>sh.rubric.baud</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>baud</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.social-networking</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_baud._udp</string>
+		<string>_peer-baud._udp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>For video calls, and to scan invite and link codes. Only while a call or the scanner is open.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>So your iPhone can reach your Mac and your other devices on the same Wi-Fi, like at home. Away from home, baud doesn't use it.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>So a share keeps going while baud is in the background, until it ends or you stop it. Your location goes only to the people in that chat.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>To show the friends you choose where you are, only while you're sharing it in a chat. It goes straight to them, never to a server.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>For your voice on calls. baud only listens during a call you place or answer.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>To save a photo or video from a chat to your library, when you choose Save.</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>INSendMessageIntent</string>
+		<string>INStartCallIntent</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>audio</string>
+		<string>voip</string>
+		<string>processing</string>
+		<string>remote-notification</string>
+		<string>location</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>

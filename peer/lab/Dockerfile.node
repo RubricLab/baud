@@ -1,0 +1,10 @@
+# One image for every lab box: routers (NAT, firewall, miniupnpd, netem) and devices (peer-node).
+FROM debian:bookworm-slim
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      iproute2 iptables conntrack miniupnpd-iptables tcpdump procps ca-certificates libssl3 \
+      iputils-ping netcat-openbsd python3 \
+ && rm -rf /var/lib/apt/lists/* \
+ && update-alternatives --set iptables /usr/sbin/iptables-legacy \
+ && update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+CMD ["sleep", "infinity"]

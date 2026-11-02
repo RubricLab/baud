@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- baud's mark: two lights and the line between them (apps/icon/Mark.swift), 24 units = 44 dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#F4F4F5"
+        android:pathData="M40.25,54m-4.125,0a4.125,4.125 0,1 1,8.25 0a4.125,4.125 0,1 1,-8.25 0" />
+    <path android:fillColor="#F4F4F5"
+        android:pathData="M67.75,54m-4.125,0a4.125,4.125 0,1 1,8.25 0a4.125,4.125 0,1 1,-8.25 0" />
+    <path android:strokeColor="#F4F4F5" android:strokeWidth="4.125" android:strokeLineCap="round"
+        android:pathData="M49.42,54L58.58,54" />
+</vector>

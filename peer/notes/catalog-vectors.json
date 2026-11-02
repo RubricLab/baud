@@ -1,0 +1,2169 @@
+{
+ "cases": [
+  {
+   "expect": {
+    "clocks": [
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "bytes",
+      "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "class",
+      "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "createdAt",
+      "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "format",
+      "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "mime",
+      "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "name",
+      "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "ownerId",
+      "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "rating",
+      "hlc": "01700000000020:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "space",
+      "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "status",
+      "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "field": "updatedAt",
+      "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     }
+    ],
+    "live": [
+     {
+      "tbl": "asset",
+      "row": "A1",
+      "deleted": 0
+     }
+    ],
+    "rows": {
+     "asset": [
+      {
+       "bytes": 10,
+       "class": "image",
+       "format": "jpg",
+       "id": "A1",
+       "metadata": "{}",
+       "mime": "image/jpeg",
+       "name": "A1",
+       "owner_id": "u1",
+       "rating": 5,
+       "space": "test-space",
+       "status": "ready",
+       "updated_at": 1
+      }
+     ]
+    }
+   },
+   "name": "lww-same-field",
+   "ops": [
+    {
+     "field": "bytes",
+     "id": "op-0001",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 10,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "class",
+     "id": "op-0002",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "createdAt",
+     "id": "op-0003",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "format",
+     "id": "op-0004",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "jpg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "mime",
+     "id": "op-0005",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image/jpeg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "name",
+     "id": "op-0006",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "A1",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "ownerId",
+     "id": "op-0007",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "u1",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "space",
+     "id": "op-0008",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "test-space",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "status",
+     "id": "op-0009",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "ready",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "updatedAt",
+     "id": "op-0010",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "rating",
+     "id": "op-0011",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 3,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000010:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "rating",
+     "id": "op-0012",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 5,
+     "device": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "hlc": "01700000000020:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "row": "A1",
+     "table": "asset"
+    },
+    {
+     "field": "rating",
+     "id": "op-0013",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "hlc": "01700000000015:000000:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "row": "A1",
+     "table": "asset"
+    }
+   ],
+   "orders": {
+    "forward": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12
+    ],
+    "reverse": [
+     12,
+     11,
+     10,
+     9,
+     8,
+     7,
+     6,
+     5,
+     4,
+     3,
+     2,
+     1,
+     0
+    ],
+    "shuffled1": [
+     1,
+     3,
+     4,
+     7,
+     5,
+     6,
+     10,
+     11,
+     12,
+     2,
+     9,
+     0,
+     8
+    ],
+    "shuffled2": [
+     9,
+     11,
+     8,
+     5,
+     3,
+     7,
+     12,
+     0,
+     10,
+     6,
+     2,
+     4,
+     1
+    ]
+   }
+  },
+  {
+   "expect": {
+    "clocks": [
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "bytes",
+      "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "class",
+      "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "createdAt",
+      "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "format",
+      "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "label",
+      "hlc": "01700000000030:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "mime",
+      "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "name",
+      "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "ownerId",
+      "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "space",
+      "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "status",
+      "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "field": "updatedAt",
+      "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     }
+    ],
+    "live": [
+     {
+      "tbl": "asset",
+      "row": "A2",
+      "deleted": 0
+     }
+    ],
+    "rows": {
+     "asset": [
+      {
+       "bytes": 10,
+       "class": "image",
+       "format": "jpg",
+       "id": "A2",
+       "label": "green",
+       "metadata": "{}",
+       "mime": "image/jpeg",
+       "name": "A2",
+       "owner_id": "u1",
+       "rating": 0,
+       "space": "test-space",
+       "status": "ready",
+       "updated_at": 1
+      }
+     ]
+    }
+   },
+   "name": "lww-tiebreak-counter-then-device",
+   "ops": [
+    {
+     "field": "bytes",
+     "id": "op-0014",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 10,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "class",
+     "id": "op-0015",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "createdAt",
+     "id": "op-0016",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "format",
+     "id": "op-0017",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "jpg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "mime",
+     "id": "op-0018",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image/jpeg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "name",
+     "id": "op-0019",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "A2",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "ownerId",
+     "id": "op-0020",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "u1",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "space",
+     "id": "op-0021",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "test-space",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "status",
+     "id": "op-0022",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "ready",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "updatedAt",
+     "id": "op-0023",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "label",
+     "id": "op-0024",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "red",
+     "device": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "hlc": "01700000000030:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "label",
+     "id": "op-0025",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "blue",
+     "device": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "hlc": "01700000000030:000000:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "row": "A2",
+     "table": "asset"
+    },
+    {
+     "field": "label",
+     "id": "op-0026",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "green",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000030:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A2",
+     "table": "asset"
+    }
+   ],
+   "orders": {
+    "forward": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12
+    ],
+    "reverse": [
+     12,
+     11,
+     10,
+     9,
+     8,
+     7,
+     6,
+     5,
+     4,
+     3,
+     2,
+     1,
+     0
+    ],
+    "shuffled1": [
+     1,
+     3,
+     4,
+     7,
+     5,
+     6,
+     10,
+     11,
+     12,
+     2,
+     9,
+     0,
+     8
+    ],
+    "shuffled2": [
+     9,
+     11,
+     8,
+     5,
+     3,
+     7,
+     12,
+     0,
+     10,
+     6,
+     2,
+     4,
+     1
+    ]
+   }
+  },
+  {
+   "expect": {
+    "clocks": [
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "__row",
+      "hlc": "01700000000040:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "bytes",
+      "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "class",
+      "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "createdAt",
+      "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "format",
+      "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "mime",
+      "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "name",
+      "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "ownerId",
+      "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "rating",
+      "hlc": "01700000000050:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "space",
+      "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "status",
+      "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "field": "updatedAt",
+      "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     }
+    ],
+    "live": [
+     {
+      "tbl": "asset",
+      "row": "A3",
+      "deleted": 0
+     }
+    ],
+    "rows": {
+     "asset": [
+      {
+       "bytes": 10,
+       "class": "image",
+       "format": "jpg",
+       "id": "A3",
+       "metadata": "{}",
+       "mime": "image/jpeg",
+       "name": "A3",
+       "owner_id": "u1",
+       "rating": 4,
+       "space": "test-space",
+       "status": "ready",
+       "updated_at": 1
+      }
+     ]
+    }
+   },
+   "name": "edit-after-delete-revives",
+   "ops": [
+    {
+     "field": "bytes",
+     "id": "op-0027",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 10,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "class",
+     "id": "op-0028",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "createdAt",
+     "id": "op-0029",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "format",
+     "id": "op-0030",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "jpg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "mime",
+     "id": "op-0031",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image/jpeg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "name",
+     "id": "op-0032",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "A3",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "ownerId",
+     "id": "op-0033",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "u1",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "space",
+     "id": "op-0034",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "test-space",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "status",
+     "id": "op-0035",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "ready",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "updatedAt",
+     "id": "op-0036",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "__row",
+     "id": "op-0037",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": true,
+     "value": null,
+     "device": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "hlc": "01700000000040:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "row": "A3",
+     "table": "asset"
+    },
+    {
+     "field": "rating",
+     "id": "op-0038",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 4,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000050:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A3",
+     "table": "asset"
+    }
+   ],
+   "orders": {
+    "forward": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11
+    ],
+    "reverse": [
+     11,
+     10,
+     9,
+     8,
+     7,
+     6,
+     5,
+     4,
+     3,
+     2,
+     1,
+     0
+    ],
+    "shuffled1": [
+     4,
+     8,
+     5,
+     10,
+     6,
+     2,
+     1,
+     9,
+     3,
+     11,
+     7,
+     0
+    ],
+    "shuffled2": [
+     1,
+     5,
+     10,
+     7,
+     2,
+     9,
+     8,
+     0,
+     4,
+     6,
+     11,
+     3
+    ]
+   }
+  },
+  {
+   "expect": {
+    "clocks": [
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "__row",
+      "hlc": "01700000000070:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "bytes",
+      "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "class",
+      "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "createdAt",
+      "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "format",
+      "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "label",
+      "hlc": "01700000000065:000000:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "mime",
+      "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "name",
+      "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "ownerId",
+      "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "rating",
+      "hlc": "01700000000060:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "space",
+      "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "status",
+      "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "field": "updatedAt",
+      "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     }
+    ],
+    "live": [
+     {
+      "tbl": "asset",
+      "row": "A4",
+      "deleted": 1
+     }
+    ],
+    "rows": {}
+   },
+   "name": "delete-after-edits-stays-dead",
+   "ops": [
+    {
+     "field": "bytes",
+     "id": "op-0039",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 10,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "class",
+     "id": "op-0040",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "createdAt",
+     "id": "op-0041",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "format",
+     "id": "op-0042",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "jpg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "mime",
+     "id": "op-0043",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image/jpeg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "name",
+     "id": "op-0044",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "A4",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "ownerId",
+     "id": "op-0045",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "u1",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "space",
+     "id": "op-0046",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "test-space",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "status",
+     "id": "op-0047",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "ready",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "updatedAt",
+     "id": "op-0048",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "rating",
+     "id": "op-0049",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 2,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000060:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "__row",
+     "id": "op-0050",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": true,
+     "value": null,
+     "device": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "hlc": "01700000000070:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "row": "A4",
+     "table": "asset"
+    },
+    {
+     "field": "label",
+     "id": "op-0051",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "late",
+     "device": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "hlc": "01700000000065:000000:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "row": "A4",
+     "table": "asset"
+    }
+   ],
+   "orders": {
+    "forward": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12
+    ],
+    "reverse": [
+     12,
+     11,
+     10,
+     9,
+     8,
+     7,
+     6,
+     5,
+     4,
+     3,
+     2,
+     1,
+     0
+    ],
+    "shuffled1": [
+     1,
+     3,
+     4,
+     7,
+     5,
+     6,
+     10,
+     11,
+     12,
+     2,
+     9,
+     0,
+     8
+    ],
+    "shuffled2": [
+     9,
+     11,
+     8,
+     5,
+     3,
+     7,
+     12,
+     0,
+     10,
+     6,
+     2,
+     4,
+     1
+    ]
+   }
+  },
+  {
+   "expect": {
+    "clocks": [
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "bytes",
+      "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "class",
+      "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "createdAt",
+      "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "format",
+      "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "mime",
+      "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "name",
+      "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "ownerId",
+      "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "space",
+      "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "status",
+      "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "field": "updatedAt",
+      "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "collection_asset",
+      "row": "C1|A5",
+      "field": "assetId",
+      "hlc": "01700000000080:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "collection_asset",
+      "row": "C1|A5",
+      "field": "collectionId",
+      "hlc": "01700000000080:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "collection_asset",
+      "row": "C1|A5",
+      "field": "position",
+      "hlc": "01700000000090:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+     },
+     {
+      "tbl": "tag",
+      "row": "A5|sunset",
+      "field": "assetId",
+      "hlc": "01700000000085:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+     },
+     {
+      "tbl": "tag",
+      "row": "A5|sunset",
+      "field": "confidence",
+      "hlc": "01700000000085:000002:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+     },
+     {
+      "tbl": "tag",
+      "row": "A5|sunset",
+      "field": "name",
+      "hlc": "01700000000085:000001:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+     }
+    ],
+    "live": [
+     {
+      "tbl": "asset",
+      "row": "A5",
+      "deleted": 0
+     },
+     {
+      "tbl": "collection_asset",
+      "row": "C1|A5",
+      "deleted": 0
+     },
+     {
+      "tbl": "tag",
+      "row": "A5|sunset",
+      "deleted": 0
+     }
+    ],
+    "rows": {
+     "asset": [
+      {
+       "bytes": 10,
+       "class": "image",
+       "format": "jpg",
+       "id": "A5",
+       "metadata": "{}",
+       "mime": "image/jpeg",
+       "name": "A5",
+       "owner_id": "u1",
+       "rating": 0,
+       "space": "test-space",
+       "status": "ready",
+       "updated_at": 1
+      }
+     ],
+     "collection_asset": [
+      {
+       "asset_id": "A5",
+       "collection_id": "C1",
+       "position": 3
+      }
+     ],
+     "tag": [
+      {
+       "asset_id": "A5",
+       "confidence": 0.9,
+       "name": "sunset",
+       "source": "ai"
+      }
+     ]
+    }
+   },
+   "name": "composite-keys",
+   "ops": [
+    {
+     "field": "bytes",
+     "id": "op-0052",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 10,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "class",
+     "id": "op-0053",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "createdAt",
+     "id": "op-0054",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "format",
+     "id": "op-0055",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "jpg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "mime",
+     "id": "op-0056",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image/jpeg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "name",
+     "id": "op-0057",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "A5",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "ownerId",
+     "id": "op-0058",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "u1",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "space",
+     "id": "op-0059",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "test-space",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "status",
+     "id": "op-0060",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "ready",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "updatedAt",
+     "id": "op-0061",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A5",
+     "table": "asset"
+    },
+    {
+     "field": "collectionId",
+     "id": "op-0062",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "C1",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000080:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "C1|A5",
+     "table": "collection_asset"
+    },
+    {
+     "field": "assetId",
+     "id": "op-0063",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "A5",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000080:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "C1|A5",
+     "table": "collection_asset"
+    },
+    {
+     "field": "position",
+     "id": "op-0064",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 0,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000080:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "C1|A5",
+     "table": "collection_asset"
+    },
+    {
+     "field": "position",
+     "id": "op-0065",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 3,
+     "device": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "hlc": "01700000000090:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "row": "C1|A5",
+     "table": "collection_asset"
+    },
+    {
+     "field": "assetId",
+     "id": "op-0066",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "A5",
+     "device": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "hlc": "01700000000085:000000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "row": "A5|sunset",
+     "table": "tag"
+    },
+    {
+     "field": "name",
+     "id": "op-0067",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "sunset",
+     "device": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "hlc": "01700000000085:000001:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "row": "A5|sunset",
+     "table": "tag"
+    },
+    {
+     "field": "confidence",
+     "id": "op-0068",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 0.9,
+     "device": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "hlc": "01700000000085:000002:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "row": "A5|sunset",
+     "table": "tag"
+    }
+   ],
+   "orders": {
+    "forward": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16
+    ],
+    "reverse": [
+     16,
+     15,
+     14,
+     13,
+     12,
+     11,
+     10,
+     9,
+     8,
+     7,
+     6,
+     5,
+     4,
+     3,
+     2,
+     1,
+     0
+    ],
+    "shuffled1": [
+     2,
+     13,
+     1,
+     11,
+     3,
+     7,
+     12,
+     16,
+     9,
+     6,
+     4,
+     8,
+     5,
+     14,
+     10,
+     0,
+     15
+    ],
+    "shuffled2": [
+     1,
+     3,
+     11,
+     12,
+     4,
+     10,
+     5,
+     15,
+     9,
+     13,
+     7,
+     8,
+     16,
+     2,
+     6,
+     0,
+     14
+    ]
+   }
+  },
+  {
+   "expect": {
+    "clocks": [
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "bytes",
+      "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "class",
+      "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "createdAt",
+      "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "format",
+      "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "metadata",
+      "hlc": "01700000000100:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "mime",
+      "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "name",
+      "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "ownerId",
+      "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "space",
+      "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "status",
+      "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "field": "updatedAt",
+      "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     }
+    ],
+    "live": [
+     {
+      "tbl": "asset",
+      "row": "A6",
+      "deleted": 0
+     }
+    ],
+    "rows": {
+     "asset": [
+      {
+       "bytes": 10,
+       "class": "image",
+       "format": "jpg",
+       "id": "A6",
+       "metadata": "{\"camera\":\"X100\",\"iso\":200}",
+       "mime": "image/jpeg",
+       "name": "A6",
+       "owner_id": "u1",
+       "rating": 0,
+       "space": "test-space",
+       "status": "ready",
+       "updated_at": 1
+      }
+     ]
+    }
+   },
+   "name": "idempotent-and-json-values",
+   "ops": [
+    {
+     "field": "bytes",
+     "id": "op-0069",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 10,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "class",
+     "id": "op-0070",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "createdAt",
+     "id": "op-0071",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "format",
+     "id": "op-0072",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "jpg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "mime",
+     "id": "op-0073",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image/jpeg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "name",
+     "id": "op-0074",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "A6",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "ownerId",
+     "id": "op-0075",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "u1",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "space",
+     "id": "op-0076",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "test-space",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "status",
+     "id": "op-0077",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "ready",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "updatedAt",
+     "id": "op-0078",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "metadata",
+     "id": "op-0079",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": {
+      "camera": "X100",
+      "iso": 200
+     },
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000100:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "bytes",
+     "id": "op-0069",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 10,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "class",
+     "id": "op-0070",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "createdAt",
+     "id": "op-0071",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000002:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "format",
+     "id": "op-0072",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "jpg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000003:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "mime",
+     "id": "op-0073",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "image/jpeg",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000004:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "name",
+     "id": "op-0074",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "A6",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000005:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "ownerId",
+     "id": "op-0075",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "u1",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000006:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "space",
+     "id": "op-0076",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "test-space",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000007:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "status",
+     "id": "op-0077",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": "ready",
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000008:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "updatedAt",
+     "id": "op-0078",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": 1,
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000000:000009:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    },
+    {
+     "field": "metadata",
+     "id": "op-0079",
+     "sig": "",
+     "space": "test-space",
+     "tombstone": false,
+     "value": {
+      "camera": "X100",
+      "iso": 200
+     },
+     "device": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "hlc": "01700000000100:000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "row": "A6",
+     "table": "asset"
+    }
+   ],
+   "orders": {
+    "forward": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21
+    ],
+    "reverse": [
+     21,
+     20,
+     19,
+     18,
+     17,
+     16,
+     15,
+     14,
+     13,
+     12,
+     11,
+     10,
+     9,
+     8,
+     7,
+     6,
+     5,
+     4,
+     3,
+     2,
+     1,
+     0
+    ],
+    "shuffled1": [
+     2,
+     18,
+     9,
+     4,
+     5,
+     21,
+     7,
+     16,
+     12,
+     14,
+     10,
+     13,
+     1,
+     17,
+     11,
+     19,
+     15,
+     8,
+     3,
+     0,
+     6,
+     20
+    ],
+    "shuffled2": [
+     18,
+     5,
+     13,
+     21,
+     6,
+     17,
+     7,
+     10,
+     9,
+     20,
+     15,
+     8,
+     3,
+     14,
+     12,
+     0,
+     4,
+     2,
+     1,
+     16,
+     19,
+     11
+    ]
+   }
+  }
+ ],
+ "format": "darkroom-catalog-vectors/1",
+ "generated": "2026-10-07T17:47:46.322Z"
+}

@@ -1,0 +1,60 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/link",
+      "destination": "/add"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/download/mac",
+      "destination": "/baud-0.2.19.dmg",
+      "permanent": false
+    },
+    {
+      "source": "/download/android",
+      "destination": "/baud-0.2.19.apk",
+      "permanent": false
+    },
+    {
+      "source": "/download/ios",
+      "destination": "/iphone",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.apk",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.android.package-archive"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    }
+  ]
+}
