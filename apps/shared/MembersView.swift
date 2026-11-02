@@ -50,6 +50,10 @@ struct MembersView: View {
 							}
 							.padding(.horizontal, Rows.inset + Rows.pad - 6)
 						}
+						if c.kind != .space {
+							SectionHeading(title: "Disappearing messages")
+							DisappearPicker(conversation: c).padding(.horizontal, Rows.inset + Rows.pad - 6)
+						}
 						let canAdd = (c.kind == .chat && !c.isDirect) || c.admins.contains(model.me.user)
 						HStack(spacing: 8) {
 							if canAdd && c.kind != .channel { Button("Add someone") { model.addingTo = c.id }.buttonStyle(Quiet()) }

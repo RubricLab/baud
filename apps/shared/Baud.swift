@@ -380,6 +380,7 @@ final class Baud: CoreSurface, @unchecked Sendable {
 	func leave(_ conv: ConversationId) throws { try local.leave(conv) }
 	func setName(_ conv: ConversationId, _ name: String) throws { try local.setName(conv, name) }
 	func setTopic(_ conv: ConversationId, _ topic: String) throws { try local.setTopic(conv, topic) }
+	func setDisappear(_ conv: ConversationId, _ seconds: Int) throws { try local.setDisappear(conv, seconds) }
 	func delivery(_ conv: ConversationId, _ event: EventId) -> Delivery { local.delivery(conv, event) }
 	func createChat(_ users: [UserId]) throws -> Conversation { try local.createChat(users) }
 	func createGroup(_ name: String, users: [UserId]) throws -> Conversation { try local.createGroup(name, users: users) }

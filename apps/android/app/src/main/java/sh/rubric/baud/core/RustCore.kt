@@ -75,6 +75,7 @@ class RustCore private constructor(private val b: Ffi) : CoreSurface {
     override fun edit(conv: ConversationId, target: EventId, text: String) = call { b.edit(conv, target, text) }
     override fun redact(conv: ConversationId, target: EventId) = call { b.redact(conv, target) }
     override fun markRead(conv: ConversationId, event: EventId) = call { b.markRead(conv, event) }
+    override fun setDisappear(conv: ConversationId, seconds: Int) = call { b.setDisappear(conv, seconds.coerceAtLeast(0).toUInt()) }
     override fun typing(conv: ConversationId) = call { b.typing(conv) }
     override fun typingNow(conv: ConversationId) = call { b.typingNow(conv) }
     override fun members(conv: ConversationId) = call { b.members(conv).map { it.toCore() } }
@@ -151,6 +152,7 @@ private fun FfiChange.toCore(): Change? = when (this) {
     is FfiChange.Places -> Change.Places(conv)
     is FfiChange.Replied -> Change.Replied(user)
     is FfiChange.ReplyLapsed -> Change.ReplyLapsed(user)
+    is FfiChange.Expired -> Change.Expired(conv, events)
     else -> null
 }
 
@@ -180,7 +182,7 @@ private fun FfiKind.toCore() = when (this) { FfiKind.CHAT -> ConvKind.Chat; FfiK
 
 private fun sh.rubric.baud.ffi.Conversation.toCore() = Conversation(
     id, kind.toCore(), name, topic, space, members, admins, ms(createdAt), ms(lastAt), lastText, lastUser, lastEvent,
-    unread.toInt(), mentions.toInt(), eventCount.toInt(), isDefault, pinned,
+    unread.toInt(), mentions.toInt(), eventCount.toInt(), isDefault, pinned, disappear.toInt(),
 )
 
 private fun FfiEventType.toCore() = when (this) {

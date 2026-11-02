@@ -79,6 +79,7 @@ struct Header: View {
 			VStack(alignment: .leading, spacing: 3) {
 				HStack(alignment: .firstTextBaseline, spacing: 8) {
 					Text(model.title(conversation)).font(Theme.titleFont).foregroundStyle(tones.heading).lineLimit(1)
+					if conversation.disappear > 0 { DisappearMark(seconds: conversation.disappear) }
 					if let t = conversation.topic, !t.isEmpty { Text(t).font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1) }
 				}
 				HStack(spacing: 5) {

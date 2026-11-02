@@ -99,6 +99,8 @@ data class Conversation(
     val eventCount: Int = 0,
     val isDefault: Boolean = false,
     val pinned: List<EventId> = emptyList(),
+    /// Disappearing messages: how many seconds a message written now lasts after it's read; 0 is off.
+    val disappear: Int = 0,
 ) {
     /// A DM is a chat with exactly two members and no name.
     val isDirect: Boolean get() = kind == ConvKind.Chat && name == null && members.size == 2
@@ -265,6 +267,8 @@ sealed interface Change {
     data class Replied(val user: UserId) : Change
     /// A reply I made stopped waiting unopened.
     data class ReplyLapsed(val user: UserId) : Change
+    /// These disappearing messages went from this phone: their notification goes too.
+    data class Expired(val conv: ConversationId, val events: List<EventId>) : Change
 }
 
 /// Where someone in a chat is while they share it (BaudCore/Places.swift).
@@ -312,6 +316,9 @@ interface CoreSurface {
     fun edit(conv: ConversationId, target: EventId, text: String)
     fun redact(conv: ConversationId, target: EventId)
     fun markRead(conv: ConversationId, event: EventId)
+    /// Messages written from now on disappear this many seconds after they're read; 0 turns it off.
+    /// Anyone in a chat, only an admin in a channel.
+    fun setDisappear(conv: ConversationId, seconds: Int)
     fun typing(conv: ConversationId)
     fun typingNow(conv: ConversationId): List<UserId>
     fun members(conv: ConversationId): List<Member>

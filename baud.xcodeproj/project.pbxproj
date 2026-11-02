@@ -83,6 +83,7 @@
 		A458F177EAC1EA38FFAE1DC2 /* Depth.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E49FFF5E160264102022AF /* Depth.swift */; };
 		A56110ADC4BA5231A2BF9637 /* Pacer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 479CCAEA8EF0EEFC572A6A47 /* Pacer.swift */; };
 		A8C2DAA477FBEDD33796EED9 /* ComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B7405D45CFD740E11957F6 /* ComposerView.swift */; };
+		A9B853527C054111A97C16E4 /* Disappearing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86864BC03AF614C58E7BBAC /* Disappearing.swift */; };
 		AC81F87EC3CB8AA475F0D8F3 /* AddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3332FE8571C2E8AF13D0E34 /* AddView.swift */; };
 		AEBBA993F1512B1F78328CF7 /* AddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3332FE8571C2E8AF13D0E34 /* AddView.swift */; };
 		B031E7D112534BF317364ABC /* PeerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9E7BD9CF8F823A8E7F6472B4 /* PeerKit */; };
@@ -101,6 +102,7 @@
 		C4C9C0FD5BA3743E6D2DFB62 /* Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 133DE6E73AD57CF972243B6E /* Sidebar.swift */; };
 		C5760471B09B8634E3CA8916 /* CallShots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F5E94CA73FC1C09394C483 /* CallShots.swift */; };
 		C5F0FE0FDDDC4A047D33A37F /* Updates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC33D706CA17262846A56F2 /* Updates.swift */; };
+		C991F1BA31595226F98EAF67 /* Disappearing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86864BC03AF614C58E7BBAC /* Disappearing.swift */; };
 		CBC6ADF1D0C87DD207E06171 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06C125CF54953433EE56874C /* TimelineView.swift */; };
 		CC4539CC7AD95AAF57CCF31E /* BaudCore in Frameworks */ = {isa = PBXBuildFile; productRef = 00703347F79FF04291A37609 /* BaudCore */; };
 		CC5C8E5F0D3FA82B607836DE /* Crate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D75C62574C80DD4D8C5FFE77 /* Crate.swift */; };
@@ -182,6 +184,7 @@
 		D610A833ADF7DE411898B02A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D75C62574C80DD4D8C5FFE77 /* Crate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Crate.swift; sourceTree = "<group>"; };
 		D7A91D1AA8F5A59BA5495D03 /* Baud.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Baud.entitlements; sourceTree = "<group>"; };
+		D86864BC03AF614C58E7BBAC /* Disappearing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Disappearing.swift; sourceTree = "<group>"; };
 		D94A66B72317CFFE43C9689B /* CrateCalls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrateCalls.swift; sourceTree = "<group>"; };
 		DB1E02C57F25635A5E6C0112 /* MacTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacTimeline.swift; sourceTree = "<group>"; };
 		DB63EC081D64513628AB58B5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -332,6 +335,7 @@
 				C2FD6820E82C57C56C80A214 /* ConversationView.swift */,
 				D75C62574C80DD4D8C5FFE77 /* Crate.swift */,
 				B4E49FFF5E160264102022AF /* Depth.swift */,
+				D86864BC03AF614C58E7BBAC /* Disappearing.swift */,
 				8FC89CC1CA8EBF876B323305 /* EmojiData.swift */,
 				3F5302278BAA483D7DAF49FF /* EmojiPicker.swift */,
 				1FB065FCE67C439525356FC2 /* IconColour.swift */,
@@ -490,6 +494,7 @@
 				D539303C5660D9B7016A3A45 /* Crate.swift in Sources */,
 				99183BDBBC107817D491C07C /* CrateCalls.swift in Sources */,
 				A458F177EAC1EA38FFAE1DC2 /* Depth.swift in Sources */,
+				C991F1BA31595226F98EAF67 /* Disappearing.swift in Sources */,
 				23EADF0E8283FC539883DBE4 /* EmojiData.swift in Sources */,
 				F873020353568983D8870A60 /* EmojiPicker.swift in Sources */,
 				BC2E13A45992BD0A1CCE1DFD /* IOSApp.swift in Sources */,
@@ -546,6 +551,7 @@
 				CC5C8E5F0D3FA82B607836DE /* Crate.swift in Sources */,
 				0325E909E403F7BE631EF6B8 /* CrateCalls.swift in Sources */,
 				804B1121B68BD0C20DD3BA1B /* Depth.swift in Sources */,
+				A9B853527C054111A97C16E4 /* Disappearing.swift in Sources */,
 				E7E0ABD8B269EEDB51AA740C /* EmojiData.swift in Sources */,
 				122562BE326A38F9C13EAB9E /* EmojiPicker.swift in Sources */,
 				961F72BD12970553BC4FAAB5 /* IconColour.swift in Sources */,

@@ -106,6 +106,8 @@ object Glyphs {
     val pin = make("pin", listOf("M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11z", "M12 7.6a2.4 2.4 0 1 0 0 4.8a2.4 2.4 0 1 0 0-4.8z"), width = 1.9f)
     val pinFill = make("pinFill", listOf(), listOf("M12 2.6a7.2 7.2 0 0 0-7.2 7.2c0 5.3 6.4 11.3 6.7 11.6a0.7 0.7 0 0 0 1 0c0.3-0.3 6.7-6.3 6.7-11.6A7.2 7.2 0 0 0 12 2.6zm0 4.6a2.6 2.6 0 1 1 0 5.2a2.6 2.6 0 1 1 0-5.2z"))
     val issue = make("issue", listOf(), listOf("M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20zm-1.2 5h2.4l-0.3 7h-1.8zM12 15.4a1.4 1.4 0 1 1 0 2.8a1.4 1.4 0 1 1 0-2.8z"))
+    val timer = make("timer", listOf("M12 5.5a7.5 7.5 0 1 0 0 15a7.5 7.5 0 1 0 0-15z", "M12 9.2V13l2.6 1.6", "M10 2.8h4"), width = 1.9f)
+    val check = make("check", listOf("M5.5 12.5l4.2 4.2L18.5 7.8"), width = 2.2f)
 }
 
 @Composable

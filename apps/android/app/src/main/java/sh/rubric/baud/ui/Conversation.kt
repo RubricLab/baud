@@ -99,6 +99,7 @@ private fun Header(c: Conversation, back: () -> Unit) {
                     }
                 }
             }
+            if (c.kind != ConvKind.Space) DisappearSpot(c)
             // Where I am, for this chat: not my chat with myself, where nobody else would see it.
             if (!own) ShareSpot(c.id)
         }

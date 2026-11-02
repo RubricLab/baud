@@ -138,6 +138,8 @@ class AppModel(val context: Context, val core: CoreSurface) {
     val whereabouts = Whereabouts(context, this)
     fun share(conv: ConversationId, until: java.time.Instant?) { attempt { core.sharePlace(conv, until) }; refreshPlaces() }
     fun stopSharing(conv: ConversationId) { attempt { core.stopSharing(conv) }; refreshPlaces() }
+    /// Disappearing messages in this conversation: seconds after they're read, 0 off.
+    fun setDisappear(conv: ConversationId, seconds: Int) { attempt { core.setDisappear(conv, seconds) } }
     /// Shares that ran out drop here too; the location service follows.
     fun refreshPlaces() {
         sharing = runCatching { core.sharing().associate { it.conv to it.until } }.getOrDefault(emptyMap())
@@ -369,6 +371,7 @@ class AppModel(val context: Context, val core: CoreSurface) {
             Change.Removed -> removedHere = true
             Change.Network -> netState = core.netState()
             is Change.Places -> refreshPlaces()
+            is Change.Expired -> sh.rubric.baud.Notifier.expired(context, c.conv)
             // My reply met them: the add the Add screen shows is done.
             is Change.Replied -> join?.takeIf { it.reply != null && it.phase != Join.Phase.Done }?.let {
                 join = it.copy(user = c.user, phase = Join.Phase.Done); markOnboarded(true); refreshAll()

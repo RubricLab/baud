@@ -476,6 +476,15 @@ final class AppModel {
 				who.share(place: chat.id, until: Date().addingTimeInterval(3600))
 			}
 		}
+		// `BAUD_DEMO_DISAPPEAR=<seconds>`: disappearing messages on in my chat with Sam (I turned it
+		// on) and in Ana's with me (she did), with a line written in each after, for pictures. Once
+		// per store: a relaunch finds it set.
+		if let s = ProcessInfo.processInfo.environment["BAUD_DEMO_DISAPPEAR"].flatMap(Int.init), let d = demo {
+			for (who, other, line) in [(local, d.sam.me().user, "the gate code is 4471, see you at 8"), (d.ana, me.user, "the spare key is under the blue pot")] {
+				guard let chat = who.conversations(.chat).first(where: { $0.isDirect && $0.members.contains(other) }), chat.disappear != s else { continue }
+				attempt { try who.setDisappear(chat.id, s); _ = try who.send(chat.id, Draft(text: line)) }
+			}
+		}
 		refreshAll()
 	}
 
@@ -734,6 +743,7 @@ final class AppModel {
 		case .delivery(let id): timelines[id]?.refreshDelivery()
 		case .typing(let id): timelines[id]?.refreshTyping()
 		case .places: placesChanged()
+		case .expired(let id, let events): Notifier.shared.expired(id, events)
 		case .incomingCall: break
 		}
 	}

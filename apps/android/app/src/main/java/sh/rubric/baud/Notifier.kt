@@ -152,6 +152,8 @@ object Notifier {
     }
 
     fun cancel(context: Context, conv: ConversationId) { NotificationManagerCompat.from(context).cancel(conv, 0) }
+    /// Disappearing messages went from this phone: the chat's notification, which may quote them, goes too.
+    fun expired(context: Context, conv: ConversationId) = cancel(context, conv)
     /// The chat came on screen: what it said is read now.
     fun clearShown(context: Context, conv: ConversationId?) { conv?.let { cancel(context, it) } }
 

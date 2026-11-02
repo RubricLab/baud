@@ -275,6 +275,19 @@ class FakeCore(private val dir: File, private val prefs: SharedPreferences, devi
         if (changed) emit(Change.Conversations)
     }
 
+    /// The setting and its line, for the screens; the stand-in's messages stay (baud-core makes them go).
+    override fun setDisappear(conv: ConversationId, seconds: Int) {
+        synchronized(lock) {
+            val v = convs[conv] ?: throw CoreError.NotFound
+            v.c = v.c.copy(disappear = seconds.coerceAtLeast(0))
+            v.events += Event(
+                id = "e-" + hex(8), conv = conv, device = thisDevice, seq = ++lamport, user = user, at = Instant.now(), lamport = lamport,
+                type = EventType.State, system = disappearLine("You", seconds.coerceAtLeast(0)), mine = true,
+            )
+        }
+        emit(Change.Conversation(conv), Change.Conversations)
+    }
+
     override fun typing(conv: ConversationId) {}
     override fun typingNow(conv: ConversationId): List<UserId> = synchronized(lock) {
         val now = System.currentTimeMillis()

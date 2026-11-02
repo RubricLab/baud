@@ -45,6 +45,7 @@ flag (`SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) BAUD_SPACES'`) to show 
 | `BAUD_DEMO=1` | Three demo people (Ana with a Mac and an iPhone, Jo, Sam) on an in-process mesh, with chats, a group and a space. Every delivery state on screen is computed, not painted. Runs without the network. |
 | `BAUD_DEMO_EVENTS=10000` | How many events the demo's busiest channel gets. |
 | `BAUD_DEMO_PLACES=1` | Ana and Jo share where they are, for pictures. |
+| `BAUD_DEMO_DISAPPEAR=86400` | Disappearing messages on (that many seconds) in my chat with Sam and in Ana's with me, a line after each, for pictures. |
 | `BAUD_CRATE=0` | Run on the in-process stub alone, without peer. |
 | `BAUD_DIR=path` | Keep the store somewhere else. Use one per copy of the app you run side by side. |
 | `BAUD_NAME=…` | Skip the name screen. |

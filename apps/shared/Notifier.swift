@@ -150,6 +150,18 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 		#endif
 	}
 
+	/// Disappearing messages that went from this device: the notification each one made goes too,
+	/// whichever chat it was filed under (a merged direct chat files under the one shown).
+	func expired(_ conv: ConversationId, _ events: [EventId]) {
+		Measure.log("notify: \(events.count) gone from \(conv.prefix(8))")
+		if dry { return }
+		let gone = Set(events), center = center
+		Task {
+			let ids = await center.deliveredNotifications().map(\.request.identifier).filter { gone.contains(String($0.split(separator: "/").last ?? "")) }
+			if !ids.isEmpty { center.removeDeliveredNotifications(withIdentifiers: ids) }
+		}
+	}
+
 	/// The chat is in front of the person: the app is active and that timeline is showing.
 	private func onScreen(_ conv: ConversationId) -> Bool {
 		guard let model else { return false }

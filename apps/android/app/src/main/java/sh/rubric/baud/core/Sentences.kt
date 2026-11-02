@@ -79,6 +79,29 @@ val Delivery.best: DeliveryState
         return DeliveryState.Sent
     }
 
+/// How long a disappearing message lasts, in the largest unit that fits it whole: "5 minutes",
+/// "1 hour", "1 day", "4 weeks" (baud-core's `disappear_after`).
+fun disappearAfter(seconds: Int): String {
+    val (n, unit) = disappearUnit(seconds)
+    return "$n $unit" + if (n == 1) "" else "s"
+}
+
+/// The same, short, for a conversation's header: "5m", "1h", "8h", "1d", "1w", "4w".
+fun disappearShort(seconds: Int): String {
+    val (n, unit) = disappearUnit(seconds)
+    return "$n${unit.first()}"
+}
+
+private fun disappearUnit(seconds: Int): Pair<Int, String> {
+    for ((size, unit) in listOf(604_800 to "week", 86_400 to "day", 3600 to "hour", 60 to "minute")) if (seconds >= size && seconds % size == 0) return seconds / size to unit
+    return seconds to "second"
+}
+
+/// The timeline's line when someone changes the setting: "Ana set messages to disappear 1 day
+/// after they're read" · "You turned off disappearing messages" (baud-core's own, for the stand-in).
+fun disappearLine(by: String, seconds: Int): String =
+    if (seconds > 0) "$by set messages to disappear ${disappearAfter(seconds)} after they're read" else "$by turned off disappearing messages"
+
 /// "a, b and c"
 fun list(items: List<String>): String = when (items.size) {
     0 -> ""
