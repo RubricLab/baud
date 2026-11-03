@@ -10,7 +10,7 @@
   "redirects": [
     {
       "source": "/download/mac",
-      "destination": "/baud-0.2.21.dmg",
+      "destination": "/baud-0.2.22.dmg",
       "permanent": false
     },
     {
