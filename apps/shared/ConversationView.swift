@@ -142,7 +142,7 @@ struct Header: View {
 				.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
 				#endif
 			}
-			.buttonStyle(Pill(on: showMembers)).keyboardShortcut("i", modifiers: .command).help(conversation.isDirect || own ? "Details (⌘I)" : "People (⌘I)")
+			.buttonStyle(Pill(on: showMembers)).help(conversation.isDirect || own ? "Details (⌘I)" : "People (⌘I)")
 			.accessibilityLabel(conversation.isDirect || own ? "Details" : "\(conversation.members.count) people")
 			}
 		}

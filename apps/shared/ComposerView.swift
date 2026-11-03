@@ -90,7 +90,7 @@ struct ComposerView: View {
 				#endif
 				#if os(macOS)
 				MacComposerText(text: $text, placeholder: placeholder, onSend: send,
-					onEscape: { if editing != nil { cancelEdit(); return true }; if reply != nil { reply = nil; return true }; return false },
+					onEscape: { if editing != nil { cancelEdit(); return true }; if reply != nil { reply = nil; return true }; if model.details, thread == nil { model.details = false; return true }; return false },
 					onUpEmpty: { beginEditLast() },
 					onFiles: { files += $0.filter { $0.startAccessingSecurityScopedResource() || true } },
 					onArrow: { d in guard !mentionMatches.isEmpty else { return false }; mentionIndex = max(0, min(mentionMatches.prefix(6).count - 1, mentionIndex + d)); return true },
@@ -116,9 +116,14 @@ struct ComposerView: View {
 				#endif
 			}
 			.padding(.horizontal, 10).padding(.vertical, 7)
-			.background(RoundedRectangle(cornerRadius: 21, style: .continuous).fill(tones.field).lifted(tones))
-			.padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 14)
+			.background(RoundedRectangle(cornerRadius: Radius.bubble, style: .continuous).fill(tones.field).lifted(tones))
+			.padding(.horizontal, Space.side).padding(.top, 8).padding(.bottom, 12)
 		}
+		// Under the conversation's column on a wide Mac window, as the messages are.
+		#if os(macOS)
+		.frame(maxWidth: MessageRow.column + Space.side * 2)
+		.frame(maxWidth: .infinity)
+		#endif
 		.onAppear {
 			text = model.draft(draftKey); focused = Theme.autofocus; Bench.typeInto = { text += $0 }
 			#if DEBUG
@@ -127,6 +132,9 @@ struct ComposerView: View {
 			#endif
 		}
 		.onChange(of: conv) { _, c in text = model.draft(c); focused = Theme.autofocus }
+		#if os(macOS)
+		.onChange(of: model.focusComposer) { _, _ in guard thread == nil else { return }; focused = false; Task { @MainActor in focused = true } }
+		#endif
 		// Dropped on the conversation, not on the field: staged here all the same.
 		.onChange(of: model.dropped[conv], initial: true) { _, urls in
 			guard thread == nil, let urls, !urls.isEmpty else { return }

@@ -214,11 +214,12 @@ struct UpdateBar: View {
 			switch updates.state {
 			case .available: Button("Update") { updates.install() }.buttonStyle(Quiet(strong: true))
 			case .ready: Button("Restart") { updates.restart() }.buttonStyle(Quiet(strong: true))
-			default: ProgressView().controlSize(.small)
+			// Downloading: the words under the name say so; no spinner.
+			default: EmptyView()
 			}
 		}
 		.padding(.horizontal, 10).padding(.vertical, 8)
-		.glass(corner: 12)
+		.glass(corner: Radius.card)
 	}
 	private var title: String {
 		switch updates.state {

@@ -223,7 +223,7 @@ struct MessageRow: View {
 	private var mentionsMe: Bool { event.mentions.contains(model.me.user) && !event.mine }
 	/// A run of one person's messages reads as one: its inner corners tighten.
 	private var bubble: UnevenRoundedRectangle {
-		let big: CGFloat = 19, small: CGFloat = 6
+		let big = Radius.bubble, small = Self.inner
 		return event.mine
 			? UnevenRoundedRectangle(topLeadingRadius: big, bottomLeadingRadius: big, bottomTrailingRadius: last ? big : small, topTrailingRadius: first ? big : small, style: .continuous)
 			: UnevenRoundedRectangle(topLeadingRadius: first ? big : small, bottomLeadingRadius: last ? big : small, bottomTrailingRadius: big, topTrailingRadius: big, style: .continuous)
@@ -263,11 +263,14 @@ struct MessageRow: View {
 								Button { react(r.key) } label: { Label(r.mine ? "Take mine back" : "React \(r.key) too", systemImage: r.mine ? "minus.circle" : "plus.circle") }
 							}
 						}
+						#if os(macOS)
 						Button { picking = true } label: {
 							Image(systemName: "face.smiling").font(Theme.smallFont)
 								.padding(.horizontal, 7).padding(.vertical, 3).frame(minHeight: Theme.small + 8)
 								.glass(Capsule(), lifted: false)
 						}.buttonStyle(.plain).foregroundStyle(tones.secondary).help("React").accessibilityLabel("React")
+						.opacity(hover || picking ? 1 : 0).allowsHitTesting(hover || picking)
+						#endif
 					}
 				}
 				if event.replies > 0 {
@@ -349,7 +352,7 @@ struct MessageRow: View {
 						#endif
 				}
 			}
-			.padding(.horizontal, 14).padding(.vertical, 9)
+			.padding(.horizontal, Self.padH).padding(.vertical, Self.padV)
 			.foregroundStyle(event.mine ? tones.onMine : tones.text)
 			.background { bubble.fill(event.mine ? tones.loud : tones.card).lifted(tones) }
 			.overlay { if mentionsMe { bubble.strokeBorder(tones.text, lineWidth: 2) } }
@@ -364,22 +367,35 @@ struct MessageRow: View {
 	#else
 	static let asides = false
 	#endif
-	/// The empty side of a message: on the Mac wide enough for its time and React on a hover.
+	/// The empty side of a message: on the Mac wide enough for its time and the hover actions.
+	/// A bubble's padding, and its corner inside a run of one person's messages.
 	#if os(macOS)
-	static let gutter: CGFloat = 104
+	static let gutter: CGFloat = 160
+	static let padH: CGFloat = 12, padV: CGFloat = 7, inner: CGFloat = 4
+	/// The conversation's column on a wide window: the two sides of a chat stay within reach.
+	static let column: CGFloat = 720
 	#else
 	static let gutter: CGFloat = 56
+	static let padH: CGFloat = 14, padV: CGFloat = 9, inner: CGFloat = 6
 	#endif
-	/// On a hover (Mac): its way, its time and React, in the empty space beside the bubble, never on it.
+	/// On a hover (Mac): its way and time, then React, Reply and More (the right click's menu), in
+	/// the empty space beside the bubble, never on it.
 	@ViewBuilder private var beside: some View {
 		#if os(macOS)
-		let react = Button { picking = true } label: { Image(systemName: "face.smiling").font(.system(size: Theme.small + 2)) }
-			.buttonStyle(.plain).foregroundStyle(tones.secondary).help("React").accessibilityLabel("React")
-		HStack(spacing: 8) {
-			if event.mine { react; aside } else { aside; react }
+		let shown = hover || picking || Self.asides
+		let actions = HStack(spacing: 0) {
+			IconButton(symbol: "face.smiling", help: "React", size: Icon.row) { picking = true }
+			IconButton(symbol: "arrowshape.turn.up.left", help: "Reply", size: Icon.row) { onReply(event) }
+			Menu { menu } label: { Image(systemName: "ellipsis").font(Icon.font(Icon.row)).frame(width: 24, height: 24).contentShape(Rectangle()) }
+				.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().foregroundStyle(tones.secondary)
+				.help("More").accessibilityLabel("More")
 		}
-		.opacity(hover || picking || Self.asides ? 1 : 0)
-		.animation(.easeOut(duration: 0.12), value: hover)
+		HStack(spacing: 6) {
+			if event.mine { actions; aside } else { aside; actions }
+		}
+		.opacity(shown ? 1 : 0)
+		.allowsHitTesting(shown)
+		.animation(Motion.quick, value: hover)
 		#endif
 	}
 	/// Its way, as a mark, and its time: beside it on a hover or a drag.

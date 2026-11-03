@@ -306,7 +306,10 @@ final class HostCell: NSTableCellView {
 		host.sizingOptions = []
 		host.translatesAutoresizingMaskIntoConstraints = false
 		addSubview(host)
-		NSLayoutConstraint.activate([host.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16), host.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16), host.topAnchor.constraint(equalTo: topAnchor), host.bottomAnchor.constraint(equalTo: bottomAnchor)])
+		// A column at most `MessageRow.column` wide, centred: on a narrow window, the cell less 16 a side.
+		let fill = host.widthAnchor.constraint(equalTo: widthAnchor, constant: -32)
+		fill.priority = .defaultHigh
+		NSLayoutConstraint.activate([host.centerXAnchor.constraint(equalTo: centerXAnchor), host.widthAnchor.constraint(lessThanOrEqualToConstant: MessageRow.column), fill, host.topAnchor.constraint(equalTo: topAnchor), host.bottomAnchor.constraint(equalTo: bottomAnchor)])
 	}
 	required init?(coder: NSCoder) { nil }
 }
@@ -370,8 +373,9 @@ struct Heights {
 			var sum = (first ? m.firstTop : m.top) + (last ? m.lastBottom : m.bottom)
 			if first, !e.mine, !direct { sum += m.name }
 			if text != nil || quoted { sum += m.bubblePad }
-			// The row's insets, the far side's spacer, the bubble's own padding, and a face in a group.
-			let textWidth = width - 32 - MessageRow.gutter - 28 - (direct || e.mine ? 0 : 36)
+			// The column (the row's insets, or its widest), the far side's spacer, the bubble's own
+			// padding, and a face in a group.
+			let textWidth = min(width - 32, MessageRow.column) - MessageRow.gutter - MessageRow.padH * 2 - (direct || e.mine ? 0 : 36)
 			if quoted { sum += m.quote > 0 ? m.quote : 33 }
 			if let t = text {
 				let ns = NSMutableAttributedString(t)

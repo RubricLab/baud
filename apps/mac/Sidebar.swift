@@ -1,7 +1,7 @@
-/// The Mac's sidebar, rebuilt for the two modes with a wall between them. At the top, beside the
-/// traffic lights, the switch: Home or Spaces. Home is chats (direct and group), friends and my
-/// devices. Spaces is the list of spaces; hop into one and the sidebar is that space: its channels
-/// and its people, a way back at the top. Never both. At the bottom, me, which opens Settings.
+/// The Mac's sidebar. In the band with the traffic lights, compose (and the Home or Spaces switch
+/// when spaces are on); under it, search (⌘F); then the list: chats (direct and group) and friends
+/// not written to yet, or the spaces. At the foot, me: my face and name open Settings, and this
+/// Mac's status opens its sheet.
 import BaudCore
 import SwiftUI
 
@@ -11,30 +11,24 @@ struct Sidebar: View {
 	@Environment(\.openWindow) private var openWindow
 	@Binding var sheet: NewSheet.What?
 	@FocusState private var focused: Bool
+	@FocusState private var searching: Bool
 	@State private var query = ""
 	@Environment(Updates.self) private var updates
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// The band the traffic lights sit in: the switch beside them, the rest drags the window.
-			HStack(spacing: 0) {
-				Color.clear.frame(width: 78)
+			// The band the traffic lights sit in: compose at its end, the rest drags the window.
+			HStack(spacing: 8) {
+				Color.clear.frame(width: 70)
 				if Features.spaces { ModeSwitch() } else { Spacer() }
+				Compose(sheet: $sheet)
 			}
-			.padding(.trailing, 12)
-			.frame(height: Theme.band)
+			.padding(.trailing, Rows.inset)
+			.frame(height: Theme.band + 4)
 			.background(Color.clear.contentShape(Rectangle()).modifier(DragsWindow()))
-			// Signal's top row: my face (Settings), Chats, compose (New group, New friend); search under it.
-			HStack {
-				Button { openWindow(id: "settings") } label: { Avatar(name: model.me.name, hash: model.me.avatar, size: 26) }.buttonStyle(.plain).help("You (⌘,)")
-				Spacer()
-				Text("Chats").font(Theme.headingFont)
-				Spacer()
-				Menu { Button("New group") { sheet = .group }; Button("New friend") { model.offer = .friend } } label: { Image(systemName: "square.and.pencil").font(.system(size: 13, weight: .semibold)) }
-					.menuStyle(.borderlessButton).menuIndicator(.hidden).frame(width: 26).help("New")
-			}
-			.padding(.horizontal, 16).padding(.bottom, 8)
-			SidebarSearch(query: $query).padding(.horizontal, Rows.inset).padding(.bottom, 6)
+			SearchBox(text: $query, keys: query.isEmpty && !searching ? "⌘F" : nil, fill: tones.hover, focus: $searching)
+				.onKeyPress(.escape) { if !query.isEmpty { query = "" } else { searching = false; focused = true }; return .handled }
+				.padding(.horizontal, Rows.inset).padding(.top, 4).padding(.bottom, 8)
 			ScrollViewReader { proxy in
 				ScrollView {
 					VStack(alignment: .leading, spacing: 0) {
@@ -50,27 +44,51 @@ struct Sidebar: View {
 					.id(model.mode == .home ? "home" : model.selectedSpace ?? "spaces")
 				}
 				.scrollIndicators(.never)
-				.onChange(of: model.selectedConversation) { _, id in if let id { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(id) } } }
+				.onChange(of: model.selectedConversation) { _, id in if let id { withAnimation(Motion.quick) { proxy.scrollTo(id) } } }
 			}
 
 			// A newer baud, where it's seen: one press updates, another restarts into it.
-			if updates.offering { UpdateBar().padding(.horizontal, 10).padding(.bottom, 8).transition(.move(edge: .bottom).combined(with: .opacity)) }
-			// This Mac's status at the foot: the mark and the words; a tap explains.
+			if updates.offering { UpdateBar().padding(.horizontal, Rows.inset).padding(.bottom, 8).transition(.move(edge: .bottom).combined(with: .opacity)) }
 			Hairline()
-			HStack { NetStatusChip(); Spacer() }.padding(.horizontal, 11).padding(.vertical, 8)
+			YouRow()
 		}
 		.background(tones.raised)
-		// Arrows walk this side of the wall and open as they go, ⏎ hops into a space, ⎋ or ← out of it.
+		// Arrows walk this side of the wall and open as they go; ⏎ hands the keyboard to the chat's
+		// composer, or hops into a space; ⎋ or ← out of it.
 		.focusable()
 		.focused($focused)
 		.focusEffectDisabled()
 		.onKeyPress(.downArrow) { model.step(1); return .handled }
 		.onKeyPress(.upArrow) { model.step(-1); return .handled }
-		.onKeyPress(.return) { if model.mode == .spaces, model.selectedSpace == nil, let c = model.stepCursor { model.selectedSpace = c; return .handled }; return .ignored }
+		.onKeyPress(.return) {
+			if model.mode == .spaces, model.selectedSpace == nil, let c = model.stepCursor { model.selectedSpace = c; return .handled }
+			if model.selectedConversation != nil { focused = false; model.focusComposer &+= 1; return .handled }
+			return .ignored
+		}
 		.onKeyPress(.escape) { if model.mode == .spaces, model.selectedSpace != nil { model.leaveSpace(); return .handled }; return .ignored }
 		.onKeyPress(.leftArrow) { if model.mode == .spaces, model.selectedSpace != nil { model.leaveSpace(); return .handled }; return .ignored }
 		.onChange(of: focused) { _, f in model.sidebarFocused = f }
 		.onChange(of: model.focusSidebar) { _, _ in focused = true }
+		.onChange(of: model.focusSearch) { _, _ in searching = true }
+	}
+}
+
+/// Compose, by the traffic lights: a new chat, a new group, a new friend.
+struct Compose: View {
+	@Environment(AppModel.self) private var model
+	@Binding var sheet: NewSheet.What?
+	var body: some View {
+		Menu {
+			Button { sheet = .chat } label: { Label("New chat", systemImage: "bubble.left") }
+			Button { sheet = .group } label: { Label("New group", systemImage: "person.2") }
+			Button { model.offer = .friend } label: { Label("New friend", systemImage: "person.badge.plus") }
+		} label: {
+			Image(systemName: "square.and.pencil").font(Icon.font(Icon.bar))
+		}
+		.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+		.frame(width: 24, height: 24)
+		.help("New chat, group or friend (⌘N, ⇧⌘N, ⌥⌘N)")
+		.accessibilityLabel("New")
 	}
 }
 
@@ -141,19 +159,6 @@ struct HomeList: View {
 }
 
 /// Search, in the sidebar: every message that matches.
-struct SidebarSearch: View {
-	@Environment(\.tones) private var tones
-	@Binding var query: String
-	var body: some View {
-		HStack(spacing: 6) {
-			Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundStyle(tones.secondary)
-			TextField("", text: $query, prompt: Text("Search").foregroundStyle(tones.secondary)).textFieldStyle(.plain).font(Theme.font)
-		}
-		.padding(.horizontal, 8).frame(height: 28)
-		.background(RoundedRectangle(cornerRadius: 7).fill(tones.field))
-	}
-}
-
 struct SearchList: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
@@ -241,25 +246,25 @@ struct SpaceList: View {
 	}
 }
 
-/// Me, at the foot of the sidebar: my face, my name, my devices; Settings is one click.
+/// Me, at the foot of the sidebar: my face and name (Settings), and this Mac's status (its sheet),
+/// far enough apart that neither is hit for the other.
 struct YouRow: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
-	let action: () -> Void
+	@Environment(\.openWindow) private var openWindow
 	var body: some View {
-		let others = model.me.otherDevices
-		Button(action: action) {
-			HStack(spacing: 8) {
-				Avatar(name: model.me.name, hash: model.me.avatar, size: 26, presence: .online)
-				VStack(alignment: .leading, spacing: 0) {
-					Text(model.me.name).font(Theme.font.weight(.semibold)).lineLimit(1)
-					Text(others.isEmpty ? "this \(AppModel.thisKind) only" : "\(others.count + 1) devices · \(others.filter(\.online).count + 1) online").font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1)
+		HStack(spacing: 8) {
+			Button { openWindow(id: "settings") } label: {
+				HStack(spacing: 8) {
+					Avatar(name: model.me.name, hash: model.me.avatar, size: 22)
+					Text(model.me.name).font(Theme.font.weight(.semibold)).foregroundStyle(tones.text).lineLimit(1)
 				}
-				Spacer()
-				Image(systemName: "gearshape").font(.system(size: 12, weight: .medium)).foregroundStyle(tones.secondary)
+				.padding(.leading, 3).padding(.trailing, 8).frame(height: 28)
 			}
-			.frame(height: 40)
+			.buttonStyle(Pill()).help("Settings (⌘,)").accessibilityLabel("Settings")
+			Spacer(minLength: 24)
+			NetStatusChip().fixedSize()
 		}
-		.buttonStyle(RowStyle()).padding(.vertical, 6).help("Settings (⌘,)")
+		.padding(.horizontal, Rows.inset).frame(height: 44)
 	}
 }

@@ -40,26 +40,45 @@ struct BaudMacApp: App {
 			CommandGroup(replacing: .newItem) {
 				Button("New Chat") { sheet = .chat }.keyboardShortcut("n")
 				Button("New Group") { sheet = .group }.keyboardShortcut("n", modifiers: [.command, .shift])
+				Button("New Friend") { model.offer = .friend }.keyboardShortcut("n", modifiers: [.command, .option])
 				if Features.spaces {
-					Button("New Space") { sheet = .space }.keyboardShortcut("n", modifiers: [.command, .option])
+					Button("New Space") { sheet = .space }.keyboardShortcut("n", modifiers: [.command, .option, .control])
 					Button("New Channel") { sheet = .channel }.keyboardShortcut("n", modifiers: [.command, .control]).disabled(model.selectedSpace == nil)
 				}
 			}
 			CommandMenu("Go") {
+				Button("Jump to…") { palette = true }.keyboardShortcut("k")
+				Button("Search Messages") { model.focusSearch &+= 1 }.keyboardShortcut("f")
 				if Features.spaces {
 					Button("Home") { model.show(.home) }.keyboardShortcut("1")
 					Button("Spaces") { model.show(.spaces) }.keyboardShortcut("2")
 					Button("Back to All Spaces") { model.leaveSpace() }.keyboardShortcut("[").disabled(model.mode != .spaces || model.selectedSpace == nil)
+				} else {
+					// The first nine chats in the list, by their place in it, as Slack and Linear do.
+					Menu("Chats") {
+						ForEach(Array(model.chats.prefix(9).enumerated()), id: \.element.id) { i, c in
+							Button(model.title(c)) { model.show(.home); model.open(c.id) }.keyboardShortcut(KeyEquivalent(Character("\(i + 1)")))
+						}
+					}
 				}
-				Button("Sidebar") { model.focusSidebar += 1 }.keyboardShortcut("0")
-				Divider()
-				Button("Jump to…") { palette = true }.keyboardShortcut("k")
-				Button("Delete Chat…") { model.deleting = model.selectedConversation.flatMap(model.conversation) }.keyboardShortcut(.delete, modifiers: .command).disabled(model.selectedConversation == nil)
-				Button("Next Conversation") { model.step(1) }.keyboardShortcut(.downArrow, modifiers: [.command, .option])
-				Button("Previous Conversation") { model.step(-1) }.keyboardShortcut(.upArrow, modifiers: [.command, .option])
+				Button("Next Chat") { model.step(1) }.keyboardShortcut(.downArrow, modifiers: [.command, .option])
+				Button("Previous Chat") { model.step(-1) }.keyboardShortcut(.upArrow, modifiers: [.command, .option])
+				Button("Sidebar") { model.focusSidebar &+= 1 }.keyboardShortcut("0")
 				Divider()
 				Button("Friends") { model.settingsSection = "friends"; openWindow(id: "settings") }.keyboardShortcut("1", modifiers: [.command, .shift])
 				Button("Network") { model.settingsSection = "network"; openWindow(id: "settings") }.keyboardShortcut("2", modifiers: [.command, .shift])
+			}
+			// What can be done with the open chat. Calls have no keys: a stray chord shouldn't ring anyone.
+			CommandMenu("Chat") {
+				let c = model.selectedConversation.flatMap(model.conversation)
+				let callable = c.map { model.calls.callable($0.id) && model.calls.session == nil } ?? false
+				Button(c.map { "Call \(model.title($0))" } ?? "Call") { if let c { model.calls.start(c.id, video: false) } }.disabled(!callable)
+				Button(c.map { "Video Call \(model.title($0))" } ?? "Video Call") { if let c { model.calls.start(c.id, video: true) } }.disabled(!callable)
+				Divider()
+				Button(model.details ? "Hide Details" : "Show Details") { model.details.toggle() }.keyboardShortcut("i").disabled(c == nil)
+				Button("Mark as Read") { if let c { model.markRead(c) } }.keyboardShortcut("u", modifiers: [.command, .shift]).disabled((c?.unread ?? 0) == 0)
+				Divider()
+				Button(c.map { $0.kind == .home ? "Clear Chat…" : $0.isDirect ? "Delete Chat…" : "Leave and Delete…" } ?? "Delete Chat…") { model.deleting = c }.keyboardShortcut(.delete, modifiers: .command).disabled(c == nil)
 			}
 		}
 		Window("Settings", id: "settings") { SettingsView().toolbarBackground(.hidden, for: .windowToolbar).modifier(NotRestored()).modifier(Tinted(hex: model.accentHex)).environment(model).environment(updates).environment(\.restart, { model = AppModel() }).frame(minWidth: 520, minHeight: 520) }
@@ -81,21 +100,22 @@ struct Panes: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
 	@Binding var sheet: NewSheet.What?
-	@Binding var members: Bool
+	@Binding var palette: Bool
 	var body: some View {
+		@SwiftUI.Bindable var m = model
 		HStack(spacing: 0) {
 			Sidebar(sheet: $sheet).frame(width: 264)
 			Rectangle().fill(tones.hairline).frame(width: 1)
 			if let id = model.selectedConversation, model.conversation(id) != nil {
-				ConversationView(conv: id, showMembers: $members)
-				if members {
+				ConversationView(conv: id, showMembers: $m.details)
+				if model.details {
 					Rectangle().fill(tones.hairline).frame(width: 1)
-					MembersView(conv: id, close: { members = false }).frame(width: 300).background(tones.raised)
+					MembersView(conv: id, close: { model.details = false }).frame(width: 300).background(tones.raised)
 				}
 			} else if model.mode == .spaces, model.selectedSpace == nil {
 				SpacesOverview(sheet: $sheet)
 			} else {
-				HomeOverview(sheet: $sheet)
+				HomeOverview(sheet: $sheet, jump: { palette = true })
 			}
 		}
 		.ignoresSafeArea(.container, edges: .top)
@@ -108,7 +128,6 @@ struct Root: View {
 	@Environment(\.tones) private var tones
 	@Binding var palette: Bool
 	@Binding var sheet: NewSheet.What?
-	@State private var members = false
 	@Environment(\.openWindow) private var openWindow
 
 	var body: some View {
@@ -118,7 +137,7 @@ struct Root: View {
 			if !model.named || (!model.onboarded && model.conversations.isEmpty) {
 				OnboardingView()
 			} else {
-				Panes(sheet: $sheet, members: $members)
+				Panes(sheet: $sheet, palette: $palette)
 				.background(Ground())
 				.overlay(alignment: .bottomTrailing) { WindowTint(color: tones.surface, dark: tones.chromeDark).frame(width: 1, height: 1).allowsHitTesting(false) }
 				// Belt and braces: the moment any window (a sheet, a side window) becomes key, every window takes the surface.
@@ -153,7 +172,7 @@ struct Root: View {
 			await Bench.runIfAsked(model)
 			await Shots.runIfAsked(model) { what in
 				switch what {
-				case "members": members.toggle()
+				case "members": model.details.toggle()
 				case "palette": palette.toggle()
 				case let w where w.hasPrefix("sheet:"): sheet = NewSheet.What(rawValue: String(w.dropFirst(6)))
 				case let w where w.hasPrefix("marks:"):
@@ -175,10 +194,14 @@ struct Root: View {
 		case .hit(let h): model.open(h.conversation.id); if let t = h.event.thread { model.openThread = t }
 		case .newChat: sheet = .chat
 		case .newGroup: sheet = .group
+		case .newFriend: model.offer = .friend
 		case .newSpace: sheet = .space
 		case .network: model.settingsSection = "network"; openWindow(id: "settings")
-		case .contacts: model.settingsSection = "friends"; openWindow(id: "settings")
+		case .friends: model.settingsSection = "friends"; openWindow(id: "settings")
 		case .settings: openWindow(id: "settings")
+		case .call(let id, let video): model.calls.start(id, video: video)
+		case .details: model.details.toggle()
+		case .markRead(let id): if let c = model.conversation(id) { model.markRead(c) }
 		}
 	}
 }

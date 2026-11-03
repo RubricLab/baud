@@ -653,6 +653,12 @@ final class AppModel {
 	var sidebarFocused = false
 	/// ⌘0 bumps this; the sidebar takes the keyboard.
 	var focusSidebar = 0
+	/// The Mac's details pane beside the open chat (⌘I).
+	var details = false
+	/// ⌘F bumps this; the sidebar's search takes the keyboard.
+	var focusSearch = 0
+	/// ⏎ in the sidebar bumps this; the open chat's composer takes the keyboard.
+	var focusComposer = 0
 	/// The conversation whose "add someone" sheet is up.
 	var addingTo: ConversationId?
 	/// Settings scrolls to this section when it opens (friends, devices, network).
