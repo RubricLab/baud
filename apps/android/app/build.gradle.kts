@@ -12,7 +12,7 @@ android {
         applicationId = "sh.rubric.baud"
         minSdk = 26
         targetSdk = 35
-        versionName = "0.2.19"
+        versionName = "0.2.20"
         // The build number, from the UTC clock as on iOS: scripts/ship-android.sh sets it to
         // yyDDDHHmm (year, day of the year, time), because iOS's yyyyMMddHHmm is past Android's
         // ceiling of 2,100,000,000. Local builds are 1.
