@@ -307,7 +307,7 @@ struct LiveMap: View {
 						Spacer(minLength: 8)
 						if let me { Text(distance(me.distance(from: CLLocation(latitude: p.lat, longitude: p.lon)))).font(Theme.smallFont.weight(.semibold)).foregroundStyle(tones.secondary) }
 					}
-					.frame(height: Rows.chat)
+					.frame(minHeight: Rows.chat)
 				}
 				Hairline().padding(.vertical, 4)
 				if let mine {

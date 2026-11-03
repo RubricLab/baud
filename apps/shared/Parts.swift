@@ -63,7 +63,7 @@ struct ActionRow: View {
 			Spacer(minLength: 6)
 			if let value { Text(value).font(Theme.font).foregroundStyle(tones.secondary).lineLimit(1) }
 		}
-		.frame(height: Rows.chat)
+		.frame(minHeight: Rows.chat)
 		.contentShape(Rectangle())
 	}
 }

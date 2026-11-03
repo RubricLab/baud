@@ -226,7 +226,7 @@ struct SpaceList: View {
 					Text(c.name ?? "").font(Theme.font).foregroundStyle(tones.secondary)
 					Spacer()
 					Text("Join").font(Theme.smallFont.weight(.semibold)).padding(.horizontal, 7).frame(height: 18).background(Capsule().strokeBorder(tones.hairline))
-				}.frame(height: Rows.compact)
+				}.frame(minHeight: Rows.compact)
 			}
 			.buttonStyle(RowStyle()).help("Join #\(c.name ?? "")")
 		}

@@ -86,6 +86,7 @@ struct ComposerView: View {
 					.menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden).fixedSize()
 					.foregroundStyle(tones.secondary).frame(width: 24, height: 24)
 					.help("Attach files, photos or where you are (or drop or paste files here)")
+					.accessibilityLabel("Attach")
 				#endif
 				#if os(macOS)
 				MacComposerText(text: $text, placeholder: placeholder, onSend: send,

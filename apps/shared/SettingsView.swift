@@ -372,7 +372,7 @@ struct FriendsSection: View {
 					#if os(iOS)
 					Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(tones.tertiary)
 					#endif
-				}.frame(height: Rows.chat)
+				}.frame(minHeight: Rows.chat)
 				#if os(iOS)
 				NavigationLink(value: PersonLink(user: k.user)) { row }.buttonStyle(RowStyle())
 				#else

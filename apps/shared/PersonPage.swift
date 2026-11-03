@@ -112,7 +112,7 @@ struct PersonPage: View {
 					if d.online, !this, let p = Mark.path(d.path) { MarkView(mark: p, size: Theme.small + 2, color: tones.secondary) }
 					StatusWord(on: this || d.online, word: this ? "This \(AppModel.thisKind)" : d.word.capitalizedFirst)
 				}
-				.frame(height: Rows.chat)
+				.frame(minHeight: Rows.chat)
 				.cardRow()
 			}
 		}
@@ -137,7 +137,7 @@ struct PersonPage: View {
 							Spacer(minLength: 8)
 							Text("\(g.members.count) people").font(Theme.smallFont).foregroundStyle(tones.secondary)
 						}
-						.frame(height: Rows.chat)
+						.frame(minHeight: Rows.chat)
 					}
 					.buttonStyle(RowStyle())
 				}
@@ -227,13 +227,13 @@ struct AddPeopleSheet: View {
 											.foregroundStyle(on ? tones.strong : tones.tertiary)
 											.contentTransition(.symbolEffect(.replace))
 									}
-									.frame(height: Rows.chat)
+									.frame(minHeight: Rows.chat)
 									.contentShape(Rectangle())
 								}
 								.buttonStyle(RowStyle(selected: on))
 								.accessibilityAddTraits(on ? .isSelected : [])
 							}
-							if shown.isEmpty { Text("No friend called “\(q)”.").font(Theme.font).foregroundStyle(tones.secondary).padding(.horizontal, Rows.pad).frame(height: Rows.chat) }
+							if shown.isEmpty { Text("No friend called “\(q)”.").font(Theme.font).foregroundStyle(tones.secondary).padding(.horizontal, Rows.pad).frame(minHeight: Rows.chat) }
 						}
 					}
 				}

@@ -28,7 +28,7 @@ struct DisappearPicker: View {
 					Spacer(minLength: 4)
 					if can { Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(tones.secondary) }
 				}
-				.padding(.horizontal, 6).frame(height: Rows.compact).contentShape(Rectangle())
+				.padding(.horizontal, 6).frame(minHeight: Rows.compact).contentShape(Rectangle())
 			}
 			.menuIndicator(.hidden).buttonStyle(.plain).disabled(!can)
 			.accessibilityLabel("Disappearing messages: \(words)")

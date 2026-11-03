@@ -113,15 +113,18 @@ struct MembersView: View {
 					.onExitCommand { renaming = false; name = c.name ?? "" }
 					#endif
 					.onChange(of: editing) { _, on in if !on { commitName() } }
-			} else {
-				Button { if canRename { name = c.name ?? model.title(c); renaming = true; editing = true } } label: {
+			} else if canRename {
+				Button { name = c.name ?? model.title(c); renaming = true; editing = true } label: {
 					HStack(spacing: 6) {
 						Text(model.title(c)).font(Theme.titleFont).multilineTextAlignment(.center)
-						if canRename { Image(systemName: "pencil").font(.system(size: Theme.small, weight: .semibold)).foregroundStyle(tones.secondary) }
+						Image(systemName: "pencil").font(.system(size: Theme.small, weight: .semibold)).foregroundStyle(tones.secondary)
 					}
 				}
-				.buttonStyle(.plain).disabled(!canRename)
-				.help(canRename ? "Rename" : "")
+				.buttonStyle(.plain)
+				.help("Rename")
+			} else {
+				// A name that can't be changed is just the name: a disabled button dimmed it.
+				Text(model.title(c)).font(Theme.titleFont).multilineTextAlignment(.center)
 			}
 			Text(subtitle(c, members: members, other: other)).font(Theme.smallFont).foregroundStyle(tones.secondary)
 		}
@@ -159,7 +162,8 @@ struct MemberRow: View {
 				HStack(spacing: 4) {
 					Text(m.me ? model.me.name : model.name(of: m.user)).font(Theme.font.weight(.medium)).lineLimit(1)
 					IdentityMark(member: m)
-					if m.admin { Text("admin").font(Theme.smallFont).foregroundStyle(tones.secondary) }
+					// Admin means something only where there are people to manage.
+					if m.admin, model.conversation(conv).map({ !$0.isDirect && $0.kind != .home }) ?? false { Text("admin").font(Theme.smallFont).foregroundStyle(tones.secondary) }
 				}
 				HStack(spacing: 4) {
 					if !through.isEmpty { MarkView(mark: .relayed, size: Theme.small + 1, color: tones.secondary) }
@@ -170,7 +174,8 @@ struct MemberRow: View {
 			Spacer(minLength: 4)
 			HStack(spacing: 3) { ForEach(m.devices) { d in DeviceGlyph(shape: DeviceShape(d), lit: d.online || d.id == model.me.thisDevice, size: 14, color: tones.secondary) } }
 		}
-		.frame(height: Rows.chat)
+		// At least a row's height; more when the person reads at a larger size.
+		.frame(minHeight: Rows.chat)
 		.accessibilityElement(children: .combine)
 	}
 }
@@ -185,7 +190,7 @@ struct Field: View {
 	@FocusState private var focused: Bool
 	var body: some View {
 		TextField(placeholder, text: $text).textFieldStyle(.plain).font(Theme.font)
-			.padding(.horizontal, 6).frame(height: Rows.compact)
+			.padding(.horizontal, 6).frame(minHeight: Rows.compact)
 			.background(RoundedRectangle(cornerRadius: 6).fill(focused ? tones.field : hover ? tones.hover : .clear))
 			.overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(focused ? tones.strong : hover ? tones.hairline : .clear))
 			.focused($focused).onHover { hover = $0 }
