@@ -187,9 +187,10 @@ struct IncomingCall: View {
 			}
 			Spacer(minLength: 8)
 			HStack(spacing: 10) {
+				// The call screen's words: Decline, Audio only, Accept.
 				small("phone.down.fill", "Decline", CallInk.danger) { model.calls.decline() }
-				if session.video { small("video.slash.fill", "Answer without video", ink.field) { model.calls.accept(camera: false) } }
-				small(session.video ? "video.fill" : "phone.fill", "Answer", CallInk.accept) { model.calls.accept(camera: true) }
+				if session.video { small("video.slash.fill", "Audio only", ink.field) { model.calls.accept(camera: false) } }
+				small(session.video ? "video.fill" : "phone.fill", "Accept", CallInk.accept) { model.calls.accept(camera: true) }
 			}
 		}
 		.padding(.horizontal, 16)

@@ -148,7 +148,7 @@ struct CallScreen: View {
 					#if os(macOS)
 					Spacer()
 					#endif
-					CallButton(symbol: "pip.enter", label: "Make the call small", style: .glass, small: true) { calls.minimized = true }
+					CallButton(symbol: "pip.enter", label: "Make the call small", style: .glass, small: true, keys: "⇧⌘M") { calls.minimized = true }
 						.keyboardShortcut("m", modifiers: [.command, .shift])
 					#if os(iOS)
 					Spacer()
@@ -232,10 +232,10 @@ struct CallScreen: View {
 				}
 				#endif
 				if session.video {
-					CallButton(symbol: session.cameraOn ? "video.fill" : "video.slash.fill", label: session.cameraOn ? "Turn camera off" : "Turn camera on", style: session.cameraOn ? .glass : .on) { calls.toggleCamera() }
+					CallButton(symbol: session.cameraOn ? "video.fill" : "video.slash.fill", label: session.cameraOn ? "Turn camera off" : "Turn camera on", style: session.cameraOn ? .glass : .on, keys: "⇧⌘V") { calls.toggleCamera() }
 						.keyboardShortcut("v", modifiers: [.command, .shift])
 				}
-				CallButton(symbol: session.muted ? "mic.slash.fill" : "mic.fill", label: session.muted ? "Unmute" : "Mute", style: session.muted ? .on : .glass) { calls.toggleMute() }
+				CallButton(symbol: session.muted ? "mic.slash.fill" : "mic.fill", label: session.muted ? "Unmute" : "Mute", style: session.muted ? .on : .glass, keys: "⇧⌘A") { calls.toggleMute() }
 					.keyboardShortcut("a", modifiers: [.command, .shift])
 				#if os(iOS)
 				RouteButton(routes: calls.routes)
@@ -421,7 +421,7 @@ struct Ring: View {
 			let swell = 1 + breath + level * 0.28
 			let k = size / 128
 			ZStack {
-				Circle().strokeBorder(tones.loud, lineWidth: (6 + level * 14) * k)
+				Circle().strokeBorder(tones.loud, lineWidth: (4 + level * 14) * k)
 					.frame(width: size * 1.25, height: size * 1.25).scaleEffect(swell)
 				Face(name: session.name, hash: session.avatar, group: session.group).frame(width: size, height: size)
 					.overlay(alignment: .bottomTrailing) {
@@ -594,6 +594,8 @@ struct CallButton: View {
 	var style: Style = .glass
 	var big = false
 	var small = false
+	/// The keys it answers to on the Mac, for its tooltip: "⇧⌘A".
+	var keys: String? = nil
 	let action: () -> Void
 	@State private var hover = false
 	var body: some View {
@@ -606,7 +608,7 @@ struct CallButton: View {
 			CallDisc(symbol: symbol, label: label, style: style, big: big, small: small, hover: hover && enabled)
 		}
 		.buttonStyle(Press())
-		.help(label)
+		.help(keys.map { "\(label) (\($0))" } ?? label)
 		.accessibilityLabel(label)
 		.onHover { h in withAnimation(.easeOut(duration: 0.12)) { hover = h } }
 	}
