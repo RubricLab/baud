@@ -186,6 +186,8 @@ struct HomeTab: View {
 			Staged.push(model, kind: .chat) { path = $0 }
 			// `BAUD_TAB=you` opens You on launch, for the pictures.
 			if ProcessInfo.processInfo.environment["BAUD_TAB"] == "you" { Task { try? await Task.sleep(for: .milliseconds(600)); you = true } }
+			// `BAUD_SHEET=chat|group` opens the New sheet on launch, for the pictures.
+			if let w = ProcessInfo.processInfo.environment["BAUD_SHEET"].flatMap(NewSheet.What.init(rawValue:)) { Task { try? await Task.sleep(for: .milliseconds(600)); sheet = w } }
 		}
 		.onChange(of: model.reveal) { _, id in if let id, model.conversation(id)?.kind == .chat { you = false; path = [.conv(id)]; model.reveal = nil } }
 		.sheet(item: $sheet) { NewSheet(what: $0).presentationBackground { Ground() } }
@@ -286,7 +288,7 @@ struct SpaceScreen: View {
 				ForEach(model.channels(in: space)) { c in NavigationLink(value: Route.conv(c.id)) { ChannelRow(c: c) }.buttonStyle(RowStyle()) }
 				ForEach(model.browsable(in: space)) { c in
 					Button { model.attempt { try model.core.join(space: space, channel: c.id); model.refreshAll() } } label: {
-						HStack { Text("#").foregroundStyle(tones.secondary).frame(width: Rows.smallFace - 4); Text(c.name ?? "").foregroundStyle(tones.secondary); Spacer(); Text("Join").font(Theme.smallFont.weight(.semibold)) }.frame(height: Rows.compact)
+						HStack { Text("#").foregroundStyle(tones.secondary).frame(width: Rows.smallFace - 4); Text(c.name ?? "").foregroundStyle(tones.secondary); Spacer(); Text("Join").font(Theme.smallFont.weight(.semibold)) }.frame(minHeight: Rows.compact)
 					}.buttonStyle(RowStyle())
 				}
 				SectionHeading(title: "People")

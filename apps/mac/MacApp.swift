@@ -155,6 +155,7 @@ struct Root: View {
 				switch what {
 				case "members": members.toggle()
 				case "palette": palette.toggle()
+				case let w where w.hasPrefix("sheet:"): sheet = NewSheet.What(rawValue: String(w.dropFirst(6)))
 				case let w where w.hasPrefix("marks:"):
 					Shots.render(MarksSheet().modifier(Tinted(hex: model.accentHex)).environment(model).font(Theme.font), width: 760, background: tones.surface, to: String(w.dropFirst(6)))
 				case let w where w.hasPrefix("page:"):

@@ -95,6 +95,10 @@ enum Shots {
 				model.leaveSpace(); await snap(step)
 			case "palette":
 				show("palette"); await snap(step); show("palette")
+			case "newchat", "newgroup":
+				// The New chat and New group sheets, then closed.
+				show("sheet:" + (step == "newchat" ? "chat" : "group")); await snap(step); show("sheet:")
+				try? await Task.sleep(for: .milliseconds(500))
 			case "hike":
 				// A group chat with someone who isn't my friend, its people open.
 				if let h = model.chats.first(where: { $0.name == "hike" }) { model.open(h.id) }
