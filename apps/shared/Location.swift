@@ -111,10 +111,7 @@ private struct PlaceOpen: View {
 					}
 					Spacer()
 				}
-				Button {
-					if let u = URL(string: String(format: "https://maps.apple.com/?ll=%.5f,%.5f&q=%@", pin.lat, pin.lon, pin.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")) { openURL(u) }
-				} label: { Label("Open in Maps", systemImage: "map").frame(maxWidth: .infinity) }
-				.buttonStyle(Quiet(strong: true, large: true))
+				MapsButtons(lat: pin.lat, lon: pin.lon, name: pin.name)
 			}
 			.padding(Parts.side)
 			.background(tones.surface)
@@ -285,6 +282,7 @@ struct LiveMap: View {
 	@Environment(\.dismiss) private var dismiss
 	let conv: ConversationId
 	@State private var locating = false
+	@State private var picked: String?
 	var body: some View {
 		let _ = model.placesTick
 		let theirs = model.local.places(conv)
@@ -293,9 +291,14 @@ struct LiveMap: View {
 		let pins = theirs.map { p in Pin(id: p.user, name: model.name(of: p.user), hash: model.contacts.first { $0.user == p.user }?.avatar, lat: p.lat, lon: p.lon) }
 			+ (mine != nil ? me.map { [Pin(id: "me", name: model.me.name, hash: model.me.avatar, lat: $0.coordinate.latitude, lon: $0.coordinate.longitude)] } ?? [] : [])
 		VStack(spacing: 0) {
-			HueMap(pins: pins).ignoresSafeArea(edges: .top)
+			HueMap(pins: pins, picked: $picked).ignoresSafeArea(edges: .top)
+				.overlay(alignment: .bottom) {
+					if let p = theirs.first(where: { $0.user == picked }) { PlaceCard(place: p).padding(Space.side).transition(.move(edge: .bottom).combined(with: .opacity)) }
+				}
+				.animation(Motion.standard, value: picked)
 			VStack(alignment: .leading, spacing: 0) {
 				ForEach(theirs, id: \.user) { p in
+					Button { picked = picked == p.user ? nil : p.user } label: {
 					HStack(spacing: 10) {
 						Avatar(name: model.name(of: p.user), hash: model.contacts.first { $0.user == p.user }?.avatar, size: Rows.face)
 						VStack(alignment: .leading, spacing: 1) {
@@ -305,7 +308,9 @@ struct LiveMap: View {
 						Spacer(minLength: 8)
 						if let me { Text(distance(me.distance(from: CLLocation(latitude: p.lat, longitude: p.lon)))).font(Theme.smallFont.weight(.semibold)).foregroundStyle(tones.secondary) }
 					}
-					.frame(minHeight: Rows.chat)
+					.frame(minHeight: Rows.person).contentShape(Rectangle())
+					}
+					.buttonStyle(.plain)
 				}
 				Hairline().padding(.vertical, 4)
 				if let mine {
@@ -331,8 +336,51 @@ struct LiveMap: View {
 		.presentationDragIndicator(.visible)
 		#endif
 	}
-	private func ago(_ d: Date) -> String {
-		let s = Int(Date().timeIntervalSince(d))
-		return s < 60 ? "Just now" : s < 3600 ? "\(s / 60) min ago" : "At \(clock(d))"
+	private func ago(_ d: Date) -> String { freshness(d) }
+}
+
+/// How fresh a place is: "Just now", "4 min ago", "At 2:10 PM".
+func freshness(_ d: Date) -> String {
+	let s = Int(Date().timeIntervalSince(d))
+	return s < 60 ? "Just now" : s < 3600 ? "\(s / 60) min ago" : "At \(clock(d))"
+}
+
+/// Everyone sharing where they are, on one map: a face where each is; a tap on one, their card.
+struct PlacesMap: View {
+	@Environment(AppModel.self) private var model
+	let places: [Place]
+	@State private var picked: String?
+	var body: some View {
+		let pins = places.map { p in Pin(id: p.user, name: model.name(of: p.user), hash: model.contacts.first { $0.user == p.user }?.avatar, lat: p.lat, lon: p.lon) }
+		HueMap(pins: pins, picked: $picked)
+			.overlay(alignment: .bottom) {
+				if let p = places.first(where: { $0.user == picked }) { PlaceCard(place: p).padding(8).transition(.move(edge: .bottom).combined(with: .opacity)) }
+			}
+			.animation(Motion.standard, value: picked)
+	}
+}
+
+/// One person's place: who, how fresh, how far from me, and the way there in a maps app.
+struct PlaceCard: View {
+	@Environment(AppModel.self) private var model
+	@Environment(\.tones) private var tones
+	let place: Place
+	var body: some View {
+		let name = model.name(of: place.user)
+		let me = Whereabouts.shared.lastFix
+		let far = me.map { distance($0.distance(from: CLLocation(latitude: place.lat, longitude: place.lon))) }
+		VStack(alignment: .leading, spacing: 10) {
+			HStack(spacing: Rows.gap) {
+				Avatar(name: name, hash: model.contacts.first { $0.user == place.user }?.avatar, size: Rows.personFace)
+				VStack(alignment: .leading, spacing: 2) {
+					Text(name).font(Theme.font.weight(.semibold))
+					Text([freshness(place.date), far.map { "\($0) away" }].compactMap { $0 }.joined(separator: " · ")).font(Theme.smallFont).foregroundStyle(tones.secondary)
+				}
+				Spacer(minLength: 0)
+			}
+			MapsButtons(lat: place.lat, lon: place.lon, name: name)
+		}
+		.padding(12)
+		.background(RoundedRectangle(cornerRadius: Radius.card, style: .continuous).fill(tones.card).lifted(tones, by: 2))
 	}
 }

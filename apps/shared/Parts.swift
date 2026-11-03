@@ -502,19 +502,21 @@ struct DeleteChatQuestion: ViewModifier {
 }
 
 /// A chat's menu in the list, on a right click or a long press, the same on both platforms (and in
-/// ⌘K): calling it, read or unread, muting it, and last, asked first, deleting or leaving it.
+/// ⌘K): read or unread, pinned, muted, archived, and last, asked first, deleting or leaving it.
 struct ChatMenu: View {
 	@Environment(AppModel.self) private var model
 	let c: Conversation
 	var body: some View {
-		if model.calls.callable(c.id) {
-			Button { model.calls.start(c.id, video: false) } label: { Label("Call", systemImage: "phone") }
-			Button { model.calls.start(c.id, video: true) } label: { Label("Video call", systemImage: "video") }
-		}
 		Button { model.toggleUnread(c) } label: {
 			model.isUnread(c) ? Label("Mark as read", systemImage: "checkmark.message") : Label("Mark as unread", systemImage: "message.badge")
 		}
-		MuteMenu(id: c.id)
+		if c.kind != .home {
+			if model.isPinned(c.id) { Button { model.pin(c.id, false) } label: { Label("Unpin chat", systemImage: "pin.slash") } }
+			else { Button { model.pin(c.id, true) } label: { Label("Pin chat", systemImage: "pin") }.disabled(model.pins.count >= AppModel.maxPins) }
+			MuteMenu(id: c.id)
+			if model.isArchived(c) { Button { model.archive(c, false) } label: { Label("Unarchive", systemImage: "tray.and.arrow.up") } }
+			else { Button { model.archive(c, true) } label: { Label("Archive", systemImage: "archivebox") } }
+		}
 		Divider()
 		Button(role: .destructive) { model.deleting = c } label: {
 			Label(c.kind == .home ? "Clear…" : c.isDirect ? "Delete…" : "Leave and delete…", systemImage: c.kind == .chat && !c.isDirect ? "rectangle.portrait.and.arrow.right" : "trash")
@@ -533,7 +535,7 @@ struct MuteMenu: View {
 		} else {
 			Menu {
 				ForEach(Self.choices, id: \.0) { t, s in Button(t) { model.mute(id, for: s) } }
-			} label: { Label("Mute", systemImage: "bell.slash") }
+			} label: { Label("Mute notifications", systemImage: "bell.slash") }
 		}
 	}
 }

@@ -294,6 +294,29 @@ final class AppModel {
 	private(set) var markedUnread: Set<ConversationId> = []
 	/// Chats muted, until when (`.distantFuture`: always): no notifications for their messages.
 	private(set) var mutes: [ConversationId: Date] = [:]
+	/// Pinned chats, when each was pinned (their order at the top); five at most.
+	private(set) var pins: [ConversationId: Date] = [:]
+	static let maxPins = 5
+	/// Archived chats, when each was archived.
+	private(set) var archives: [ConversationId: Date] = [:]
+	func isPinned(_ id: ConversationId) -> Bool { pins[id] != nil }
+	func pin(_ id: ConversationId, _ on: Bool) {
+		guard !on || pins.count < Self.maxPins else { return }
+		let at = Date()
+		if on { pins[id] = at } else { pins[id] = nil }
+		local.setProfile("pin." + id, on ? String(at.timeIntervalSince1970) : "0")
+	}
+	/// Archived: out of the list, kept, until a new message from someone else (a muted chat stays).
+	func isArchived(_ c: Conversation) -> Bool {
+		guard let at = archives[c.id] else { return false }
+		return c.lastAt <= at || c.lastUser == me.user || muted(c.id) != nil
+	}
+	func archive(_ c: Conversation, _ on: Bool) {
+		let at = Date()
+		if on { archives[c.id] = at } else { archives[c.id] = nil }
+		local.setProfile("archive." + c.id, on ? String(at.timeIntervalSince1970) : "0")
+		if on, selectedConversation == c.id { selectedConversation = nil }
+	}
 	func isUnread(_ c: Conversation) -> Bool { c.unread > 0 || markedUnread.contains(c.id) }
 	func muted(_ id: ConversationId) -> Date? { mutes[id].flatMap { $0 > Date() ? $0 : nil } }
 	/// Read or unread, the chat menu's and ⇧⌘U's one toggle.
@@ -313,15 +336,19 @@ final class AppModel {
 	func unmute(_ id: ConversationId) { mutes[id] = nil; local.setProfile("mute." + id, "0") }
 	/// The marks as my profile has them now (another device of mine may have changed them).
 	private func readMarks() {
-		var unread = Set<ConversationId>(), muted: [ConversationId: Date] = [:]
+		var unread = Set<ConversationId>(), muted: [ConversationId: Date] = [:], pinned: [ConversationId: Date] = [:], archived: [ConversationId: Date] = [:]
 		for c in conversations where c.kind == .chat || c.kind == .home {
 			if local.profile("unread." + c.id) == "1" { unread.insert(c.id) }
+			if let p = local.profile("pin." + c.id).flatMap(Double.init), p > 0 { pinned[c.id] = Date(timeIntervalSince1970: p) }
+			if let a = local.profile("archive." + c.id).flatMap(Double.init), a > 0 { archived[c.id] = Date(timeIntervalSince1970: a) }
 			if let m = local.profile("mute." + c.id) {
 				if m == "always" { muted[c.id] = .distantFuture } else if let t = Double(m), t > Date().timeIntervalSince1970 { muted[c.id] = Date(timeIntervalSince1970: t) }
 			}
 		}
 		if unread != markedUnread { markedUnread = unread }
 		if muted != mutes { mutes = muted }
+		if pinned != pins { pins = pinned }
+		if archived != archives { archives = archived }
 	}
 	/// My reaction on a message, given or taken back, and the reaction remembered as a recent one.
 	func toggleReaction(_ e: Event, _ key: String) {
@@ -333,6 +360,21 @@ final class AppModel {
 	/// its own editor, info or delete question.
 	enum MessageAsk: Equatable { case edit, info, delete, forward, react }
 	var messageAsk: (event: EventId, ask: MessageAsk)?
+	/// Where this device keeps baud: the store, its files, what it carries for others.
+	@ObservationIgnored private(set) var storeDir: URL?
+	/// How much that is, counted off the main thread.
+	func storeSize() async -> Int64? {
+		guard let dir = storeDir else { return nil }
+		return await Task.detached(priority: .utility) {
+			guard let e = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: [.totalFileAllocatedSizeKey, .fileSizeKey]) else { return nil }
+			var total: Int64 = 0
+			while let u = e.nextObject() as? URL {
+				let v = try? u.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileSizeKey])
+				total += Int64(v?.totalFileAllocatedSize ?? v?.fileSize ?? 0)
+			}
+			return total
+		}.value
+	}
 	/// Everyone sharing where they are with me, from any chat: the newest place of each.
 	var livePlaces: [Place] {
 		_ = placesTick
@@ -377,6 +419,7 @@ final class AppModel {
 		#endif
 		// Never the keychain for a beta copy, whatever it was built as.
 		keys = AppleKeychain(fallbackDir: dir, fileOnly: lab || beta)
+		storeDir = dir
 		// Before the first unlock after a restart (a background wake, a call coming in), neither the
 		// keychain nor the store can be read. Opening anyway made a nameless stand-in, and baud asked
 		// for a name; it waits instead, on an empty store in memory that touches neither, and the app
@@ -619,8 +662,15 @@ final class AppModel {
 
 	// MARK: reading
 
-	/// Every chat, with my chat with myself ("You") always first.
-	var chats: [Conversation] { (notes.map { [$0] } ?? []) + conversations.filter { $0.kind == .chat } }
+	/// Every chat in the list: my chat with myself ("You") first, then the pinned ones in the order
+	/// they were pinned, then the rest; archived ones aren't here (`archivedChats`).
+	var chats: [Conversation] {
+		let all = conversations.filter { $0.kind == .chat && !isArchived($0) }
+		let pinned = all.filter { pins[$0.id] != nil }.sorted { pins[$0.id]! < pins[$1.id]! }
+		return (notes.map { [$0] } ?? []) + pinned + all.filter { pins[$0.id] == nil }
+	}
+	/// Chats I archived, until someone else writes in one (unless it's muted).
+	var archivedChats: [Conversation] { conversations.filter { $0.kind == .chat && isArchived($0) } }
 	/// Friends I have no chat with yet: listed under the chats, so anyone can be written to.
 	var quiet: [Contact] {
 		let talked = Set(conversations.filter { $0.kind == .chat && $0.isDirect }.flatMap(\.members))

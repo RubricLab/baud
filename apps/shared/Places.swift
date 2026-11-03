@@ -124,6 +124,8 @@ struct HueMap: View {
 	@Environment(\.tones) private var tones
 	let pins: [Pin]
 	var interactive = true
+	/// A tap on a face picks that person (their card); nil: the faces are only pictures.
+	var picked: Binding<String?>? = nil
 	/// One person: their neighbourhood, about two kilometres across. Several: all of them.
 	private var start: MapCameraPosition {
 		guard pins.count == 1, let p = pins.first else { return .automatic }
@@ -132,7 +134,11 @@ struct HueMap: View {
 	var body: some View {
 		Map(initialPosition: start, interactionModes: interactive ? .all : []) {
 			ForEach(pins) { p in
-				Annotation(p.name, coordinate: p.coordinate, anchor: .center) { PinFace(name: p.name, hash: p.hash) }
+				Annotation(p.name, coordinate: p.coordinate, anchor: .center) {
+					PinFace(name: p.name, hash: p.hash)
+						.onTapGesture { if let picked { picked.wrappedValue = picked.wrappedValue == p.id ? nil : p.id } }
+						.accessibilityAddTraits(picked != nil ? .isButton : [])
+				}
 			}
 		}
 		.mapStyle(.standard(pointsOfInterest: .excludingAll))

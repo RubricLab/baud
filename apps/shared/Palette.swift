@@ -12,7 +12,7 @@ struct Palette: View {
 	@State private var index = 0
 	@FocusState private var focused: Bool
 
-	enum Command: Hashable { case open(ConversationId), person(UserId), hit(Hit), newChat, newGroup, newFriend, newSpace, friends, network, settings, call(ConversationId, video: Bool), details, markRead(ConversationId) }
+	enum Command: Hashable { case open(ConversationId), person(UserId), hit(Hit), newChat, newGroup, newFriend, newSpace, friends, network, settings, call(ConversationId, video: Bool), details, markRead(ConversationId), pin(ConversationId), mute(ConversationId, TimeInterval?, off: Bool), archive(ConversationId), delete(ConversationId) }
 	struct Item: Identifiable { let id: String; let title: String; var detail: String? = nil; var keys: String? = nil; var symbol: String? = nil; let command: Command }
 	struct Shelf: Identifiable { let id: String; let items: [Item] }
 
@@ -29,7 +29,14 @@ struct Palette: View {
 				here.append(Item(id: "x-video", title: "Video call \(name)", symbol: "video", command: .call(c.id, video: true)))
 			}
 			here.append(Item(id: "x-details", title: model.details ? "Hide details" : "Show details", keys: "⌘I", symbol: "info.circle", command: .details))
-			if c.unread > 0 { here.append(Item(id: "x-read", title: "Mark as read", keys: "⇧⌘U", symbol: "checkmark.message", command: .markRead(c.id))) }
+			here.append(Item(id: "x-read", title: model.isUnread(c) ? "Mark as read" : "Mark as unread", keys: "⇧⌘U", symbol: model.isUnread(c) ? "checkmark.message" : "message.badge", command: .markRead(c.id)))
+			if c.kind != .home {
+				here.append(Item(id: "x-pin", title: model.isPinned(c.id) ? "Unpin chat" : "Pin chat", symbol: model.isPinned(c.id) ? "pin.slash" : "pin", command: .pin(c.id)))
+				if model.muted(c.id) != nil { here.append(Item(id: "x-unmute", title: "Unmute", symbol: "bell", command: .mute(c.id, nil, off: true))) }
+				else { for (t, s) in MuteMenu.choices { here.append(Item(id: "x-mute-\(t)", title: "Mute \(t.lowercased())", symbol: "bell.slash", command: .mute(c.id, s, off: false))) } }
+				here.append(Item(id: "x-archive", title: model.isArchived(c) ? "Unarchive" : "Archive", symbol: "archivebox", command: .archive(c.id)))
+			}
+			here.append(Item(id: "x-delete", title: c.kind == .home ? "Clear…" : c.isDirect ? "Delete chat…" : "Leave and delete…", keys: "⌘⌫", symbol: "trash", command: .delete(c.id)))
 			out.append(Shelf(id: "This chat", items: here.filter { hit($0.title) }))
 		}
 		let chats = model.conversations.filter { (Features.spaces || c($0)) && hit(model.title($0)) }.map { c in

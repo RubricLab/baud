@@ -146,6 +146,7 @@ struct ChatRow: View {
 				HStack(alignment: .firstTextBaseline, spacing: 4) {
 					Text(model.title(c)).font(Theme.font.weight(unread || selected ? .semibold : .regular)).lineLimit(1)
 					if muted { Image(systemName: "bell.slash.fill").font(Icon.font(Icon.inline)).foregroundStyle(tones.tertiary).accessibilityLabel("Muted") }
+					if model.isPinned(c.id) { Image(systemName: "pin.fill").font(Icon.font(Icon.inline)).foregroundStyle(tones.tertiary).accessibilityLabel("Pinned") }
 					Spacer(minLength: 4)
 					// My last message's mark, small, beside its time; its words are inside the chat.
 					if c.lastUser == model.me.user, let e = c.lastEvent, c.kind != .home {

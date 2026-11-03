@@ -61,62 +61,48 @@ struct NetStatusChip: View {
 		}
 		.buttonStyle(Pill())
 		.accessibilityLabel(issue ? "\(words). Local Network is off" : words)
-		.sheet(isPresented: $open) { NetStatusSheet().presentationDetents(tall ? [.medium, .large] : [.medium]).presentationBackground(tones.surface).presentationDragIndicator(.visible) }
+		.sheet(isPresented: $open) { ConnectionSheet().presentationDetents(tall ? [.large] : [.medium, .large]).presentationBackground(tones.surface).presentationDragIndicator(.visible) }
 		// `BAUD_STATUS_SHEET=1`: the sheet open at launch, for a look at it without a click.
 		.onAppear { if ProcessInfo.processInfo.environment["BAUD_STATUS_SHEET"] == "1" { open = true } }
 	}
 }
 
-/// This device and what it is connected to, the state in a word and a sentence, and the fix.
-struct NetStatusSheet: View {
+/// Connection, compact: this device and its word, my devices and how each is reached right now (one
+/// line each), the fix when nothing reaches me, and what the router said, in one quiet line. The
+/// status chip's sheet and Settings ▸ Connection both show it.
+struct ConnectionDetails: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
-	@Environment(\.dismiss) private var dismiss
 	var body: some View {
 		let s = model.netState
 		let here = model.me.devices.first { $0.id == model.me.thisDevice }
-		ScrollView { VStack(spacing: 22) {
-			Constellation(here: here.map(DeviceShape.init) ?? (AppModel.deviceKind == .iphone ? .iphone : .macbook), state: s, links: links, carrier: carrierId)
-			VStack(spacing: 6) {
-				HStack(spacing: 7) {
-					MarkView(mark: s.mark, size: 15, color: s.lit ? tones.strong : tones.secondary)
-					Text(s.words(connecting: model.connecting)).font(Theme.headingFont)
+		VStack(alignment: .leading, spacing: Space.section) {
+			ListCard {
+				HStack(spacing: Rows.gap) {
+					DeviceGlyph(shape: here.map(DeviceShape.init) ?? (AppModel.deviceKind == .iphone ? .iphone : .macbook), lit: s != .offline, size: Rows.personFace - 4).frame(width: Rows.personFace)
+					VStack(alignment: .leading, spacing: 2) {
+						Text("This \(AppModel.thisKind)").font(Theme.font.weight(.medium))
+						Text(s.line(connecting: model.connecting)).font(Theme.smallFont).foregroundStyle(tones.secondary).fixedSize(horizontal: false, vertical: true)
+					}
+					Spacer(minLength: 8)
+					HStack(spacing: 4) {
+						MarkView(mark: s.mark, size: 12, color: s.lit ? tones.strong : tones.secondary)
+						Text(s.words(connecting: model.connecting)).font(Theme.font.weight(.semibold)).foregroundStyle(s.lit ? tones.text : tones.secondary)
+					}
 				}
-				Text(s.line(connecting: model.connecting)).font(Theme.font).foregroundStyle(tones.secondary).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+				.frame(minHeight: Rows.person)
+				.cardRow()
 			}
 			if case .notReachable = s, !model.connecting { NotReachable(compact: false) }
 			if model.localNetworkOff { LocalNetworkIssue() }
-			Text(footnote).font(Theme.smallFont).foregroundStyle(tones.secondary).multilineTextAlignment(.center)
-			#if os(macOS)
-			// No drag to close on the Mac: Done, and ⎋.
-			Button("Done") { dismiss() }.buttonStyle(Quiet()).keyboardShortcut(.cancelAction)
-			#endif
-		}
-		.padding(.horizontal, 28).padding(.top, 32).padding(.bottom, 24)
-		.frame(maxWidth: 440)
-		.frame(maxWidth: .infinity) }
-		.scrollBounceBehavior(.basedOnSize)
-		.frame(maxHeight: .infinity)
-		.background(tones.surface)
-	}
-
-	/// Who this device holds a live connection to now: my devices first, then friends, four at most.
-	private var links: [Constellation.Link] {
-		let live = model.peers.filter(\.device.online).sorted { ($0.own ? 0 : 1, $0.userName) < ($1.own ? 0 : 1, $1.userName) }
-		let shown = live.prefix(4).map { p in
-			Constellation.Link(id: p.device.id, name: p.own ? Names.device(p.device.name) : Names.first(p.userName), detail: speed(p.device.path), shape: p.own ? DeviceShape(p.device) : nil)
-		}
-		return shown + (live.count > 4 ? [Constellation.Link(id: "more", name: "\(live.count - 4) more", detail: "", shape: nil)] : [])
-	}
-	private func speed(_ p: BaudCore.Path) -> String {
-		switch p {
-		case .direct(let ms): return ms.map { "\($0) ms" } ?? "Direct"
-		case .relay: return "Relayed"
-		case .nearby: return "Nearby"
-		default: return ""
+			let others = model.me.devices.filter { $0.id != model.me.thisDevice }
+			ListCard(title: "Your other devices", footer: "A Mac at home with baud open keeps your devices reachable from anywhere, and carries for them while they're away.") {
+				ForEach(others) { d in DeviceRow(d: d, this: false).cardRow() }
+				if others.isEmpty { Text("None yet. Add one in Devices.").font(Theme.font).foregroundStyle(tones.secondary).frame(minHeight: Rows.line).cardRow() }
+			}
+			Text(footnote).font(Theme.smallFont).foregroundStyle(tones.secondary).padding(.horizontal, Rows.inset + Rows.pad)
 		}
 	}
-	private var carrierId: DeviceId? { if case .through = model.netState { return model.carrier?.device.id }; return nil }
 
 	/// What the router said and Local Network, in one quiet line.
 	private var footnote: String {
@@ -137,60 +123,18 @@ struct NetStatusSheet: View {
 	}
 }
 
-/// This device, and a fine line down to each device and friend it is connected to, with its name
-/// and how fast. Nothing connected: a dotted line ending in the state's mark.
-struct Constellation: View {
+/// The status chip's sheet: Connection, a header and its details.
+struct ConnectionSheet: View {
 	@Environment(\.tones) private var tones
-	struct Link: Identifiable { let id: String; let name: String; let detail: String; let shape: DeviceShape? }
-	let here: DeviceShape
-	let state: AppModel.NetState
-	let links: [Link]
-	let carrier: DeviceId?
-	@State private var drawn = false
-
 	var body: some View {
 		VStack(spacing: 0) {
-			DeviceGlyph(shape: here, lit: state != .offline, size: 64)
-			if links.isEmpty {
-				Rectangle().fill(tones.text.opacity(0.28)).frame(width: 1.2, height: 34)
-					.mask(VStack(spacing: 4) { ForEach(0..<6, id: \.self) { _ in Rectangle().frame(height: 3) } })
-					.padding(.top, 6)
-				MarkView(mark: state.mark, size: 20, color: tones.secondary).padding(.top, 6)
-			} else {
-				Canvas { ctx, size in
-					let n = links.count
-					for (i, l) in links.enumerated() {
-						let x = size.width * (CGFloat(i) + 0.5) / CGFloat(n)
-						var p = SwiftUI.Path()
-						p.move(to: CGPoint(x: size.width / 2, y: 0))
-						p.addCurve(to: CGPoint(x: x, y: size.height), control1: CGPoint(x: size.width / 2, y: size.height * 0.55), control2: CGPoint(x: x, y: size.height * 0.45))
-						let strong = l.id == carrier
-						ctx.stroke(p.trimmedPath(from: 0, to: drawn ? 1 : 0), with: .color(tones.strong.opacity(strong ? 0.9 : 0.45)), lineWidth: strong ? 1.6 : 1)
-					}
-				}
-				.frame(height: 40).padding(.top, 2)
-				HStack(alignment: .top, spacing: 0) {
-					ForEach(links) { l in
-						VStack(spacing: 5) {
-							Group {
-								if let shape = l.shape { DeviceGlyph(shape: shape, size: 30) }
-								else if l.id == "more" { Circle().stroke(tones.hairline).frame(width: 28, height: 28).overlay(Image(systemName: "ellipsis").font(.system(size: 11, weight: .semibold)).foregroundStyle(tones.secondary)) }
-								else { Avatar(name: l.name, size: 28) }
-							}
-							.frame(height: 32)
-							Text(l.name).font(Theme.smallFont.weight(.medium)).lineLimit(1)
-							if !l.detail.isEmpty { Text(l.detail).font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit().lineLimit(1) }
-						}
-						.frame(maxWidth: .infinity)
-					}
-				}
-				.padding(.top, 4)
-			}
+			SheetHeader(title: "Connection")
+			ScrollView { ConnectionDetails().padding(.horizontal, Space.side).padding(.vertical, Space.section) }
 		}
-		.frame(maxWidth: CGFloat(max(1, links.count)) * 104)
-		.onAppear { withAnimation(.easeOut(duration: 0.5).delay(0.1)) { drawn = true } }
-		.accessibilityElement(children: .ignore)
-		.accessibilityLabel(links.isEmpty ? "Not connected to anything" : "Connected to " + links.map(\.name).joined(separator: ", "))
+		.background(tones.surface.ignoresSafeArea())
+		#if os(macOS)
+		.frame(width: 440, height: 520)
+		#endif
 	}
 }
 

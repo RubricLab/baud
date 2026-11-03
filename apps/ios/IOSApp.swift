@@ -56,8 +56,8 @@ enum TabBadges {
 	}
 }
 
-/// Where a stack can go: a conversation, or inside a space.
-enum Route: Hashable { case conv(ConversationId), space(ConversationId) }
+/// Where a stack can go: a conversation, inside a space, the archived chats, Friends.
+enum Route: Hashable { case conv(ConversationId), space(ConversationId), archived, friends }
 
 struct IOSRoot: View {
 	@Environment(AppModel.self) private var model
@@ -131,6 +131,7 @@ struct HomeTab: View {
 	@State private var path: [Route] = []
 	@State private var query = ""
 	@State private var you = false
+	@State private var muting: Conversation?
 	var body: some View {
 		NavigationStack(path: $path) {
 			// A List, for swipe to delete; the top row and search ride as its first rows.
@@ -138,10 +139,11 @@ struct HomeTab: View {
 				Group {
 					// My face (You) at the left, compose at the right, and between them the title with this
 					// iPhone's status under it, a tap from its sheet: nothing shares the title's line.
-					HStack {
+					HStack(spacing: 0) {
 						Button { you = true } label: { Avatar(name: model.me.name, hash: model.me.avatar, size: 34).frame(width: 44, height: 44).contentShape(Rectangle()) }
 							.buttonStyle(.plain).accessibilityLabel("You")
 						Spacer()
+						IconButton(symbol: "person.2", help: "Friends", size: Icon.bar) { path.append(.friends) }
 						Menu {
 							Button { sheet = .chat } label: { Label("New chat", systemImage: "bubble.left") }
 							Button { sheet = .group } label: { Label("New group", systemImage: "person.2") }
@@ -167,19 +169,22 @@ struct HomeTab: View {
 							}.buttonStyle(RowStyle())
 						}
 					} else {
-						ForEach(model.chats) { c in
-							Button { path.append(.conv(c.id)) } label: { ChatRow(c: c) }.buttonStyle(RowStyle())
-								.contextMenu { ChatMenu(c: c) }
-								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
-									Button(c.kind == .home ? "Clear" : "Delete", role: .destructive) { model.deleting = c }
-								}
-								// Read, from the other edge, while there's something unread.
-								.swipeActions(edge: .leading, allowsFullSwipe: true) {
-									if c.unread > 0 { Button("Read") { model.markRead(c) }.tint(tones.strong) }
-								}
-						}
+						ForEach(model.chats) { c in chatRow(c) }
 						ForEach(model.quiet) { f in
 							Button { if let id = model.startChat(with: f.user) { path.append(.conv(id)) } } label: { NewChatRow(friend: f) }.buttonStyle(RowStyle())
+						}
+						if !model.archivedChats.isEmpty {
+							Button { path.append(.archived) } label: {
+								HStack(spacing: Rows.gap) {
+									Image(systemName: "archivebox").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.face)
+									Text("Archived").font(Theme.font)
+									Spacer(minLength: 4)
+									Text("\(model.archivedChats.count)").font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit()
+									Image(systemName: "chevron.right").font(Icon.font(Icon.inline)).foregroundStyle(tones.tertiary)
+								}
+								.frame(minHeight: Rows.line)
+							}
+							.buttonStyle(RowStyle())
 						}
 						if model.chats.count <= 1 && model.quiet.isEmpty {
 							Button { model.offer = .friend } label: { Label("New friend", systemImage: "plus") }.buttonStyle(Quiet(strong: true)).frame(maxWidth: .infinity).padding(.top, 40)
@@ -192,14 +197,17 @@ struct HomeTab: View {
 			// A scroll through the chats puts the search's keyboard away.
 			.scrollDismissesKeyboard(.immediately)
 			.modifier(DeleteChatQuestion())
+			.modifier(MuteQuestion(muting: $muting))
 			.background(Ground())
 			.toolbar(.hidden, for: .navigationBar)
-			.navigationDestination(for: Route.self) { r in RouteView(route: r) }
+			.navigationDestination(for: Route.self) { r in RouteView(route: r, path: $path, muting: $muting) }
+			.navigationDestination(for: PersonLink.self) { PersonPage(user: $0.user, conv: $0.conv) }
 		}
 		.onAppear {
 			Staged.push(model, kind: .chat) { path = $0 }
-			// `BAUD_TAB=you` opens You on launch, for the pictures.
+			// `BAUD_TAB=you` opens You on launch, `friends` Friends, for the pictures.
 			if ProcessInfo.processInfo.environment["BAUD_TAB"] == "you" { Task { try? await Task.sleep(for: .milliseconds(600)); you = true } }
+			if ProcessInfo.processInfo.environment["BAUD_TAB"] == "friends" { Task { try? await Task.sleep(for: .milliseconds(600)); path = [.friends] } }
 			// `BAUD_SHEET=chat|group` opens the New sheet on launch, for the pictures.
 			if let w = ProcessInfo.processInfo.environment["BAUD_SHEET"].flatMap(NewSheet.What.init(rawValue:)) { Task { try? await Task.sleep(for: .milliseconds(600)); sheet = w } }
 		}
@@ -219,7 +227,65 @@ struct HomeTab: View {
 			.presentationDetents([.large]).presentationBackground { Ground() }.presentationDragIndicator(.visible)
 		}
 	}
+	private func chatRow(_ c: Conversation) -> some View { ChatListRow(c: c, open: { path.append(.conv(c.id)) }, muting: $muting) }
 }
+
+/// A chat in the list, with its menu and its swipes: from the left, read or unread; from the right,
+/// Mute and Delete (red, asked first).
+struct ChatListRow: View {
+	@Environment(AppModel.self) private var model
+	@Environment(\.tones) private var tones
+	let c: Conversation
+	let open: () -> Void
+	@Binding var muting: Conversation?
+	var body: some View {
+		Button(action: open) { ChatRow(c: c) }.buttonStyle(RowStyle())
+			.contextMenu { ChatMenu(c: c) }
+			.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+				Button(c.kind == .home ? "Clear" : "Delete", role: .destructive) { model.deleting = c }
+				if c.kind != .home {
+					Button(model.muted(c.id) != nil ? "Unmute" : "Mute") { if model.muted(c.id) != nil { model.unmute(c.id) } else { muting = c } }.tint(tones.secondary)
+				}
+			}
+			.swipeActions(edge: .leading, allowsFullSwipe: true) {
+				Button(model.isUnread(c) ? "Read" : "Unread") { model.toggleUnread(c) }.tint(tones.strong)
+			}
+	}
+}
+
+/// How long a chat is muted, asked from a swipe.
+struct MuteQuestion: ViewModifier {
+	@Environment(AppModel.self) private var model
+	@Binding var muting: Conversation?
+	func body(content: Content) -> some View {
+		content.confirmationDialog(muting.map { "Mute \(model.title($0))?" } ?? "", isPresented: Binding(get: { muting != nil }, set: { if !$0 { muting = nil } }), titleVisibility: .visible) {
+			if let c = muting { ForEach(MuteMenu.choices, id: \.0) { t, s in Button(t) { model.mute(c.id, for: s); muting = nil } } }
+			Button("Cancel", role: .cancel) { muting = nil }
+		} message: { Text("Its messages still come in, without notifications.") }
+	}
+}
+
+/// The chats I archived; one opens as any chat does.
+struct ArchivedPage: View {
+	@Environment(AppModel.self) private var model
+	@Environment(\.tones) private var tones
+	@Binding var path: [Route]
+	@Binding var muting: Conversation?
+	var body: some View {
+		List {
+			Group {
+				ForEach(model.archivedChats) { c in ChatListRow(c: c, open: { path.append(.conv(c.id)) }, muting: $muting) }
+				if model.archivedChats.isEmpty { EmptyLine(text: "Nothing archived.") }
+			}
+			.listRowInsets(EdgeInsets()).listRowSeparator(.hidden).listRowBackground(Color.clear)
+		}
+		.listStyle(.plain).scrollContentBackground(.hidden).background(Ground())
+		.navigationTitle("Archived").navigationBarTitleDisplayMode(.inline)
+		.modifier(Bars())
+	}
+}
+
+
 
 /// Spaces: the list of spaces. Tap one to step inside.
 struct SpacesTab: View {
@@ -251,10 +317,14 @@ struct SpacesTab: View {
 
 struct RouteView: View {
 	let route: Route
+	var path: Binding<[Route]> = .constant([])
+	var muting: Binding<Conversation?> = .constant(nil)
 	var body: some View {
 		switch route {
 		case .conv(let id): ConversationScreen(conv: id)
 		case .space(let id): SpaceScreen(space: id)
+		case .archived: ArchivedPage(path: path, muting: muting)
+		case .friends: FriendsPage()
 		}
 	}
 }

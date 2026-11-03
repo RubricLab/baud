@@ -4,9 +4,12 @@
 /// newer version shows as a bar at the foot of the sidebar. One press downloads it and checks three
 /// things: the record's signature, the download's hash against the record, and that the app inside
 /// is signed by baud's Apple team. It then puts the new app in place of this one, and Restart opens
-/// it. Nothing downloads or installs before the press (peer/DESIGN.md, rule 1). Where this copy
-/// can't replace itself (a folder it may not write, a build run from Xcode), the disk image opens
-/// for the drag into Applications instead. An unsigned or wrongly signed record is never offered.
+/// it. With "Download and install updates automatically" on (the default, the person's choice in
+/// Settings ▸ Updates), the installed app does the press itself, the same three checks and the
+/// same swap, then waits: nothing ever restarts by itself. Off, nothing downloads before the press.
+/// Where this copy can't replace itself (a folder it may not write, a build run from Xcode, a beta
+/// copy), it only offers, and the press opens the disk image for the drag into Applications. An
+/// unsigned or wrongly signed record is never offered.
 import AppKit
 import CryptoKit
 import Foundation
@@ -49,6 +52,21 @@ final class Updates {
 
 	/// When the last answer came.
 	var checkedAt: Date?
+	/// Download, check and put a new version in place without a press (never restart). On unless
+	/// the person turns it off.
+	var auto: Bool = UserDefaults.standard.object(forKey: "autoUpdate") as? Bool ?? true {
+		didSet { UserDefaults.standard.set(auto, forKey: "autoUpdate"); takeIfAuto() }
+	}
+	/// Only the installed app in a folder it may write takes an update by itself: anywhere else the
+	/// press would open a disk image, and that waits for a person.
+	nonisolated static var replacesItself: Bool {
+		Bundle.main.bundleIdentifier == "sh.rubric.baud.mac" && FileManager.default.isWritableFile(atPath: Bundle.main.bundleURL.deletingLastPathComponent().path)
+	}
+	private func takeIfAuto() {
+		guard auto, Self.replacesItself, case .available = state else { return }
+		Measure.log("update: taking it by itself")
+		install()
+	}
 	/// At most a few words, for the app card: "Up to date · 3:41 PM", "0.2.1 available", "Checking…".
 	var word: String {
 		switch state {
@@ -57,7 +75,7 @@ final class Updates {
 		case .latest: return "Up to date" + (checkedAt.map { " · " + clock($0) } ?? "")
 		case .available(let v): return "\(v) available"
 		case .downloading: return "Updating…"
-		case .ready(let v): return "\(v) ready: restart to finish"
+		case .ready(let v): return "\(v) ready: restart to update"
 		case .failed: return "Couldn't update" + (checkedAt.map { " · " + clock($0) } ?? "")
 		}
 	}
@@ -101,6 +119,7 @@ final class Updates {
 					return
 				}
 				release = r; state = .available(r.version)
+				takeIfAuto()
 			case .failure(let e): state = .failed("Couldn't reach baud's site to check."); Measure.log("update check failed: \(e)")
 			}
 		}
@@ -231,7 +250,7 @@ struct UpdateBar: View {
 		switch updates.state {
 		case .available: return "A new version is out"
 		case .downloading: return "Updating…"
-		case .ready: return "Ready: restart to finish"
+		case .ready: return "Restart to update"
 		default: return ""
 		}
 	}

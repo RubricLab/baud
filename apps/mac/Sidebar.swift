@@ -18,9 +18,11 @@ struct Sidebar: View {
 	var body: some View {
 		VStack(spacing: 0) {
 			// The band the traffic lights sit in: compose at its end, the rest drags the window.
-			HStack(spacing: 8) {
+			HStack(spacing: 4) {
 				Color.clear.frame(width: 70)
 				if Features.spaces { ModeSwitch() } else { Spacer() }
+				IconButton(symbol: "person.2", help: "Friends (⇧⌘1)", size: Icon.bar) { model.showFriends() }
+					.background(Circle().fill(model.pane == .friends ? tones.pressed : .clear))
 				Compose(sheet: $sheet)
 			}
 			.padding(.trailing, Rows.inset)
@@ -137,24 +139,49 @@ struct ModeSwitch: View {
 	}
 }
 
-/// Home: chats, friends, my devices.
+/// Home: chats (pinned first), friends not written to yet, and at the foot the archived chats,
+/// a row that opens them in place.
 struct HomeList: View {
 	@Environment(AppModel.self) private var model
+	@Environment(\.tones) private var tones
 	@Environment(\.openWindow) private var openWindow
 	@Binding var sheet: NewSheet.What?
 	let focused: Bool
+	@State private var archive = false
 	var body: some View {
-		ForEach(model.chats) { c in
-			let on = model.selectedConversation == c.id
-			Button { model.open(c.id) } label: { ChatRow(c: c, selected: on) }
-				.buttonStyle(RowStyle(selected: on, focused: focused)).id(c.id)
-				.contextMenu { ChatMenu(c: c) }
+		if archive {
+			Button { archive = false } label: {
+				HStack(spacing: 4) { Image(systemName: "chevron.left").font(Icon.font(Icon.inline)); Text("Archived").font(Theme.font.weight(.semibold)) }
+					.foregroundStyle(tones.text).frame(minHeight: Rows.compact)
+			}
+			.buttonStyle(RowStyle()).help("Back to your chats")
+			ForEach(model.archivedChats) { c in row(c) }
+			if model.archivedChats.isEmpty { EmptyLine(text: "Nothing archived.") }
+		} else {
+			ForEach(model.chats) { c in row(c) }
+			ForEach(model.quiet) { f in
+				Button { if let id = model.startChat(with: f.user) { model.open(id) } } label: { NewChatRow(friend: f) }
+					.buttonStyle(RowStyle(focused: focused)).id(f.user)
+			}
+			if !model.archivedChats.isEmpty {
+				Button { archive = true } label: {
+					HStack(spacing: Rows.gap) {
+						Image(systemName: "archivebox").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.face)
+						Text("Archived").font(Theme.font)
+						Spacer(minLength: 4)
+						Text("\(model.archivedChats.count)").font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit()
+					}
+					.frame(minHeight: Rows.line)
+				}
+				.buttonStyle(RowStyle()).padding(.top, 4)
+			}
 		}
-		ForEach(model.quiet) { f in
-			Button { if let id = model.startChat(with: f.user) { model.open(id) } } label: { NewChatRow(friend: f) }
-				.buttonStyle(RowStyle(focused: focused)).id(f.user)
-		}
-
+	}
+	private func row(_ c: Conversation) -> some View {
+		let on = model.selectedConversation == c.id
+		return Button { model.open(c.id) } label: { ChatRow(c: c, selected: on) }
+			.buttonStyle(RowStyle(selected: on, focused: focused)).id(c.id)
+			.contextMenu { ChatMenu(c: c) }
 	}
 }
 
@@ -250,18 +277,21 @@ struct SpaceList: View {
 /// far enough apart that neither is hit for the other.
 struct YouRow: View {
 	@Environment(AppModel.self) private var model
+	@Environment(Updates.self) private var updates
 	@Environment(\.tones) private var tones
-	@Environment(\.openWindow) private var openWindow
 	var body: some View {
+		let on = model.pane == .settings
 		HStack(spacing: 8) {
-			Button { openWindow(id: "settings") } label: {
+			Button { if on { model.pane = nil } else { model.showSettings(updates.offering ? "updates" : nil) } } label: {
 				HStack(spacing: 8) {
 					Avatar(name: model.me.name, hash: model.me.avatar, size: 22)
-					Text(model.me.name).font(Theme.font.weight(.semibold)).foregroundStyle(tones.text).lineLimit(1)
+					Text(model.me.name).font(Theme.font.weight(.semibold)).foregroundStyle(on ? tones.onLoud : tones.text).lineLimit(1)
+					// An update waiting: a dot here too, not only in Settings.
+					if updates.offering { Circle().fill(on ? tones.onLoud : tones.strong).frame(width: 7, height: 7).accessibilityLabel("Update waiting") }
 				}
 				.padding(.leading, 3).padding(.trailing, 8).frame(height: 28)
 			}
-			.buttonStyle(Pill()).help("Settings (⌘,)").accessibilityLabel("Settings")
+			.buttonStyle(Pill(on: on)).help("Settings (⌘,)").accessibilityLabel("Settings")
 			Spacer(minLength: 24)
 			NetStatusChip().fixedSize()
 		}

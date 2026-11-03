@@ -1,6 +1,8 @@
-/// You: me (face, name, colour), my devices, my friends, the network, the app, and starting over.
-/// A picture, a name and a button per thing; no sentences. The same page is the Mac's Settings
-/// window and the iPhone's You tab.
+/// Settings, in sections: You (face, name, colour), Devices, Notifications, Calls, Connection,
+/// Updates and Data (with starting over, last). On the Mac they are the main window's pane, a list
+/// of sections beside the one open; on the iPhone, You lists them and each opens as a page.
+/// Friends aren't here: they have a page of their own, nowhere near adding a device.
+import AVFoundation
 import BaudCore
 import PhotosUI
 import SwiftUI
@@ -11,45 +13,226 @@ import ServiceManagement
 import UIKit
 #endif
 
+enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
+	case you, devices, notifications, calls, connection, updates, data
+	var id: String { rawValue }
+	var title: String {
+		switch self {
+		case .you: "You"
+		case .devices: "Devices"
+		case .notifications: "Notifications"
+		case .calls: "Calls"
+		case .connection: "Connection"
+		case .updates: "Updates"
+		case .data: "Data"
+		}
+	}
+	var symbol: String {
+		switch self {
+		case .you: "person.crop.circle"
+		case .devices: "laptopcomputer.and.iphone"
+		case .notifications: "bell"
+		case .calls: "phone"
+		case .connection: "point.3.connected.trianglepath.dotted"
+		case .updates: "arrow.down.circle"
+		case .data: "internaldrive"
+		}
+	}
+	/// A section asked for by an older name (a menu, a link, `BAUD_SECTION`).
+	init?(asked: String) {
+		switch asked {
+		case "you", "colour": self = .you
+		case "devices": self = .devices
+		case "notifications": self = .notifications
+		case "calls": self = .calls
+		case "network", "connection": self = .connection
+		case "app", "updates": self = .updates
+		case "data": self = .data
+		default: return nil
+		}
+	}
+}
+
 struct SettingsView: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
 	#if os(macOS)
 	@Environment(Updates.self) private var updates
+	@State private var section: SettingsSection = .you
 	#endif
 
 	var body: some View {
-		ScrollViewReader { proxy in
-			ScrollView {
-				SettingsPage().onDisappear { model.settleIcon() }
+		#if os(macOS)
+		HStack(spacing: 0) {
+			SettingsList(selected: $section).frame(width: 220).background(tones.raised)
+			Rectangle().fill(tones.hairline).frame(width: 1)
+			VStack(spacing: 0) {
+				SheetHeader(title: section.title, close: { model.pane = nil }, help: "Back")
+				ScrollView {
+					SectionContent(section: section)
+						.padding(.horizontal, Settings.side).padding(.vertical, Space.section)
+						.frame(maxWidth: 640, alignment: .leading).frame(maxWidth: .infinity)
+				}
 			}
-			.onAppear { if let s = model.settingsSection { proxy.scrollTo(s, anchor: .top); model.settingsSection = nil } }
-			.onChange(of: model.settingsSection) { _, s in if let s { withAnimation { proxy.scrollTo(s, anchor: .top) }; model.settingsSection = nil } }
+		}
+		.background(tones.surface)
+		.onAppear { take(model.settingsSection); updates.check(quiet: true) }
+		.onChange(of: model.settingsSection) { _, s in take(s) }
+		#else
+		ScrollView {
+			VStack(alignment: .leading, spacing: Space.section) {
+				ListCard {
+					NavigationLink(value: SettingsSection.you) {
+						HStack(spacing: Rows.gap) {
+							Avatar(name: model.me.name, hash: model.me.avatar, size: 56)
+							VStack(alignment: .leading, spacing: 2) {
+								Text(model.me.name).font(Theme.titleFont).lineLimit(1)
+								Text("Face, name and colour").font(Theme.smallFont).foregroundStyle(tones.secondary)
+							}
+							Spacer(minLength: 8)
+							Image(systemName: "chevron.right").font(Icon.font(Icon.inline)).foregroundStyle(tones.tertiary)
+						}
+						.frame(minHeight: 72)
+					}
+					.buttonStyle(RowStyle())
+				}
+				ListCard { ForEach([SettingsSection.devices, .notifications, .calls, .connection]) { row($0) } }
+				ListCard { ForEach([SettingsSection.updates, .data]) { row($0) } }
+			}
+			.padding(.horizontal, Settings.side).padding(.vertical, Space.section)
 		}
 		.background(tones.surface.ignoresSafeArea())
-		#if os(macOS)
-		.background(WindowTint(color: tones.surface, dark: tones.chromeDark))
-		.onAppear { updates.check(quiet: true) }
+		.navigationDestination(for: SettingsSection.self) { SettingsPageOf(section: $0) }
 		#endif
+	}
+
+	#if os(macOS)
+	private func take(_ asked: String?) {
+		guard let asked else { return }
+		if let s = SettingsSection(asked: asked) { section = s }
+		model.settingsSection = nil
+	}
+	#else
+	private func row(_ s: SettingsSection) -> some View {
+		NavigationLink(value: s) {
+			HStack(spacing: Rows.gap) {
+				Image(systemName: s.symbol).font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
+				Text(s.title).font(Theme.font.weight(.medium))
+				Spacer(minLength: 8)
+				SectionValue(section: s)
+				Image(systemName: "chevron.right").font(Icon.font(Icon.inline)).foregroundStyle(tones.tertiary)
+			}
+			.frame(minHeight: Rows.line)
+		}
+		.buttonStyle(RowStyle())
+	}
+	#endif
+}
+
+/// The quiet value beside a section's name: how many devices, the connection's word.
+struct SectionValue: View {
+	@Environment(AppModel.self) private var model
+	@Environment(\.tones) private var tones
+	let section: SettingsSection
+	var body: some View {
+		switch section {
+		case .devices: Text("\(model.me.devices.count)").font(Theme.font).foregroundStyle(tones.secondary)
+		case .connection: Text(model.netState.words(connecting: model.connecting)).font(Theme.font).foregroundStyle(tones.secondary).lineLimit(1)
+		default: EmptyView()
+		}
 	}
 }
 
-/// Everything You shows, top to bottom, as titled cards of rows; the window scrolls it, the pictures
-/// render it whole.
-struct SettingsPage: View {
+#if os(macOS)
+/// The Mac's list of sections: me at the top (my face, my name), then each section, the open one lit.
+struct SettingsList: View {
+	@Environment(AppModel.self) private var model
+	@Environment(Updates.self) private var updates
+	@Environment(\.tones) private var tones
+	@Binding var selected: SettingsSection
+	var body: some View {
+		VStack(alignment: .leading, spacing: 2) {
+			Button { selected = .you } label: {
+				HStack(spacing: Rows.gap) {
+					Avatar(name: model.me.name, hash: model.me.avatar, size: 32)
+					VStack(alignment: .leading, spacing: 1) {
+						Text(model.me.name).font(Theme.font.weight(.semibold)).lineLimit(1)
+						Text("Face, name and colour").font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1)
+					}
+				}
+				.frame(minHeight: 48)
+			}
+			.buttonStyle(RowStyle(selected: selected == .you))
+			.padding(.bottom, 6)
+			ForEach(SettingsSection.allCases.dropFirst()) { s in
+				Button { selected = s } label: {
+					HStack(spacing: Rows.gap) {
+						Image(systemName: s.symbol).font(Icon.font(Icon.row)).frame(width: 20)
+						Text(s.title).font(Theme.font)
+						Spacer(minLength: 4)
+						// An update waiting shows here, as it does at the sidebar's foot.
+						if s == .updates, updates.offering { Circle().fill(tones.strong).frame(width: 8, height: 8).accessibilityLabel("Update waiting") }
+					}
+					.frame(minHeight: Rows.line)
+				}
+				.buttonStyle(RowStyle(selected: selected == s))
+			}
+			Spacer()
+		}
+		.padding(.top, 12)
+	}
+}
+#else
+/// One section, as a page of its own (the iPhone).
+struct SettingsPageOf: View {
+	@Environment(\.tones) private var tones
+	let section: SettingsSection
+	var body: some View {
+		ScrollView {
+			SectionContent(section: section).padding(.horizontal, Settings.side).padding(.vertical, Space.section)
+		}
+		.background(tones.surface.ignoresSafeArea())
+		.navigationTitle(section.title).navigationBarTitleDisplayMode(.inline)
+		.modifier(Bars())
+	}
+}
+#endif
+
+/// What a section holds.
+struct SectionContent: View {
+	let section: SettingsSection
 	var body: some View {
 		VStack(alignment: .leading, spacing: Space.section) {
-			MeCard().id("you")
-			NotifyCard()
-			DevicesSection().id("devices")
-			FriendsSection().id("friends")
-			NetworkSection().id("network")
-			AppCard().id("app")
-			StartOver()
+			switch section {
+			case .you: MeCard()
+			case .devices: DevicesSection()
+			case .notifications: NotifyCard()
+			case .calls: CallsCard()
+			case .connection:
+				ConnectionDetails()
+				#if os(macOS)
+				AtLoginCard()
+				#endif
+			case .updates: UpdatesCard()
+			case .data: DataCard()
+			}
 		}
-		.padding(.horizontal, Settings.side).padding(.top, Settings.top).padding(.bottom, 32)
-		.frame(maxWidth: 720, alignment: .leading)
-		.frame(maxWidth: .infinity)
+	}
+}
+
+/// Every section, one under the other: the offscreen picture of Settings whole.
+struct SettingsPage: View {
+	var body: some View {
+		VStack(alignment: .leading, spacing: Space.section * 1.5) {
+			ForEach(SettingsSection.allCases) { s in
+				VStack(alignment: .leading, spacing: Space.title) {
+					Text(s.title).font(Theme.headingFont)
+					SectionContent(section: s)
+				}
+			}
+		}
+		.padding(.horizontal, Settings.side).padding(.vertical, Space.section)
+		.frame(maxWidth: 640, alignment: .leading)
 	}
 }
 
@@ -61,7 +244,7 @@ enum Settings {
 	#endif
 }
 
-/// A titled card that holds a picture rather than rows (the network): padded all round.
+/// A titled card that holds a picture rather than rows: padded all round.
 struct Card<Content: View>: View {
 	@Environment(\.tones) private var tones
 	let title: String
@@ -77,39 +260,49 @@ struct Card<Content: View>: View {
 	}
 }
 
+/// A row of a settings card: its glyph, its words, and on the right what it is now and what to do.
+struct SettingRow<Trailing: View>: View {
+	@Environment(\.tones) private var tones
+	let symbol: String
+	let title: String
+	var detail: String? = nil
+	@ViewBuilder var trailing: Trailing
+	var body: some View {
+		HStack(spacing: Rows.gap) {
+			Image(systemName: symbol).font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
+			VStack(alignment: .leading, spacing: 2) {
+				Text(title).font(Theme.font.weight(.medium))
+				if let detail { Text(detail).font(Theme.smallFont).foregroundStyle(tones.secondary).fixedSize(horizontal: false, vertical: true) }
+			}
+			Spacer(minLength: 8)
+			trailing
+		}
+		.frame(minHeight: detail == nil ? Rows.line : Rows.person)
+		.cardRow()
+	}
+}
+
 // MARK: notifications
 
-/// What keeps baud from saying a message came: shown only then, a line and a button each.
+/// Whether baud may say a message came (and, on the iPhone, wake for it), and the way to turn it on.
 struct NotifyCard: View {
 	@Environment(\.tones) private var tones
 	@Environment(\.scenePhase) private var phase
 	@State private var off = false
 	@State private var noRefresh = false
 	var body: some View {
-		Group {
-			if off || noRefresh {
-				ListCard(title: "Notifications") {
-					VStack(alignment: .leading, spacing: 0) {
-						if off { row("bell.slash", "Notifications are off", Notifier.settings) }
-						#if os(iOS)
-						if noRefresh { row("arrow.clockwise", "Background App Refresh is off", URL(string: UIApplication.openSettingsURLString)) }
-						#endif
-					}
-					.cardRow()
-				}
+		ListCard(footer: "A muted chat comes in quietly: mute one from its menu or its page.") {
+			SettingRow(symbol: off ? "bell.slash" : "bell", title: "Notifications", detail: off ? "Off: baud can't tell you a message came" : "On") {
+				if off, let url = Notifier.settings { Link("Turn on", destination: url).buttonStyle(Quiet(strong: true)) }
 			}
+			#if os(iOS)
+			SettingRow(symbol: "arrow.clockwise", title: "Background App Refresh", detail: noRefresh ? "Off: messages wait until you open baud" : "On") {
+				if noRefresh, let url = URL(string: UIApplication.openSettingsURLString) { Link("Turn on", destination: url).buttonStyle(Quiet(strong: true)) }
+			}
+			#endif
 		}
 		.task { await check() }
 		.onChange(of: phase) { _, p in if p == .active { Task { await check() } } }
-	}
-	private func row(_ symbol: String, _ text: String, _ url: URL?) -> some View {
-		HStack(spacing: Rows.gap) {
-			Image(systemName: symbol).font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
-			Text(text).font(Theme.font.weight(.medium))
-			Spacer(minLength: 8)
-			if let url { Link("Turn on", destination: url).buttonStyle(Quiet(strong: true)) }
-		}
-		.frame(minHeight: Rows.line)
 	}
 	private func check() async {
 		off = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .denied
@@ -119,8 +312,136 @@ struct NotifyCard: View {
 	}
 }
 
+// MARK: calls
+
+/// The microphone and the camera: whether baud may use them, and the way to the switch when not.
+struct CallsCard: View {
+	@Environment(\.openURL) private var openURL
+	@Environment(\.scenePhase) private var phase
+	@State private var tick = 0
+	var body: some View {
+		let _ = tick
+		ListCard(footer: "baud uses them only during a call you place or answer.") {
+			row(.audio, symbol: "mic", title: "Microphone")
+			row(.video, symbol: "video", title: "Camera")
+		}
+		.onChange(of: phase) { _, _ in tick &+= 1 }
+	}
+	private func row(_ media: AVMediaType, symbol: String, title: String) -> some View {
+		let status = AVCaptureDevice.authorizationStatus(for: media)
+		let words: String = switch status {
+		case .authorized: "Allowed"
+		case .notDetermined: "Asked on your first call"
+		default: "Not allowed"
+		}
+		return SettingRow(symbol: symbol, title: title, detail: words) {
+			if status == .denied || status == .restricted { Button("Open Settings") { open(media) }.buttonStyle(Quiet(strong: true)) }
+		}
+	}
+	private func open(_ media: AVMediaType) {
+		#if os(iOS)
+		if let u = URL(string: UIApplication.openSettingsURLString) { openURL(u) }
+		#else
+		if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(media == .audio ? "Privacy_Microphone" : "Privacy_Camera")") { openURL(u) }
+		#endif
+	}
+}
+
+// MARK: updates
+
+/// This version, where the next one stands, and whether baud takes it by itself.
+struct UpdatesCard: View {
+	@Environment(\.tones) private var tones
+	#if os(macOS)
+	@Environment(Updates.self) private var updates
+	#endif
+	var body: some View {
+		let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+		VStack(alignment: .leading, spacing: Space.section) {
+			ListCard {
+				HStack(spacing: Rows.gap) {
+					BaudTile(side: Rows.personFace).frame(width: Rows.personFace)
+					VStack(alignment: .leading, spacing: 2) {
+						Text("baud \(v)").font(Theme.font.weight(.medium))
+						#if os(macOS)
+						Text(updates.word).font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit()
+						#else
+						Text("From TestFlight").font(Theme.smallFont).foregroundStyle(tones.secondary)
+						#endif
+					}
+					Spacer(minLength: 8)
+					#if os(macOS)
+					switch updates.state {
+					case .available: Button("Update") { updates.install() }.buttonStyle(Quiet(strong: true))
+					case .downloading: Button("Updating…") {}.buttonStyle(Quiet()).disabled(true)
+					case .ready: Button("Restart") { updates.restart() }.buttonStyle(Quiet(strong: true))
+					default: Button("Check") { updates.check(quiet: false) }.buttonStyle(Quiet()).disabled(updates.state == .checking)
+					}
+					#endif
+				}
+				.frame(minHeight: Rows.person)
+				.cardRow()
+			}
+			#if os(macOS)
+			ListCard(footer: "When there's a new baud, it's downloaded, checked against baud's signature and put in place by itself. Nothing restarts until you say so.") {
+				HStack(spacing: Rows.gap) {
+					Image(systemName: "arrow.down.circle").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
+					Text("Download and install updates automatically").font(Theme.font.weight(.medium))
+					Spacer(minLength: 8)
+					Toggle("Download and install updates automatically", isOn: Binding(get: { updates.auto }, set: { updates.auto = $0 })).toggleStyle(.switch).labelsHidden()
+				}
+				.frame(minHeight: Rows.line)
+				.cardRow()
+			}
+			#endif
+		}
+	}
+}
+
+#if os(macOS)
+/// A Mac that's on carries messages for your phone and your friends: open at login.
+struct AtLoginCard: View {
+	@Environment(\.tones) private var tones
+	@State private var atLogin = SMAppService.mainApp.status == .enabled
+	var body: some View {
+		ListCard(footer: "A Mac that's on carries messages for your phone and your friends while they're away.") {
+			HStack(spacing: Rows.gap) {
+				Image(systemName: "power").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
+				Text("Open at login").font(Theme.font.weight(.medium))
+				Spacer(minLength: 8)
+				Toggle("Open at login", isOn: $atLogin).toggleStyle(.switch).labelsHidden()
+			}
+			.frame(minHeight: Rows.line)
+			.cardRow()
+		}
+		.onChange(of: atLogin) { _, on in LoginItem.set(on); atLogin = SMAppService.mainApp.status == .enabled }
+	}
+}
+#endif
+
+// MARK: data
+
+/// What baud keeps on this device, and last, on its own, starting over.
+struct DataCard: View {
+	@Environment(AppModel.self) private var model
+	@Environment(\.tones) private var tones
+	@State private var size: Int64?
+	var body: some View {
+		VStack(alignment: .leading, spacing: Space.section * 2) {
+			ListCard(footer: "Your chats, photos and files, and what this \(AppModel.thisKind) carries for others while they're away.") {
+				SettingRow(symbol: "internaldrive", title: "Stored on this \(AppModel.thisKind)") {
+					Text(size.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? "…").font(Theme.font).foregroundStyle(tones.secondary).monospacedDigit()
+				}
+			}
+			StartOver()
+		}
+		.task { size = await model.storeSize() }
+	}
+}
+
 // MARK: me
 
+/// Me: my face (with its camera), my name (a tap renames), and the colour the whole app wears.
 struct MeCard: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
@@ -128,6 +449,12 @@ struct MeCard: View {
 	@State private var picking = false
 	@State private var photo: PhotosPickerItem?
 	@State private var renaming = false
+	/// Any colour: the hue and lightness strips, open under the swatches.
+	#if DEBUG
+	@State private var custom = ProcessInfo.processInfo.environment["BAUD_COLOUR_OPEN"] == "1"
+	#else
+	@State private var custom = false
+	#endif
 	@FocusState private var editing: Bool
 	var body: some View {
 		VStack(alignment: .leading, spacing: 16) {
@@ -149,11 +476,13 @@ struct MeCard: View {
 					}
 				}
 			}
-			Swatches()
+			Swatches(custom: $custom)
+			if custom { ColourStrips().transition(.opacity) }
 		}
 		.padding(Space.side)
 		.frame(maxWidth: .infinity, alignment: .leading)
 		.glass(corner: Radius.card)
+		.animation(Motion.standard, value: custom)
 		.onChange(of: editing) { _, e in if !e, renaming { if name != model.me.name, !name.isEmpty { model.setName(name) }; renaming = false } }
 		.onChange(of: photo) { _, item in Task { await model.setPhoto(item) } }
 		.fileImporter(isPresented: $picking, allowedContentTypes: [.image]) { r in if case .success(let url) = r { _ = url.startAccessingSecurityScopedResource(); model.attempt { try model.core.setAvatar(url) }; model.refreshAll() } }
@@ -176,76 +505,112 @@ struct PhotoButton: View {
 	}
 }
 
-/// The colour: no colour, eight swatches, any colour. The whole app is downstream of it.
+/// The colour: no colour (white, or black), eight swatches, and any colour (the strips, here).
 struct Swatches: View {
-	@Environment(\.rendering) private var rendering
 	@Environment(\.tones) private var tones
 	@Environment(AppModel.self) private var model
-	/// Here, not in Dots: on a narrow screen Dots is read for its two rows, never put on screen
-	/// itself, and state of its own would go nowhere.
-	@State private var picking = false
+	@Binding var custom: Bool
 	var body: some View {
 		#if os(macOS)
-		HStack(spacing: 8) { dots }
+		HStack(spacing: 8) { prefix; suffix }
 		#else
-		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 6), alignment: .leading, spacing: 8) { dots.prefix; dots.suffix }
+		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 6), alignment: .leading, spacing: 8) { prefix; suffix }
 		#endif
 	}
-	private var dots: Dots { Dots(model: model, tones: tones, rendering: rendering, picking: $picking) }
-	struct Dots: View {
-		let model: AppModel
-		let tones: Tones
-		let rendering: Bool
-		@Binding var picking: Bool
-		var body: some View { prefix; suffix }
-		@ViewBuilder var prefix: some View {
-			// No colour: white (the plain ramp, light or dark as the system is) or black (black in both).
-			swatch(nil, fill: AnyShapeStyle(Color.white), name: "White")
-			swatch(Accent.black, fill: AnyShapeStyle(Color.black), name: "Black")
-			ForEach(Accent.swatches.prefix(4), id: \.hex) { s in swatch(s.hex, fill: AnyShapeStyle(Accent.color(s.hex)!), name: s.name) }
-		}
-		@ViewBuilder var suffix: some View {
-			ForEach(Accent.swatches.suffix(4), id: \.hex) { s in swatch(s.hex, fill: AnyShapeStyle(Accent.color(s.hex)!), name: s.name) }
-			// Any colour: a rainbow circle the size of the others, a button that opens the system's
-			// colour picker (a sheet on the iPhone, the colour panel on the Mac). The picker's own
-			// well, hidden over the circle, took no clicks on the Mac and did nothing on the iPhone.
-			let custom = model.accentHex != nil && model.accentHex != Accent.black && !Accent.swatches.contains { $0.hex == model.accentHex }
-			let rainbow = Circle().fill(AngularGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple, .red], center: .center)).frame(width: 26, height: 26)
+	@ViewBuilder private var prefix: some View {
+		swatch(nil, fill: AnyShapeStyle(Color.white), name: "White")
+		swatch(Accent.black, fill: AnyShapeStyle(Color.black), name: "Black")
+		ForEach(Accent.swatches.prefix(4), id: \.hex) { s in swatch(s.hex, fill: AnyShapeStyle(Accent.color(s.hex)!), name: s.name) }
+	}
+	@ViewBuilder private var suffix: some View {
+		ForEach(Accent.swatches.suffix(4), id: \.hex) { s in swatch(s.hex, fill: AnyShapeStyle(Accent.color(s.hex)!), name: s.name) }
+		// Any colour: the rainbow opens the strips under the row (no sheet, no panel over the app).
+		let mine = model.accentHex != nil && model.accentHex != Accent.black && !Accent.swatches.contains { $0.hex == model.accentHex }
+		Button { custom.toggle() } label: {
+			Circle().fill(AngularGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple, .red], center: .center)).frame(width: 26, height: 26)
 				.overlay(Circle().strokeBorder(tones.hairline))
-				.overlay(Circle().stroke(tones.text, lineWidth: custom ? 2 : 0).padding(-4))
-			#if os(macOS)
-			Button { ColourPanel.shared.open(model.chosen) { model.accentHex = $0 } } label: {
-				rainbow.frame(width: 36, height: 36).contentShape(Circle())
-			}
-			.buttonStyle(.plain).accessibilityLabel("Any colour")
-			#else
-			Button { picking = true } label: { rainbow.frame(width: 36, height: 36).contentShape(Circle()) }
-				.buttonStyle(.plain).accessibilityLabel("Any colour")
-				.sheet(isPresented: $picking) {
-					ColourSheet(start: model.chosen) { model.accentHex = $0 }
-						.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
-				}
-			#endif
+				.overlay(Circle().stroke(tones.text, lineWidth: mine || custom ? 2 : 0).padding(-4))
+				.frame(width: 36, height: 36).contentShape(Circle())
 		}
-		private func swatch(_ hex: String?, fill: AnyShapeStyle, name: String) -> some View {
-			Button { model.accentHex = hex } label: {
-				Circle().fill(fill).frame(width: 26, height: 26)
-					.overlay(Circle().strokeBorder(tones.hairline))
-					.overlay(Circle().stroke(tones.text, lineWidth: model.accentHex == hex ? 2 : 0).padding(-4))
-					.frame(width: 36, height: 36).contentShape(Circle())
-			}.buttonStyle(.plain).accessibilityLabel(name).accessibilityAddTraits(model.accentHex == hex ? .isSelected : [])
+		.buttonStyle(.plain).accessibilityLabel("Any colour").accessibilityAddTraits(custom ? .isSelected : [])
+	}
+	private func swatch(_ hex: String?, fill: AnyShapeStyle, name: String) -> some View {
+		Button { model.accentHex = hex; custom = false } label: {
+			Circle().fill(fill).frame(width: 26, height: 26)
+				.overlay(Circle().strokeBorder(tones.hairline))
+				.overlay(Circle().stroke(tones.text, lineWidth: model.accentHex == hex && !custom ? 2 : 0).padding(-4))
+				.frame(width: 36, height: 36).contentShape(Circle())
+		}.buttonStyle(.plain).accessibilityLabel(name).accessibilityAddTraits(model.accentHex == hex ? .isSelected : [])
+	}
+}
+
+/// Any colour, in place: a hue strip and a lightness strip. The app wears the colour as the finger
+/// moves; it's kept (and goes to my other devices, and to the icon) when the finger lifts.
+struct ColourStrips: View {
+	@Environment(AppModel.self) private var model
+	@Environment(\.tones) private var tones
+	@State private var hue: Double = 0.6
+	@State private var light: Double = 0.62
+	@State private var started = false
+	static let chroma = 0.17
+	var body: some View {
+		VStack(alignment: .leading, spacing: 14) {
+			strip("Hue", value: $hue, colours: (0...12).map { OKLCH.color(l: 0.68, c: Self.chroma, h: Double($0) / 12 * 2 * .pi) })
+			strip("Lightness", value: $light, colours: (0...6).map { OKLCH.color(l: 0.3 + Double($0) / 6 * 0.6, c: Self.chroma, h: hue * 2 * .pi) })
+		}
+		.onAppear {
+			guard !started else { return }
+			started = true
+			if let hex = model.accentHex, let lch = OKLCH.parse(hex), lch.c > 0.03 {
+				hue = (lch.h < 0 ? lch.h + 2 * .pi : lch.h) / (2 * .pi)
+				light = min(1, max(0, (lch.l - 0.3) / 0.6))
+			}
+		}
+	}
+	private var hex: String { Accent.hex(OKLCH.color(l: 0.3 + light * 0.6, c: Self.chroma, h: hue * 2 * .pi)) }
+
+	private func strip(_ title: String, value: Binding<Double>, colours: [Color]) -> some View {
+		VStack(alignment: .leading, spacing: 6) {
+			Text(title).font(Theme.smallFont.weight(.semibold)).foregroundStyle(tones.secondary)
+			GeometryReader { g in
+				let w = g.size.width
+				ZStack(alignment: .leading) {
+					Capsule().fill(LinearGradient(colors: colours, startPoint: .leading, endPoint: .trailing))
+						.overlay(Capsule().strokeBorder(tones.hairline))
+					Circle().fill(OKLCH.color(l: 0.3 + light * 0.6, c: Self.chroma, h: hue * 2 * .pi))
+						.overlay(Circle().strokeBorder(Color.white, lineWidth: 2.5))
+						.shadow(color: tones.shade, radius: 3, y: 1)
+						.frame(width: 26, height: 26)
+						.offset(x: max(0, min(w - 26, value.wrappedValue * w - 13)))
+				}
+				.contentShape(Rectangle())
+				.gesture(DragGesture(minimumDistance: 0)
+					.onChanged { d in value.wrappedValue = min(1, max(0, d.location.x / w)); model.previewHex = hex }
+					.onEnded { _ in model.accentHex = hex; model.previewHex = nil })
+			}
+			.frame(height: 28)
+			.accessibilityElement()
+			.accessibilityLabel(title)
+			.accessibilityValue("\(Int(value.wrappedValue * 100)) percent")
+			.accessibilityAdjustableAction { dir in
+				value.wrappedValue = min(1, max(0, value.wrappedValue + (dir == .increment ? 0.05 : -0.05)))
+				model.accentHex = hex
+			}
 		}
 	}
 }
 
 // MARK: devices
 
+/// My devices: each a row (a click opens it), and last, on its own, adding one, which asks first:
+/// a device added is me, with all my chats, my friends and my identity.
 struct DevicesSection: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
 	@Environment(\.dismiss) private var dismiss
 	@State private var open: DeviceId?
 	@State private var removing: Device?
+	@State private var asking = false
 	/// The Add screen in device mode. On the iPhone You is a sheet: it steps aside first.
 	private func addDevice() {
 		#if os(iOS)
@@ -255,8 +620,7 @@ struct DevicesSection: View {
 		#endif
 	}
 	var body: some View {
-		ListCard(title: "Devices") {
-			Button { addDevice() } label: { ActionRow(symbol: "plus", title: "Add a device") }.buttonStyle(RowStyle())
+		ListCard(title: "Your devices", footer: "This \(AppModel.thisKind) is called \(AppModel.deviceName).") {
 			ForEach(model.me.devices) { d in
 				let this = d.id == model.me.thisDevice
 				Button { open = d.id } label: { DeviceRow(d: d, this: this) }
@@ -267,7 +631,12 @@ struct DevicesSection: View {
 						if !this { Divider(); Button(role: .destructive) { removing = d } label: { Label("Remove…", systemImage: "minus.circle") } }
 					}
 			}
+			Button { asking = true } label: { ActionRow(symbol: "plus", title: "Add a device") }.buttonStyle(RowStyle())
 		}
+		.confirmationDialog("Add a device that's yours?", isPresented: $asking, titleVisibility: .visible) {
+			Button("Add my device") { addDevice() }
+			Button("Cancel", role: .cancel) {}
+		} message: { Text("It gets all your chats, your friends and your identity. Never add someone else's device.") }
 		.confirmationDialog("Remove \(removing?.name ?? "")?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible) {
 			Button("Remove", role: .destructive) { if let d = removing { model.attempt { try model.core.revoke(d.id) }; model.refreshAll() }; removing = nil }
 			Button("Cancel", role: .cancel) { removing = nil }
@@ -330,101 +699,7 @@ struct DeviceCard: View {
 	}
 }
 
-// MARK: friends
-
-struct FriendsSection: View {
-	@Environment(AppModel.self) private var model
-	@Environment(\.tones) private var tones
-	@Environment(\.dismiss) private var dismiss
-	@State private var open: UserId?
-	@State private var removing: Contact?
-	private func addFriend() {
-		#if os(iOS)
-		model.afterYou = .friend; dismiss()
-		#else
-		model.offer = .friend
-		#endif
-	}
-	var body: some View {
-		ListCard(title: "Friends") {
-			Button { addFriend() } label: { ActionRow(symbol: "plus", title: "Add a friend") }.buttonStyle(RowStyle())
-			ForEach(model.contacts) { k in
-				let row = PersonRow(name: k.name, hash: k.avatar, presence: Mark.presence(k.devices), detail: presenceWord(k.devices).capitalizedFirst, verified: k.verified) {
-					#if os(iOS)
-					Image(systemName: "chevron.right").font(Icon.font(Icon.inline)).foregroundStyle(tones.tertiary)
-					#endif
-				}
-				#if os(iOS)
-				NavigationLink(value: PersonLink(user: k.user)) { row }.buttonStyle(RowStyle())
-					.contextMenu { FriendMenu(friend: k, removing: $removing) }
-				#else
-				Button { open = k.user } label: { row }
-					.buttonStyle(RowStyle())
-					.popover(isPresented: Binding(get: { open == k.user }, set: { if !$0 { open = nil } }), arrowEdge: .trailing) { PersonPage(user: k.user).frame(width: 360, height: 560) }
-					.contextMenu { FriendMenu(friend: k, removing: $removing) }
-				#endif
-			}
-		}
-		.modifier(RemoveFriendQuestion(removing: $removing))
-	}
-}
-
-// MARK: the network
-
-struct NetworkSection: View {
-	var body: some View {
-		Card(title: "Network") { NetworkPicture() }
-	}
-}
-
 // MARK: the app
-
-struct AppCard: View {
-	@Environment(\.tones) private var tones
-	#if os(macOS)
-	@Environment(Updates.self) private var updates
-	@State private var atLogin = SMAppService.mainApp.status == .enabled
-	#endif
-	var body: some View {
-		let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-		ListCard(title: "App") {
-			HStack(spacing: Rows.gap) {
-				BaudTile(side: Rows.personFace).frame(width: Rows.personFace)
-				VStack(alignment: .leading, spacing: 2) {
-					Text("baud \(v)").font(Theme.font.weight(.medium))
-					#if os(macOS)
-					Text(updates.word).font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit()
-					#else
-					Text("TestFlight").font(Theme.smallFont).foregroundStyle(tones.secondary)
-					#endif
-				}
-				Spacer(minLength: 8)
-				#if os(macOS)
-				switch updates.state {
-				case .available: Button("Update") { updates.install() }.buttonStyle(Quiet(strong: true))
-				case .downloading: Button("Updating…") {}.buttonStyle(Quiet()).disabled(true)
-				case .ready: Button("Restart") { updates.restart() }.buttonStyle(Quiet(strong: true))
-				default: Button("Check") { updates.check(quiet: false) }.buttonStyle(Quiet()).disabled(updates.state == .checking)
-				}
-				#endif
-			}
-			.frame(minHeight: Rows.person)
-			.cardRow()
-			#if os(macOS)
-			// A Mac that's on carries messages for your phone and your friends: open at login.
-			HStack(spacing: Rows.gap) {
-				Image(systemName: "power").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
-				Text("Open at login").font(Theme.font.weight(.medium))
-				Spacer(minLength: 8)
-				Toggle("Open at login", isOn: $atLogin).toggleStyle(.switch).labelsHidden()
-			}
-			.frame(minHeight: Rows.line)
-			.cardRow()
-			.onChange(of: atLogin) { _, on in LoginItem.set(on); atLogin = SMAppService.mainApp.status == .enabled }
-			#endif
-		}
-	}
-}
 
 /// baud's icon, small: the family tile, or the whole tile in the chosen colour (as the app icon is).
 struct BaudTile: View {
@@ -441,16 +716,29 @@ struct BaudTile: View {
 	}
 }
 
-/// Start over on this device: keys, store, friends here, everything. Last on the page, red, and
-/// it asks first.
+/// Start over on this device: keys, store, friends here, everything. Last, on its own, in red, its
+/// sentence in plain sight, and it asks first.
 struct StartOver: View {
 	@Environment(AppModel.self) private var model
+	@Environment(\.tones) private var tones
 	@Environment(\.restart) private var restart
+	@State private var asking = false
 	var body: some View {
-		DangerCard(symbol: "arrow.counterclockwise", title: "Start over", question: "Erase this \(AppModel.thisKind)?",
-			detail: "Its chats, friends and keys go for good. Your other devices keep theirs.", answer: "Erase") {
-			Task { await model.wipe(); restart() }
+		VStack(alignment: .leading, spacing: Space.title) {
+			SectionTitle("Start over")
+			VStack(alignment: .leading, spacing: 12) {
+				Text("Erase this \(AppModel.thisKind): its chats, friends and keys go for good. Your other devices keep theirs.")
+					.font(Theme.font).foregroundStyle(tones.secondary).fixedSize(horizontal: false, vertical: true)
+				Button("Start over…") { asking = true }.buttonStyle(Quiet(danger: true))
+			}
+			.padding(Space.side)
+			.frame(maxWidth: .infinity, alignment: .leading)
+			.glass(corner: Radius.card)
 		}
+		.confirmationDialog("Erase this \(AppModel.thisKind)?", isPresented: $asking, titleVisibility: .visible) {
+			Button("Erase", role: .destructive) { Task { await model.wipe(); restart() } }
+			Button("Cancel", role: .cancel) {}
+		} message: { Text("Its chats, friends and keys go for good. Your other devices keep theirs.") }
 	}
 }
 
@@ -478,53 +766,3 @@ extension String {
 	/// "away 2 h" → "Away 2 h".
 	var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }
-
-#if os(iOS)
-/// The iPhone's colour picker for Any colour: a pick lands when a finger lets go (a tap on the
-/// grid, the end of a drag on the spectrum), not on every step, so the app re-colours once.
-struct ColourSheet: UIViewControllerRepresentable {
-	let start: Color?
-	let pick: (String) -> Void
-	func makeUIViewController(context: Context) -> UIColorPickerViewController {
-		let c = UIColorPickerViewController()
-		c.supportsAlpha = false
-		c.title = "Any colour"
-		if let start { c.selectedColor = UIColor(start) }
-		c.delegate = context.coordinator
-		return c
-	}
-	func updateUIViewController(_ c: UIColorPickerViewController, context: Context) {}
-	func makeCoordinator() -> Coordinator { Coordinator(pick) }
-	final class Coordinator: NSObject, UIColorPickerViewControllerDelegate {
-		let pick: (String) -> Void
-		init(_ pick: @escaping (String) -> Void) { self.pick = pick }
-		func colorPickerViewController(_ c: UIColorPickerViewController, didSelect color: UIColor, continuously: Bool) {
-			if !continuously { pick(Accent.hex(Color(uiColor: color))) }
-		}
-		func colorPickerViewControllerDidFinish(_ c: UIColorPickerViewController) { pick(Accent.hex(Color(uiColor: c.selectedColor))) }
-	}
-}
-#endif
-
-#if os(macOS)
-/// The Mac's colour panel for Any colour: a pick lands when the mouse lets go, not on every step
-/// of a drag, so a drag across the wheel is one colour for my other devices, not hundreds.
-@MainActor final class ColourPanel: NSObject {
-	static let shared = ColourPanel()
-	private var pick: ((String) -> Void)?
-	func open(_ current: Color?, pick: @escaping (String) -> Void) {
-		self.pick = pick
-		let p = NSColorPanel.shared
-		p.showsAlpha = false
-		p.isContinuous = false
-		if let current { p.color = NSColor(current) }
-		p.setTarget(self)
-		p.setAction(#selector(changed(_:)))
-		p.orderFront(nil)
-	}
-	@objc private func changed(_ p: NSColorPanel) {
-		let c = p.color.usingColorSpace(.sRGB) ?? .black
-		pick?(String(format: "%02X%02X%02X", Int(c.redComponent * 255), Int(c.greenComponent * 255), Int(c.blueComponent * 255)))
-	}
-}
-#endif

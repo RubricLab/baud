@@ -36,7 +36,9 @@ struct BaudMacApp: App {
 		// The main window always opens at launch: macOS restores the Settings window of a quit
 		// session on its own and, left to itself, opened nothing else (seen on the real build).
 		.commands {
-			CommandGroup(after: .appInfo) { Button("Check for Updates…") { model.settingsSection = "app"; openWindow(id: "settings"); updates.check() } }
+			CommandGroup(after: .appInfo) { Button("Check for Updates…") { model.showSettings("updates"); updates.check() } }
+			// Settings is a page of the main window, not a window of its own.
+			CommandGroup(replacing: .appSettings) { Button("Settings…") { model.showSettings() }.keyboardShortcut(",") }
 			CommandGroup(replacing: .newItem) {
 				Button("New Chat") { sheet = .chat }.keyboardShortcut("n")
 				Button("New Group") { sheet = .group }.keyboardShortcut("n", modifiers: [.command, .shift])
@@ -65,8 +67,8 @@ struct BaudMacApp: App {
 				Button("Previous Chat") { model.step(-1) }.keyboardShortcut(.upArrow, modifiers: [.command, .option])
 				Button("Sidebar") { model.focusSidebar &+= 1 }.keyboardShortcut("0")
 				Divider()
-				Button("Friends") { model.settingsSection = "friends"; openWindow(id: "settings") }.keyboardShortcut("1", modifiers: [.command, .shift])
-				Button("Network") { model.settingsSection = "network"; openWindow(id: "settings") }.keyboardShortcut("2", modifiers: [.command, .shift])
+				Button("Friends") { model.showFriends() }.keyboardShortcut("1", modifiers: [.command, .shift])
+				Button("Connection") { model.showSettings("connection") }.keyboardShortcut("2", modifiers: [.command, .shift])
 			}
 			// What can be done with the open chat. Calls have no keys: a stray chord shouldn't ring anyone.
 			CommandMenu("Chat") {
@@ -76,14 +78,11 @@ struct BaudMacApp: App {
 				Button(c.map { "Video Call \(model.title($0))" } ?? "Video Call") { if let c { model.calls.start(c.id, video: true) } }.disabled(!callable)
 				Divider()
 				Button(model.details ? "Hide Details" : "Show Details") { model.details.toggle() }.keyboardShortcut("i").disabled(c == nil)
-				Button("Mark as Read") { if let c { model.markRead(c) } }.keyboardShortcut("u", modifiers: [.command, .shift]).disabled((c?.unread ?? 0) == 0)
+				Button(c.map { model.isUnread($0) } ?? false ? "Mark as Read" : "Mark as Unread") { if let c { model.toggleUnread(c) } }.keyboardShortcut("u", modifiers: [.command, .shift]).disabled(c == nil)
 				Divider()
 				Button(c.map { $0.kind == .home ? "Clear Chat…" : $0.isDirect ? "Delete Chat…" : "Leave and Delete…" } ?? "Delete Chat…") { model.deleting = c }.keyboardShortcut(.delete, modifiers: .command).disabled(c == nil)
 			}
 		}
-		Window("Settings", id: "settings") { SettingsView().toolbarBackground(.hidden, for: .windowToolbar).modifier(NotRestored()).modifier(Tinted(hex: model.shownHex)).environment(model).environment(updates).environment(\.restart, { model = AppModel() }).frame(minWidth: 520, minHeight: 520) }
-			.defaultSize(width: 640, height: 800)
-			.commands { CommandGroup(replacing: .appSettings) { Button("Settings…") { openWindow(id: "settings") }.keyboardShortcut(",") } }
 		// Linking lives in windows of its own, so it survives whatever the main window does
 		// (first run turning into the chat list) and can sit next to Settings.
 		// Never restored at launch: a linking window left open at quit must not come back empty
@@ -106,7 +105,11 @@ struct Panes: View {
 		HStack(spacing: 0) {
 			Sidebar(sheet: $sheet).frame(width: 264)
 			Rectangle().fill(tones.hairline).frame(width: 1)
-			if let id = model.selectedConversation, model.conversation(id) != nil {
+			if model.pane == .settings {
+				SettingsView()
+			} else if model.pane == .friends {
+				FriendsPage()
+			} else if let id = model.selectedConversation, model.conversation(id) != nil {
 				ConversationView(conv: id, showMembers: $m.details)
 				if model.details {
 					Rectangle().fill(tones.hairline).frame(width: 1)
@@ -167,8 +170,8 @@ struct Root: View {
 		.task {
 			Measure.opened()
 			updates.check(quiet: true)
-			// `BAUD_WINDOW=settings` opens that window on launch, for the smoke.
-			if let w = ProcessInfo.processInfo.environment["BAUD_WINDOW"] { openWindow(id: w) }
+			// `BAUD_WINDOW=settings` opens Settings (a page now) or a window on launch, for the smoke.
+			if let w = ProcessInfo.processInfo.environment["BAUD_WINDOW"] { if w == "settings" { model.showSettings() } else if w == "friends" { model.showFriends() } else { openWindow(id: w) } }
 			await Bench.runIfAsked(model)
 			await Shots.runIfAsked(model) { what in
 				switch what {
@@ -179,6 +182,12 @@ struct Root: View {
 					Shots.render(MarksSheet().modifier(Tinted(hex: model.shownHex)).environment(model).font(Theme.font), width: 760, background: tones.surface, to: String(w.dropFirst(6)))
 				case let w where w.hasPrefix("page:"):
 					Shots.render(SettingsPage().modifier(Tinted(hex: model.shownHex)).environment(model).environment(updates).font(Theme.font), width: 640, background: tones.surface, to: String(w.dropFirst(5)))
+				case "settings": model.showSettings()
+				case let w where w.hasPrefix("settings:"): model.showSettings(String(w.dropFirst(9)))
+				case "friends": model.showFriends()
+				case "back": model.pane = nil
+				case let w where w.hasPrefix("connection:"):
+					Shots.render(ConnectionSheet().modifier(Tinted(hex: model.shownHex)).environment(model).font(Theme.font), width: 440, background: tones.surface, to: String(w.dropFirst(11)))
 				default: openWindow(id: what)
 				}
 			}
@@ -196,12 +205,16 @@ struct Root: View {
 		case .newGroup: sheet = .group
 		case .newFriend: model.offer = .friend
 		case .newSpace: sheet = .space
-		case .network: model.settingsSection = "network"; openWindow(id: "settings")
-		case .friends: model.settingsSection = "friends"; openWindow(id: "settings")
-		case .settings: openWindow(id: "settings")
+		case .network: model.showSettings("connection")
+		case .friends: model.showFriends()
+		case .settings: model.showSettings()
 		case .call(let id, let video): model.calls.start(id, video: video)
 		case .details: model.details.toggle()
-		case .markRead(let id): if let c = model.conversation(id) { model.markRead(c) }
+		case .markRead(let id): if let c = model.conversation(id) { model.toggleUnread(c) }
+		case .pin(let id): model.pin(id, !model.isPinned(id))
+		case .mute(let id, let s, let off): if off { model.unmute(id) } else { model.mute(id, for: s) }
+		case .archive(let id): if let c = model.conversation(id) { model.archive(c, !model.isArchived(c)) }
+		case .delete(let id): model.deleting = model.conversation(id)
 		}
 	}
 }
