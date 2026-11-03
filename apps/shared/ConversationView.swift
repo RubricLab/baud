@@ -94,6 +94,11 @@ struct Header: View {
 						.contentTransition(.opacity)
 				}
 			}
+			// The name opens the chat's details, as the button at the end does.
+			.contentShape(Rectangle())
+			.onTapGesture { showMembers.toggle() }
+			.accessibilityAddTraits(.isButton)
+			.accessibilityHint("Shows the chat's details")
 			Spacer()
 			// Calls: two people, or a group of up to eight. A call already going on in the chat shows
 			// who's in it and a way in instead.
@@ -111,11 +116,16 @@ struct Header: View {
 				}
 			}
 			ShareSpot(conv: conversation.id)
+			// A group's people and how many; one other person's details.
 			Button { showMembers.toggle() } label: {
-				HStack(spacing: 4) { Image(systemName: "person.2").font(.system(size: 12, weight: .semibold)); Text("\(conversation.members.count)").font(Theme.smallFont.weight(.semibold)).monospacedDigit() }
-					.padding(.horizontal, 8).frame(height: 24)
+				HStack(spacing: 4) {
+					if conversation.isDirect || own { Image(systemName: "info.circle").font(.system(size: 13, weight: .semibold)) }
+					else { Image(systemName: "person.2").font(.system(size: 12, weight: .semibold)); Text("\(conversation.members.count)").font(Theme.smallFont.weight(.semibold)).monospacedDigit() }
+				}
+				.padding(.horizontal, 8).frame(height: 24)
 			}
-			.buttonStyle(Pill(on: showMembers)).keyboardShortcut("i", modifiers: .command).help("People (⌘I)")
+			.buttonStyle(Pill(on: showMembers)).keyboardShortcut("i", modifiers: .command).help(conversation.isDirect || own ? "Details (⌘I)" : "People (⌘I)")
+			.accessibilityLabel(conversation.isDirect || own ? "Details" : "\(conversation.members.count) people")
 		}
 		.padding(.horizontal, 16)
 		#if os(macOS)
