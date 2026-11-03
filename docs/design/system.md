@@ -273,7 +273,7 @@ Each change names the audit items it answers.
   weekend        Jo: who's in for…  ①
   …
 ──────────────────────────────────────
- (D) Dexter                 ··· Online       ← you (opens Settings) · your status (its sheet)
+ (R) Robin                  ··· Online       ← you (opens Settings) · your status (its sheet)
 ```
 
 - **The compose button moves into the band by the traffic lights.** Its menu lists New chat ⌘N,

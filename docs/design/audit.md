@@ -81,7 +81,7 @@ These come back on almost every screen, so they matter most.
 ### Details pane (`MembersView.swift`)
 
 - **M11. A direct chat's details repeat what's already there.** The hero shows "Sam" and
-  "Friend · away 1 d". Below it, the People card shows Dexter (admin, You) and Sam ("friend ·
+  "Friend · away 1 d". Below it, the People card shows you (marked admin) and Sam ("friend ·
   away 1 d") again. Call, video, the safety number and their devices are one more click away, in
   a popover. "admin" in a chat between two people means nothing.
 - **M12. Member rows end in tiny device drawings.** At 14 pt and 40% opacity they don't read.
