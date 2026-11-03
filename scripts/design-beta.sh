@@ -112,6 +112,9 @@ mac_copy() {
   plutil -replace LSEnvironment -json "{\"BAUD_DEMO\":\"1\",\"BAUD_NAME\":\"$NAME\",\"BAUD_DIR\":\"$BETA/mac-store\",\"BAUD_PORTMAP\":\"0\",\"BAUD_RELAY\":\"0\",\"BAUD_NOTIFY\":\"log\",\"BAUD_DEMO_PLACES\":\"1\",\"BAUD_DEMO_THREAD\":\"1\"}" "$plist"
   codesign --force --deep -s - "$APP" 2>/dev/null
   "$LSREG" -f "$APP"
+  # The build it was copied from carries the real app's id: Xcode registered it, and only
+  # /Applications/baud.app may answer for that id.
+  "$LSREG" -u "$from" 2>/dev/null || true
 }
 
 mac() {
