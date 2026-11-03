@@ -1,5 +1,6 @@
-/// Making things: a chat, a group chat, a space, a channel. One sheet, four shapes, each saying
-/// honestly what it makes: a group chat makes no new friends; a space makes everyone in it friends.
+/// Making things: a chat, a group chat, a space, a channel. One sheet, four shapes, built from the
+/// same parts as Add people: a chat is a friend picked with one click; a group is a name and the
+/// friends ticked; a space or a channel, a name.
 import BaudCore
 import SwiftUI
 
@@ -12,57 +13,73 @@ struct NewSheet: View {
 	var space: ConversationId? = nil
 	@State private var name = ""
 	@State private var picked: Set<UserId> = []
-	@FocusState private var focused: Bool
 
 	var body: some View {
-		VStack(alignment: .leading, spacing: 12) {
-			Text(title).font(Theme.headingFont)
-			if what != .chat {
-				TextField(what == .channel ? "channel-name" : "Name", text: $name).textFieldStyle(.plain).font(Theme.font)
-					.padding(8).overlay(RoundedRectangle(cornerRadius: Radius.row).stroke(tones.hairline)).focused($focused)
-					.onSubmit(make)
-			}
-			if what == .chat || what == .group {
-				List(model.contacts, selection: $picked) { c in
-					HStack { Avatar(name: c.name, hash: c.avatar, size: 18, presence: Mark.presence(c.devices)); Text(c.name).font(Theme.font); Spacer(); Text(c.sentence).font(Theme.smallFont).foregroundStyle(tones.secondary) }.tag(c.user)
+		VStack(spacing: 0) {
+			SheetHeader(title: title)
+			ScrollView {
+				VStack(alignment: .leading, spacing: Space.section) {
+					if what != .chat {
+						VStack(alignment: .leading, spacing: 4) {
+							Field(placeholder: what == .channel ? "channel-name" : what == .group ? "Group name" : "Name", text: $name, boxed: true, autofocus: true, commit: make)
+								.padding(.horizontal, Rows.inset)
+							if let explain { Text(explain).font(Theme.smallFont).foregroundStyle(tones.secondary).padding(.horizontal, Rows.inset + Rows.pad).fixedSize(horizontal: false, vertical: true) }
+						}
+					}
+					if what == .chat || what == .group {
+						if model.contacts.isEmpty {
+							EmptyLine(text: "Your friends show up here. Add one with New friend.")
+						} else {
+							VStack(alignment: .leading, spacing: Space.title) {
+								if what == .group { SectionTitle("People") }
+								PeoplePicker(people: model.contacts, picked: what == .group ? $picked : nil, open: { k in model.message(k.user); dismiss() })
+							}
+						}
+					}
 				}
-				.frame(height: 200)
-				#if os(macOS)
-				.listStyle(.inset)
-				#else
-				.environment(\.editMode, .constant(.active))
-				#endif
+				.padding(.vertical, Space.section)
 			}
-			HStack {
-				Spacer()
-				Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction).buttonStyle(Quiet())
-				Button(action: make) { Text(what == .chat ? "Open chat" : "Create") }.keyboardShortcut(.defaultAction).buttonStyle(Quiet(strong: true)).disabled(!valid)
+			#if os(iOS)
+			.scrollDismissesKeyboard(.immediately)
+			#endif
+			if what != .chat {
+				SheetFooter {
+					Button(action: make) {
+						Text("Create")
+							#if os(iOS)
+							.frame(maxWidth: .infinity)
+							#endif
+					}
+					.keyboardShortcut(.defaultAction).buttonStyle(Quiet(strong: true, large: true)).disabled(!valid)
+				}
 			}
 		}
-		.padding(20).frame(width: 380).background(tones.surface)
-		.onAppear { focused = true }
+		.background(tones.surface.ignoresSafeArea())
+		#if os(macOS)
+		.frame(width: 420, height: what == .chat || what == .group ? 520 : 260)
+		#endif
 	}
 	private var title: String {
 		switch what {
 		case .chat: return "New chat"
-		case .group: return "New group chat"
+		case .group: return "New group"
 		case .space: return "New space"
 		case .channel: return "New channel in \(space.flatMap(model.conversation)?.name ?? "the space")"
 		}
 	}
-	private var explain: String {
+	/// What it makes, said once, under its name: only where it isn't plain.
+	private var explain: String? {
 		switch what {
-		case .chat: return "You and one friend, carried by any device you both trust."
-		case .group: return "Everyone holds the whole chat; nobody becomes friends. People who aren't friends see each other's chosen names and are reached through the friends they share."
-		case .space: return "A closed circle: everyone you add becomes friends with everyone in it, every channel has every member, and only its members carry its messages. Name it, then add people."
+		case .chat, .group: return nil
+		case .space: return "A closed circle: everyone you add becomes friends with everyone in it, every channel has every member, and only its members carry its messages."
 		case .channel: return "Every channel has every member of the space."
 		}
 	}
 	private var valid: Bool {
 		switch what {
 		case .chat: return picked.count == 1
-		case .group: return !name.isEmpty && !picked.isEmpty
-		case .space, .channel: return !name.isEmpty
+		case .group: return !name.trimmingCharacters(in: .whitespaces).isEmpty && !picked.isEmpty
+		case .space, .channel: return !name.trimmingCharacters(in: .whitespaces).isEmpty
 		}
 	}
 	private func make() {
@@ -77,6 +94,9 @@ struct NewSheet: View {
 			}
 			model.refreshAll()
 			model.open(c.id)
+			#if os(iOS)
+			if what == .group { model.reveal = c.id }
+			#endif
 			// A new space is empty: the next thing is its people.
 			if what == .space { Task { try? await Task.sleep(for: .milliseconds(400)); model.addingTo = c.id } }
 		}

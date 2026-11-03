@@ -3,8 +3,23 @@
 import BaudCore
 import SwiftUI
 
+/// Disappearing messages as a section of a chat's details: the choice in a card, and under it what
+/// it means, or who may change it.
+struct DisappearCard: View {
+	@Environment(AppModel.self) private var model
+	let conversation: Conversation
+	var body: some View {
+		let c = conversation
+		let can = c.kind != .channel || c.admins.contains(model.me.user)
+		ListCard(title: "Disappearing messages", footer: !can ? "Only an admin can change this." : c.disappear > 0 ? "New messages go \(disappearAfter(c.disappear)) after they're read." : nil) {
+			DisappearPicker(conversation: c).cardRow()
+		}
+	}
+}
+
 /// Off, or how long a message stays after it's read. Anyone in a chat changes it; in a channel
-/// only an admin, and everyone else sees it as it is.
+/// only an admin, and everyone else sees it as it is. A row of a card: its glyph, its words, and the
+/// choices on a click.
 struct DisappearPicker: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
@@ -15,28 +30,22 @@ struct DisappearPicker: View {
 		let c = conversation
 		let can = c.kind != .channel || c.admins.contains(model.me.user)
 		let words = c.disappear == 0 ? "Off" : disappearAfter(c.disappear)
-		VStack(alignment: .leading, spacing: 4) {
-			Menu {
-				Picker("Disappearing messages", selection: Binding(get: { c.disappear }, set: { s in model.attempt { try model.core.setDisappear(c.id, s) } })) {
-					ForEach(Self.choices, id: \.self) { s in Text(s == 0 ? "Off" : disappearAfter(s)).tag(s) }
-				}
-				.pickerStyle(.inline).labelsHidden()
-			} label: {
-				HStack(spacing: 6) {
-					Image(systemName: "timer").font(.system(size: 12, weight: .semibold)).foregroundStyle(tones.secondary)
-					Text(words).font(Theme.font).foregroundStyle(can ? tones.text : tones.secondary)
-					Spacer(minLength: 4)
-					if can { Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(tones.secondary) }
-				}
-				.padding(.horizontal, 6).frame(minHeight: Rows.compact).contentShape(Rectangle())
+		Menu {
+			Picker("Disappearing messages", selection: Binding(get: { c.disappear }, set: { s in model.attempt { try model.core.setDisappear(c.id, s) } })) {
+				ForEach(Self.choices, id: \.self) { s in Text(s == 0 ? "Off" : disappearAfter(s)).tag(s) }
 			}
-			.menuIndicator(.hidden).buttonStyle(.plain).disabled(!can)
-			.accessibilityLabel("Disappearing messages: \(words)")
-			if c.disappear > 0 || !can {
-				Text(!can ? "Only an admin can change this." : "New messages go \(disappearAfter(c.disappear)) after they're read.")
-					.font(Theme.smallFont).foregroundStyle(tones.secondary).padding(.horizontal, 6)
+			.pickerStyle(.inline).labelsHidden()
+		} label: {
+			HStack(spacing: Rows.gap) {
+				Image(systemName: "timer").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
+				Text(words).font(Theme.font.weight(.medium)).foregroundStyle(can ? tones.text : tones.secondary)
+				Spacer(minLength: 4)
+				if can { Image(systemName: "chevron.up.chevron.down").font(Icon.font(Icon.inline)).foregroundStyle(tones.secondary) }
 			}
+			.frame(minHeight: Rows.line).contentShape(Rectangle())
 		}
+		.menuIndicator(.hidden).buttonStyle(.plain).disabled(!can)
+		.accessibilityLabel("Disappearing messages: \(words)")
 	}
 }
 

@@ -640,21 +640,25 @@ struct TileStyle: ButtonStyle {
 	}
 }
 
-/// A text field that looks like the text it holds until you point at it; typing in it, a ring.
+/// A text field that looks like the text it holds until you point at it (or, `boxed`, a field
+/// always, where something must be typed); typing in it, a ring.
 struct Field: View {
 	@Environment(\.tones) private var tones
 	let placeholder: String
 	@Binding var text: String
+	var boxed = false
+	var autofocus = false
 	let commit: () -> Void
 	@State private var hover = false
 	@FocusState private var focused: Bool
 	var body: some View {
 		TextField("", text: $text, prompt: Text(placeholder).foregroundStyle(tones.secondary)).textFieldStyle(.plain).font(Theme.font)
-			.padding(.horizontal, 8).frame(minHeight: Rows.compact)
-			.background(RoundedRectangle(cornerRadius: Radius.row, style: .continuous).fill(focused ? tones.field : hover ? tones.hover : .clear))
+			.padding(.horizontal, 8).frame(minHeight: boxed ? Rows.line : Rows.compact)
+			.background(RoundedRectangle(cornerRadius: Radius.row, style: .continuous).fill(focused || boxed ? tones.field : hover ? tones.hover : .clear))
 			.overlay(RoundedRectangle(cornerRadius: Radius.row, style: .continuous).strokeBorder(focused ? tones.text : .clear, lineWidth: 1.5))
 			.focused($focused).onHover { hover = $0 }
 			.onSubmit(commit)
+			.onAppear { if autofocus { focused = true } }
 	}
 }
 
