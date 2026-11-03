@@ -24,6 +24,7 @@ public final class Store: @unchecked Sendable {
 		// message goes on this device, once that is known.
 		exec("alter table conversations add column disappear int default 0")
 		exec("alter table events add column expires_at real")
+		exec("alter table members add column label text")
 		exec("create index if not exists events_expires on events(expires_at) where expires_at is not null")
 	}
 	deinit { sqlite3_close(handle) }

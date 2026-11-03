@@ -207,9 +207,11 @@ public struct Member: Identifiable, Hashable, Sendable {
 	public var devices: [Device]
 	public var verified: Bool
 	public var me: Bool
+	/// Their label in this group ("organiser", "plus one"), seen by everyone in it; nil for none.
+	public var label: String?
 	public var id: UserId { user }
-	public init(user: UserId, name: String, admin: Bool, joinedAt: Date, devices: [Device], verified: Bool, me: Bool) {
-		self.user = user; self.name = name; self.admin = admin; self.joinedAt = joinedAt; self.devices = devices; self.verified = verified; self.me = me
+	public init(user: UserId, name: String, admin: Bool, joinedAt: Date, devices: [Device], verified: Bool, me: Bool, label: String? = nil) {
+		self.user = user; self.name = name; self.admin = admin; self.joinedAt = joinedAt; self.devices = devices; self.verified = verified; self.me = me; self.label = label
 	}
 	public var online: Bool { devices.contains { $0.online } }
 }
@@ -380,6 +382,8 @@ public protocol CoreSurface: AnyObject, Sendable {
 	func removeMember(_ conv: ConversationId, _ user: UserId) throws
 	func leave(_ conv: ConversationId) throws
 	func setName(_ conv: ConversationId, _ name: String) throws
+	/// A member's label in a group, for everyone in it: my own, or anyone's if I'm an admin. nil or empty takes it away.
+	func setLabel(_ conv: ConversationId, _ user: UserId, _ text: String?) throws
 	func setTopic(_ conv: ConversationId, _ topic: String) throws
 	/// Messages written from now on disappear this many seconds after they're read; 0 turns it off.
 	func setDisappear(_ conv: ConversationId, _ seconds: Int) throws

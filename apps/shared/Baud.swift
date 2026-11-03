@@ -379,6 +379,7 @@ final class Baud: CoreSurface, @unchecked Sendable {
 	func removeMember(_ conv: ConversationId, _ user: UserId) throws { try local.removeMember(conv, user) }
 	func leave(_ conv: ConversationId) throws { try local.leave(conv) }
 	func setName(_ conv: ConversationId, _ name: String) throws { try local.setName(conv, name) }
+	func setLabel(_ conv: ConversationId, _ user: UserId, _ text: String?) throws { try local.setLabel(conv, user, text) }
 	func setTopic(_ conv: ConversationId, _ topic: String) throws { try local.setTopic(conv, topic) }
 	func setDisappear(_ conv: ConversationId, _ seconds: Int) throws { try local.setDisappear(conv, seconds) }
 	func delivery(_ conv: ConversationId, _ event: EventId) -> Delivery { local.delivery(conv, event) }

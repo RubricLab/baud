@@ -549,6 +549,7 @@ final class AppModel {
 	private var names: [UserId: String] = [:]
 	func name(of user: UserId) -> String {
 		if user == me.user { return "You" }
+		if let n = nickname(user) { return n }
 		if let c = contacts.first(where: { $0.user == user }) { return c.name }
 		if let n = names[user] { return n }
 		for c in conversations { if let m = core.members(c.id).first(where: { $0.user == user }) { names[user] = m.name; return m.name } }
@@ -558,7 +559,7 @@ final class AppModel {
 	/// What the row and the header call it: the other person's name for a DM, else its name.
 	func title(_ c: Conversation) -> String {
 		if c.kind == .home { return "You" }
-		if c.isDirect, let other = c.members.first(where: { $0 != me.user }) { return contacts.first { $0.user == other }?.name ?? name(of: other) }
+		if c.isDirect, let other = c.members.first(where: { $0 != me.user }) { return nickname(other) ?? contacts.first { $0.user == other }?.name ?? name(of: other) }
 		return c.kind == .channel ? "#\(c.name ?? "channel")" : (c.name ?? "Chat")
 	}
 
@@ -784,7 +785,35 @@ final class AppModel {
 		}
 	}
 
+	// MARK: nicknames
+
+	/// My own names for people: seen only by me, on all my devices (a profile setting, as the colour
+	/// is, so it rides my chat with myself). Used everywhere I see their name.
+	@ObservationIgnored private var nicknames: [UserId: String] = [:]
+	/// Bumped when a nickname changes here or arrives from another device of mine.
+	private(set) var nicknameTick = 0
+	func nickname(_ user: UserId) -> String? {
+		_ = nicknameTick
+		if let n = nicknames[user] { return n.isEmpty ? nil : n }
+		let n = local.profile("nick." + user) ?? ""
+		nicknames[user] = n
+		return n.isEmpty ? nil : n
+	}
+	/// nil or empty takes it away, and their own name shows again.
+	func setNickname(_ user: UserId, _ name: String?) {
+		let n = String((name ?? "").trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))
+		local.setProfile("nick." + user, n)
+		nicknames[user] = n
+		nicknameTick &+= 1
+	}
+	/// A member's label in a group, seen by everyone in it.
+	func setLabel(_ conv: ConversationId, _ user: UserId, _ text: String?) {
+		attempt { try core.setLabel(conv, user, text) }
+		refreshAll()
+	}
+
 	func refreshAll() {
+		if !nicknames.isEmpty { nicknames = [:]; nicknameTick &+= 1 }
 		syncAccent()
 		me = core.me()
 		contacts = core.contacts()

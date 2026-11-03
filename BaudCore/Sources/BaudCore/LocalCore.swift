@@ -411,7 +411,7 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 		lock.withLock {
 			store.query("select m.*, p.name, p.verified from members m left join people p on p.user=m.user where m.conv=? order by m.joined_at", [conv]).map { r in
 				let u = r.string("user")!
-				return Member(user: u, name: u == user ? "You" : (r.string("name") ?? "?"), admin: r.bool("admin"), joinedAt: r.date("joined_at") ?? Date(), devices: devices(of: u), verified: r.bool("verified"), me: u == user)
+				return Member(user: u, name: u == user ? "You" : (r.string("name") ?? "?"), admin: r.bool("admin"), joinedAt: r.date("joined_at") ?? Date(), devices: devices(of: u), verified: r.bool("verified"), me: u == user, label: r.string("label").flatMap { $0.isEmpty ? nil : $0 })
 			}
 		}
 	}
@@ -444,6 +444,13 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 	/// event, so a device from before calls skips the line instead of failing on it.
 	public func recordCall(_ conv: ConversationId, video: Bool, outcome: String, seconds: Int) throws {
 		_ = try write(conv, .state, body: encode(StateBody(key: "call", value: encode(CallRecord(video: video, outcome: outcome, seconds: seconds)))), text: "call")
+	}
+	/// Labels are short (24 characters) and say something about someone in this group, to everyone
+	/// in it. A member sets their own; an admin sets anyone's. A quiet change: no line in the chat.
+	public func setLabel(_ conv: ConversationId, _ u: UserId, _ text: String?) throws {
+		guard u == user || isAdmin(conv) else { throw CoreError.notAdmin }
+		let t = String((text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).prefix(24))
+		_ = try write(conv, .state, body: encode(StateBody(key: "label", value: encode(LabelBody(user: u, text: t)))), text: "label")
 	}
 	public func setTopic(_ conv: ConversationId, _ t: String) throws {
 		guard isAdmin(conv) || conversation(conv)?.kind == .chat else { throw CoreError.notAdmin }
@@ -775,6 +782,11 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 					case "name": store.run("update conversations set name=? where id=?", [b.value, e.conv])
 					case "topic": store.run("update conversations set topic=? where id=?", [b.value, e.conv])
 					case "disappear": if let s = Int(b.value), s >= 0 { store.run("update conversations set disappear=? where id=?", [s, e.conv]) }
+					case "label":
+						// Only their own, or an admin's word on anyone's.
+						if let l = decode(LabelBody.self, b.value), l.user == e.user || store.one("select admin from members where conv=? and user=?", [e.conv, e.user])?.bool("admin") == true {
+							store.run("update members set label=? where conv=? and user=?", [String(l.text.prefix(24)), e.conv, l.user])
+						}
 					case "pin":
 						if b.value.hasPrefix("-") { store.run("delete from pins where conv=? and event=?", [e.conv, String(b.value.dropFirst())]) }
 						else if !gone(b.value) { store.run("insert or ignore into pins(conv,event) values(?,?)", [e.conv, b.value]) }

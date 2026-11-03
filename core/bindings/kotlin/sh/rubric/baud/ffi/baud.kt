@@ -826,6 +826,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_baud_ffi_checksum_method_baud_set_disappear(
     ): Int
+    external fun uniffi_baud_ffi_checksum_method_baud_set_label(
+    ): Int
     external fun uniffi_baud_ffi_checksum_method_baud_set_name(
     ): Int
     external fun uniffi_baud_ffi_checksum_method_baud_set_online(
@@ -981,6 +983,8 @@ internal object UniffiLib {
     external fun uniffi_baud_ffi_fn_method_baud_set_avatar(`ptr`: Long,`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_baud_ffi_fn_method_baud_set_disappear(`ptr`: Long,`conv`: RustBuffer.ByValue,`seconds`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_baud_ffi_fn_method_baud_set_label(`ptr`: Long,`conv`: RustBuffer.ByValue,`user`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_baud_ffi_fn_method_baud_set_name(`ptr`: Long,`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1293,6 +1297,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_baud_ffi_checksum_method_baud_set_disappear() and 0xFFFF) != 10487) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_baud_ffi_checksum_method_baud_set_label() and 0xFFFF) != 32531) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_baud_ffi_checksum_method_baud_set_name() and 0xFFFF) != 53698) {
@@ -2052,6 +2059,11 @@ public interface BaudInterface {
      * is read (mine, after it is sent); 0 turns it off. Anyone in a chat, an admin in a channel.
      */
     fun `setDisappear`(`conv`: kotlin.String, `seconds`: kotlin.UInt)
+    
+    /**
+     * A member's label in a group, for everyone in it: my own, or anyone's if I'm an admin.
+     */
+    fun `setLabel`(`conv`: kotlin.String, `user`: kotlin.String, `text`: kotlin.String?)
     
     /**
      * First run: the name makes the person. Later: a new name, told to everyone who knows me.
@@ -2954,6 +2966,25 @@ open class Baud: Disposable, AutoCloseable, BaudInterface
         
         FfiConverterString.lower(`conv`),
         FfiConverterUInt.lower(`seconds`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * A member's label in a group, for everyone in it: my own, or anyone's if I'm an admin.
+     */
+    @Throws(BaudException::class)override fun `setLabel`(`conv`: kotlin.String, `user`: kotlin.String, `text`: kotlin.String?)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(BaudException) { _status ->
+    UniffiLib.uniffi_baud_ffi_fn_method_baud_set_label(
+        it,
+        
+        FfiConverterString.lower(`conv`),
+        FfiConverterString.lower(`user`),
+        FfiConverterOptionalString.lower(`text`),_status)
 }
     }
     
@@ -5195,6 +5226,8 @@ data class Member (
     var `me`: kotlin.Boolean
     , 
     var `online`: kotlin.Boolean
+    , 
+    var `label`: kotlin.String?
     
 ){
     
@@ -5219,6 +5252,7 @@ public object FfiConverterTypeMember: FfiConverterRustBuffer<Member> {
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
         )
     }
 
@@ -5230,7 +5264,8 @@ public object FfiConverterTypeMember: FfiConverterRustBuffer<Member> {
             FfiConverterSequenceTypeDevice.allocationSize(value.`devices`) +
             FfiConverterBoolean.allocationSize(value.`verified`) +
             FfiConverterBoolean.allocationSize(value.`me`) +
-            FfiConverterBoolean.allocationSize(value.`online`)
+            FfiConverterBoolean.allocationSize(value.`online`) +
+            FfiConverterOptionalString.allocationSize(value.`label`)
     )
 
     override fun write(value: Member, buf: ByteBuffer) {
@@ -5242,6 +5277,7 @@ public object FfiConverterTypeMember: FfiConverterRustBuffer<Member> {
             FfiConverterBoolean.write(value.`verified`, buf)
             FfiConverterBoolean.write(value.`me`, buf)
             FfiConverterBoolean.write(value.`online`, buf)
+            FfiConverterOptionalString.write(value.`label`, buf)
     }
 }
 

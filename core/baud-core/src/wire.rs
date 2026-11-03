@@ -311,6 +311,14 @@ pub struct StateBody {
     pub value: String,
 }
 
+/// A member's label in a group (the "label" state, `LabelBody` in Wire.swift): who, and the
+/// words; empty takes it away.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabelBody {
+    pub user: UserId,
+    pub text: String,
+}
+
 /// A call that's over, as its line reads: "Video call · 4 min", "Missed call from Ana".
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CallRecord {

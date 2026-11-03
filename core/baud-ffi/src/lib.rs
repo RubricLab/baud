@@ -312,6 +312,7 @@ pub struct Member {
     pub verified: bool,
     pub me: bool,
     pub online: bool,
+    pub label: Option<String>,
 }
 
 #[uniffi::remote(Enum)]
@@ -650,6 +651,10 @@ impl Baud {
     }
     pub fn set_topic(&self, conv: String, topic: String) -> Result<(), BaudError> {
         fallible(|| self.core.set_topic(&conv, &topic))
+    }
+    /// A member's label in a group, for everyone in it: my own, or anyone's if I'm an admin.
+    pub fn set_label(&self, conv: String, user: String, text: Option<String>) -> Result<(), BaudError> {
+        fallible(|| self.core.set_label(&conv, &user, text.as_deref()))
     }
     /// Disappearing messages: each message written from now on goes this many seconds after it
     /// is read (mine, after it is sent); 0 turns it off. Anyone in a chat, an admin in a channel.

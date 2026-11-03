@@ -701,10 +701,22 @@ impl Core {
                     devices,
                     verified: r.bool("verified"),
                     me: u == me,
+                    label: r.string("label").filter(|s| !s.is_empty()),
                     user: u,
                 }
             })
             .collect()
+    }
+
+    /// A member's label in a group, for everyone in it: my own, or anyone's if I'm an admin. Short
+    /// (24 characters); None or empty takes it away. A quiet change: no line in the chat.
+    pub fn set_label(&self, conv: &str, u: &str, text: Option<&str>) -> Result<()> {
+        if u != self.user() && !self.is_admin(conv) {
+            return Err(Error::NotAdmin);
+        }
+        let t: String = text.unwrap_or("").trim().chars().take(24).collect();
+        let body = encode(&LabelBody { user: u.into(), text: t });
+        self.write(conv, EventType::State, encode(&StateBody { key: "label".into(), value: body }), Some("label".into()), None, None, None).map(|_| ())
     }
 
     /// Into the conversation, with their card; then peer admits their devices for it.
@@ -1289,6 +1301,16 @@ impl Core {
                         "disappear" => {
                             if let Some(s) = b.value.parse::<i64>().ok().filter(|s| *s >= 0) {
                                 self.store.run("update conversations set disappear=? where id=?", &[&s, &e.conv]);
+                            }
+                        }
+                        "label" => {
+                            // Only their own, or an admin's word on anyone's.
+                            if let Some(l) = decode::<LabelBody>(&b.value) {
+                                let admin = self.store.one("select admin from members where conv=? and user=?", &[&e.conv, &e.user]).map(|r| r.bool("admin")).unwrap_or(false);
+                                if l.user == e.user || admin {
+                                    let t: String = l.text.chars().take(24).collect();
+                                    self.store.run("update members set label=? where conv=? and user=?", &[&t, &e.conv, &l.user]);
+                                }
                             }
                         }
                         "pin" => {

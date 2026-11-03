@@ -79,6 +79,7 @@ impl Store {
         // seconds (0, off), and when each message goes on this device, once that is known.
         store.exec("alter table conversations add column disappear int default 0");
         store.exec("alter table events add column expires_at real");
+        store.exec("alter table members add column label text");
         store.exec("create index if not exists events_expires on events(expires_at) where expires_at is not null");
         Ok(store)
     }

@@ -355,6 +355,8 @@ pub struct Member {
     pub verified: bool,
     pub me: bool,
     pub online: bool,
+    /// Their label in this group ("organiser"), seen by everyone in it.
+    pub label: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

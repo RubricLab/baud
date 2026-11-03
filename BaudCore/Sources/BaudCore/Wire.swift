@@ -75,6 +75,8 @@ struct ReactionBody: Codable { var target: EventId; var key: String; var on: Boo
 struct RedactBody: Codable { var target: EventId }
 struct MemberBody: Codable { var user: UserId; var card: WireCard?; var action: String; var admin: Bool? }
 struct StateBody: Codable { var key: String; var value: String }
+/// A member's label in a group ("label" state): who, and the words; empty takes it away.
+struct LabelBody: Codable { var user: String; var text: String }
 /// A call that's over, as its line reads: "Video call · 4 min", "Missed call from Ana", "Call · no answer".
 struct CallRecord: Codable {
 	var video: Bool; var outcome: String; var seconds: Int
