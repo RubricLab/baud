@@ -147,19 +147,17 @@ struct LocationSheet: View {
 		let until = model.sharingPlaces[conv]
 		let who = c.map { $0.isDirect ? "Only \(model.title($0)) sees it." : "Everyone in \(model.title($0)) sees it, and nobody else." } ?? "Only this chat sees it."
 		VStack(spacing: 0) {
+			SheetHeader(title: "Location")
 			ZStack {
 				if let fix { HueMap(pins: [Pin(id: "me", name: model.me.name, hash: model.me.avatar, lat: fix.coordinate.latitude, lon: fix.coordinate.longitude)], interactive: false) }
 				else {
 					Rectangle().fill(tones.quiet)
-					if finding { ProgressView().controlSize(.large) }
+					// Words where the map is still coming: no spinner.
+					Text(finding ? "Finding you…" : "Couldn't find you").font(Theme.smallFont).foregroundStyle(tones.secondary)
 				}
 			}
-			.frame(height: 240)
+			.frame(height: 220)
 			.clipped()
-			.overlay(alignment: .topTrailing) {
-				IconButton(symbol: "xmark", help: "Close", size: 13) { dismiss() }
-					.background(Circle().fill(tones.surface.opacity(0.9))).padding(12)
-			}
 			ScrollView {
 				VStack(alignment: .leading, spacing: Parts.gap) {
 					if Whereabouts.shared.denied {

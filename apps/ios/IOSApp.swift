@@ -136,17 +136,27 @@ struct HomeTab: View {
 			// A List, for swipe to delete; the top row and search ride as its first rows.
 			List {
 				Group {
+					// My face (You) at the left, compose at the right, and between them the title with this
+					// iPhone's status under it, a tap from its sheet: nothing shares the title's line.
 					HStack {
-						Button { you = true } label: { Avatar(name: model.me.name, hash: model.me.avatar, size: 34) }.buttonStyle(.plain).accessibilityLabel("You")
-						// Up to the centred title, with a gap: the face (34) and its spacing take the rest.
-						NetStatusChip(room: UIScreen.main.bounds.width / 2 - 26 - (Rows.inset + Rows.pad) - 34 - 8 - 4)
+						Button { you = true } label: { Avatar(name: model.me.name, hash: model.me.avatar, size: 34).frame(width: 44, height: 44).contentShape(Rectangle()) }
+							.buttonStyle(.plain).accessibilityLabel("You")
 						Spacer()
-						Menu { Button("New group") { sheet = .group }; Button("New friend") { model.offer = .friend } } label: { Image(systemName: "square.and.pencil").font(.system(size: 18, weight: .semibold)).frame(width: 44, height: 44) }
+						Menu {
+							Button { sheet = .chat } label: { Label("New chat", systemImage: "bubble.left") }
+							Button { sheet = .group } label: { Label("New group", systemImage: "person.2") }
+							Button { model.offer = .friend } label: { Label("New friend", systemImage: "person.badge.plus") }
+						} label: { Image(systemName: "square.and.pencil").font(Icon.font(Icon.bar)).frame(width: 44, height: 44) }
 							.accessibilityLabel("New")
 					}
-					.overlay { Text("Chats").font(Theme.headingFont).allowsHitTesting(false) }
-					.padding(.horizontal, Rows.inset + Rows.pad).padding(.top, 4)
-					SearchField(text: $query).padding(.horizontal, Rows.inset + Rows.pad).padding(.vertical, 8)
+					.overlay {
+						VStack(spacing: 0) {
+							Text("Chats").font(Theme.headingFont).accessibilityAddTraits(.isHeader)
+							NetStatusChip()
+						}
+					}
+					.padding(.horizontal, Rows.inset).padding(.top, 4)
+					SearchBox(text: $query).padding(.horizontal, Rows.inset + Rows.pad).padding(.vertical, 8)
 					if query.trimmingCharacters(in: .whitespaces).count >= 2 {
 						ForEach(model.core.search(query, scope: nil)) { h in
 							Button { path.append(.conv(h.conversation.id)) } label: {
@@ -162,6 +172,10 @@ struct HomeTab: View {
 								.contextMenu { ChatMenu(c: c) }
 								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
 									Button(c.kind == .home ? "Clear" : "Delete", role: .destructive) { model.deleting = c }
+								}
+								// Read, from the other edge, while there's something unread.
+								.swipeActions(edge: .leading, allowsFullSwipe: true) {
+									if c.unread > 0 { Button("Read") { model.markRead(c) }.tint(tones.strong) }
 								}
 						}
 						ForEach(model.quiet) { f in
@@ -195,26 +209,15 @@ struct HomeTab: View {
 		.sheet(isPresented: $you, onDismiss: { if let o = model.afterYou { model.afterYou = nil; model.offer = o } }) {
 			// A stack of its own: a friend opens full height, with the way back.
 			NavigationStack {
-				SettingsView().toolbar(.hidden, for: .navigationBar)
-					.navigationDestination(for: PersonLink.self) { PersonPage(user: $0.user, conv: $0.conv) }
+				VStack(spacing: 0) {
+					SheetHeader(title: "You")
+					SettingsView()
+				}
+				.toolbar(.hidden, for: .navigationBar)
+				.navigationDestination(for: PersonLink.self) { PersonPage(user: $0.user, conv: $0.conv) }
 			}
 			.presentationDetents([.large]).presentationBackground { Ground() }.presentationDragIndicator(.visible)
 		}
-	}
-}
-
-/// The search field, drawn in the palette.
-struct SearchField: View {
-	@Environment(\.tones) private var tones
-	@Binding var text: String
-	var body: some View {
-		HStack(spacing: 8) {
-			Image(systemName: "magnifyingglass").foregroundStyle(tones.secondary)
-			TextField("", text: $text, prompt: Text("Search").foregroundStyle(tones.secondary)).textFieldStyle(.plain).font(Theme.font)
-			if !text.isEmpty { Button { text = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(tones.secondary) }.buttonStyle(.plain).accessibilityLabel("Clear") }
-		}
-		.padding(.horizontal, 12).frame(minHeight: 40)
-		.glass(corner: 12, lifted: false)
 	}
 }
 
