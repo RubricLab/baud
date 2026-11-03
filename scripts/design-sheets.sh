@@ -14,7 +14,7 @@ if [ "${ROUND:-1}" = 2 ]; then
     none/mac-connection 0090FF/mac-msginfo-mine none/mac-msginfo-theirs-dark none/mac-open-weekend"
   ios="none/chats 0090FF/chats-dark none/Sam 0090FF/Sam-dark none/info-Sam none/info-weekend none/person-weekend
     none/you none/you=none/you-devices none/you=none/you-updates none/you=none/colour 0090FF/you-dark=0090FF/colour-dark
-    none/status none/friends none/hold-Sam 0090FF/hold-Sam-dark none/picker-Sam none/msginfo-Sam none/thread-weekend none/places-Ana"
+    none/status none/friends-map 0090FF/friends-map-dark none/hold-Sam 0090FF/hold-Sam-dark none/picker-Sam none/msginfo-Sam none/thread-weekend none/places-Ana"
 else
   mac="0090FF/mac-dm 0090FF/mac-members none/mac-hike none/mac-home-dark 0090FF/mac-palette-1 0090FF/mac-newgroup-1 0090FF/mac-settings-page none/mac-files-dark"
   ios="none/chats none/Sam none/info-Sam none/info-weekend none/person-weekend none/add-weekend none/you 0090FF/chats-dark 0090FF/Sam-dark 0090FF/info-weekend-dark none/locate none/door"
@@ -42,6 +42,6 @@ for kind in mac ios calls; do
     else pairs+=("$new" "$A/$kind/$new.png"); fi
   done
   out=$([ -n "$B" ] && echo "$B/compare-$kind.png" || echo "$A/sheet-$kind.png")
-  TILE=$([ -n "$B" ] && echo 4x || ([ $kind = ios ] && echo 6x || echo 4x)) sheet "$out" $h "${pairs[@]}"
+  TILE=$([ -n "$B" ] && echo 4x || ([ $kind = ios ] && echo 6x || echo 4x)) sheet "$out" $h ${pairs[@]+"${pairs[@]}"}
 done
 rm -rf "$(dirname "$blank")"
