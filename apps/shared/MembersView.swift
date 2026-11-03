@@ -1,6 +1,6 @@
-/// The people of a conversation: who is here, how each is reached (a friend, or through the friends
-/// we share), whether anyone I trust has checked them, and each of their devices with its light.
-/// Name, topic and the actions (add someone, leave) under them.
+/// A conversation's details, the same on the Mac's side pane and the iPhone's sheet: its face and
+/// name (a group's renamed with a tap), how long its messages stay, its people (each opens to who
+/// they are and how they're reached), and, last and on its own, leaving.
 import BaudCore
 import SwiftUI
 
@@ -11,62 +11,123 @@ struct MembersView: View {
 	var close: (() -> Void)? = nil
 	@State private var name = ""
 	@State private var topic = ""
+	@State private var renaming = false
+	@FocusState private var editing: Bool
 	@State private var person: Member?
+	@State private var removing: Member?
 
 	var body: some View {
 		if let c = model.conversation(conv) {
 			let members = model.core.members(conv).sorted { a, b in a.me != b.me ? a.me : (a.online != b.online ? a.online : a.name < b.name) }
-			let strangers = members.filter { !$0.me && !model.isFriend($0.user) }
+			let group = c.kind == .chat && !c.isDirect
+			let admin = c.admins.contains(model.me.user)
 			VStack(spacing: 0) {
 				HStack(spacing: 6) {
-					Text("People").font(Theme.headingFont)
-					Text("\(members.count)").font(Theme.font).foregroundStyle(tones.secondary).monospacedDigit()
+					Text(c.kind == .home ? "Your devices" : group ? "Group info" : c.kind == .channel ? "Channel info" : "Chat info").font(Theme.headingFont)
 					Spacer()
 					if let close { IconButton(symbol: "xmark", help: "Close (⌘I)", size: 11, action: close) }
 				}
 				.padding(.horizontal, 16)
 				#if os(macOS)
-				.frame(height: Theme.header + 4).padding(.top, 0)
+				.frame(height: Theme.header + 4)
 				#else
 				.frame(height: 52)
 				#endif
 				.overlay(alignment: .bottom) { Hairline() }
 				ScrollView {
-					VStack(alignment: .leading, spacing: 0) {
-						ForEach(members) { m in
-							Button { person = m } label: { MemberRow(m: m, conv: conv) }
-								.buttonStyle(RowStyle())
-								.popover(isPresented: Binding(get: { person?.id == m.id }, set: { if !$0 { person = nil } })) { PersonCard(m: m, conv: conv) }
-								.contextMenu {
-									if c.admins.contains(model.me.user) && !m.me { Button("Remove from \(model.title(c))", role: .destructive) { model.attempt { try model.core.removeMember(conv, m.user) } } }
-									if !m.me && model.isFriend(m.user) { Button("Message \(m.name)") { model.message(m.user) } }
+					VStack(alignment: .leading, spacing: Parts.gap) {
+						hero(c, members: members, group: group)
+						if c.kind == .channel {
+							ListCard(title: "Topic") { Field(placeholder: "What it's for", text: $topic) { model.attempt { try model.core.setTopic(conv, topic) } }.padding(.horizontal, 10) }
+						}
+						if c.kind != .space && c.kind != .home {
+							ListCard(title: "Disappearing messages") { DisappearPicker(conversation: c).padding(.horizontal, 10) }
+						}
+						if c.kind != .home {
+							ListCard(title: group || c.kind == .channel ? "\(members.count) people" : "People") {
+								if (group && c.kind != .channel) || (admin && c.kind == .channel) {
+									Button { model.addingTo = c.id } label: { ActionRow(symbol: "plus", title: "Add people") }.buttonStyle(RowStyle())
 								}
-						}
-						if c.kind == .channel || (c.kind == .chat && !c.isDirect) {
-							SectionHeading(title: "About")
-							VStack(alignment: .leading, spacing: 6) {
-								Field(placeholder: "Name", text: $name) { model.attempt { try model.core.setName(conv, name) } }
-								if c.kind == .channel { Field(placeholder: "Topic", text: $topic) { model.attempt { try model.core.setTopic(conv, topic) } } }
+								ForEach(members) { m in
+									Button { person = m } label: { MemberRow(m: m, conv: conv) }
+										.buttonStyle(RowStyle())
+										.popover(isPresented: Binding(get: { person?.id == m.id }, set: { if !$0 { person = nil } })) { PersonCard(m: m, conv: conv) }
+										.contextMenu {
+											if !m.me && model.isFriend(m.user) { Button { model.message(m.user) } label: { Label("Message \(model.name(of: m.user))", systemImage: "bubble.left") } }
+											if admin && !m.me {
+												Divider()
+												Button(role: .destructive) { removing = m } label: { Label("Remove from \(model.title(c))", systemImage: "person.badge.minus") }
+											}
+										}
+								}
 							}
-							.padding(.horizontal, Rows.inset + Rows.pad - 6)
 						}
-						if c.kind != .space {
-							SectionHeading(title: "Disappearing messages")
-							DisappearPicker(conversation: c).padding(.horizontal, Rows.inset + Rows.pad - 6)
+						if group {
+							DangerCard(symbol: "rectangle.portrait.and.arrow.right", title: "Leave group", question: "Leave \(model.title(c))?",
+								detail: "You'll stop getting its messages. Someone still in it can add you back.", answer: "Leave") {
+								model.attempt { try model.core.leave(conv); model.open(nil) }
+								close?()
+							}
 						}
-						let canAdd = (c.kind == .chat && !c.isDirect) || c.admins.contains(model.me.user)
-						HStack(spacing: 8) {
-							if canAdd && c.kind != .channel { Button("Add someone") { model.addingTo = c.id }.buttonStyle(Quiet()) }
-							if !c.isDirect && c.kind == .chat { Button("Leave") { model.attempt { try model.core.leave(conv); model.open(nil) } }.buttonStyle(Quiet(danger: true)) }
-						}
-						.padding(.horizontal, Rows.inset + Rows.pad).padding(.top, Theme.sectionGap)
 					}
-					.padding(.vertical, 6)
+					.padding(.horizontal, Parts.side).padding(.vertical, Parts.gap)
 				}
 			}
+			.confirmationDialog("Remove \(removing.map { model.name(of: $0.user) } ?? "")?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible) {
+				Button("Remove", role: .destructive) { if let m = removing { model.attempt { try model.core.removeMember(conv, m.user) } }; removing = nil }
+				Button("Cancel", role: .cancel) { removing = nil }
+			} message: { Text("They'll stop getting new messages here.") }
 			.onAppear { name = c.name ?? ""; topic = c.topic ?? "" }
-			.onChange(of: conv) { _, _ in name = model.conversation(conv)?.name ?? ""; topic = model.conversation(conv)?.topic ?? "" }
+			.onChange(of: conv) { _, _ in renaming = false; name = model.conversation(conv)?.name ?? ""; topic = model.conversation(conv)?.topic ?? "" }
 		}
+	}
+
+	/// Its face, its name (a group's is a field once tapped; ⏎ keeps it, ⎋ puts it back) and, under
+	/// it, how many are in it or how the one other person is.
+	@ViewBuilder private func hero(_ c: Conversation, members: [Member], group: Bool) -> some View {
+		let other = c.isDirect ? members.first { !$0.me } : nil
+		let canRename = group || (c.kind == .channel && c.admins.contains(model.me.user))
+		VStack(spacing: 10) {
+			if c.kind == .home { Avatar(name: model.me.name, hash: model.me.avatar, size: 72) }
+			else { Avatar(name: model.title(c), hash: other.flatMap { o in model.contacts.first { $0.user == o.user }?.avatar }, size: 72, presence: other.map { Mark.presence($0.devices) }) }
+			if renaming {
+				TextField("", text: $name, prompt: Text("Name").foregroundStyle(tones.secondary))
+					.textFieldStyle(.plain).font(Theme.titleFont).multilineTextAlignment(.center)
+					.focused($editing)
+					.onSubmit { commitName() }
+					#if os(macOS)
+					.onExitCommand { renaming = false; name = c.name ?? "" }
+					#endif
+					.onChange(of: editing) { _, on in if !on { commitName() } }
+			} else {
+				Button { if canRename { name = c.name ?? model.title(c); renaming = true; editing = true } } label: {
+					HStack(spacing: 6) {
+						Text(model.title(c)).font(Theme.titleFont).multilineTextAlignment(.center)
+						if canRename { Image(systemName: "pencil").font(.system(size: Theme.small, weight: .semibold)).foregroundStyle(tones.secondary) }
+					}
+				}
+				.buttonStyle(.plain).disabled(!canRename)
+				.help(canRename ? "Rename" : "")
+			}
+			Text(subtitle(c, members: members, other: other)).font(Theme.smallFont).foregroundStyle(tones.secondary)
+		}
+		.frame(maxWidth: .infinity)
+		.padding(.top, 4)
+	}
+
+	private func commitName() {
+		guard renaming else { return }
+		renaming = false
+		let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
+		guard !n.isEmpty, n != model.conversation(conv)?.name else { return }
+		model.attempt { try model.core.setName(conv, n) }
+	}
+
+	private func subtitle(_ c: Conversation, members: [Member], other: Member?) -> String {
+		if c.kind == .home { return "\(model.me.devices.count) \(model.me.devices.count == 1 ? "device" : "devices")" }
+		if let o = other { return model.isFriend(o.user) ? "Friend · \(presenceWord(o.devices))" : presenceWord(o.devices).capitalizedFirst }
+		let online = members.filter { !$0.me && $0.online }.count
+		return "\(members.count) people" + (online > 0 ? " · \(online) online" : "")
 	}
 }
 
@@ -82,13 +143,13 @@ struct MemberRow: View {
 			Avatar(name: m.me ? model.me.name : m.name, hash: m.me ? model.me.avatar : model.contacts.first { $0.user == m.user }?.avatar, size: Rows.face, presence: Mark.presence(m.devices))
 			VStack(alignment: .leading, spacing: 2) {
 				HStack(spacing: 4) {
-					Text(m.me ? "\(model.me.name) (you)" : model.name(of: m.user)).font(Theme.font.weight(.medium)).lineLimit(1)
+					Text(m.me ? model.me.name : model.name(of: m.user)).font(Theme.font.weight(.medium)).lineLimit(1)
 					IdentityMark(member: m)
 					if m.admin { Text("admin").font(Theme.smallFont).foregroundStyle(tones.secondary) }
 				}
 				HStack(spacing: 4) {
 					if !through.isEmpty { MarkView(mark: .relayed, size: Theme.small + 1, color: tones.secondary) }
-					Text(m.me ? "you" : !through.isEmpty ? "through \(list(through))" : model.isFriend(m.user) ? "friend · \(presenceWord(m.devices))" : presenceWord(m.devices))
+					Text(m.me ? "You" : !through.isEmpty ? "through \(list(through))" : model.isFriend(m.user) ? "friend · \(presenceWord(m.devices))" : presenceWord(m.devices))
 						.font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1)
 				}
 			}
@@ -193,7 +254,7 @@ struct Quiet: ButtonStyle {
 			let fill = !enabled ? tones.quiet : strong ? tones.loud : tones.card
 			configuration.label
 				.font(Theme.font.weight(.bold))
-				.foregroundStyle(!enabled ? tones.tertiary : strong ? tones.onLoud : tones.text)
+				.foregroundStyle(!enabled ? tones.tertiary : strong ? tones.onLoud : danger ? tones.danger : tones.text)
 				.padding(.horizontal, large ? 20 : 14)
 				#if os(macOS)
 				.frame(minHeight: large ? 38 : 28)
@@ -204,7 +265,6 @@ struct Quiet: ButtonStyle {
 					let shape = Capsule()
 					if enabled && !configuration.isPressed { shape.fill(fill).lifted(tones, by: hover ? 1.2 : 0.7) } else { shape.fill(fill) }
 				}
-				.overlay { if danger { Capsule().strokeBorder(tones.text, lineWidth: 1.5) } }
 				.scaleEffect(configuration.isPressed ? 0.97 : 1)
 				.animation(.easeOut(duration: 0.12), value: configuration.isPressed)
 				.contentShape(Capsule())
@@ -224,7 +284,11 @@ struct AddPeopleSheet: View {
 		let c = model.conversation(conv)
 		let candidates = model.contacts.filter { k in !(c?.members.contains(k.user) ?? true) }
 		VStack(alignment: .leading, spacing: 12) {
-			Text("Add someone to \(c.map(model.title) ?? "")").font(Theme.headingFont)
+			Text("Add people to \(c.map(model.title) ?? "")").font(Theme.headingFont)
+			if candidates.isEmpty {
+				Text(model.contacts.isEmpty ? "Add a friend first: people join a group from your friends." : "All your friends are already here.")
+					.font(Theme.font).foregroundStyle(tones.secondary).frame(maxWidth: .infinity, minHeight: 80)
+			}
 			ScrollView {
 				VStack(spacing: 0) {
 					ForEach(candidates) { k in

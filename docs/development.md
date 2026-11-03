@@ -61,6 +61,7 @@ flag (`SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) BAUD_SPACES'`) to show 
 | `BAUD_CALL_SMALL=s` | (Debug) Make a call small that many seconds after it goes live. |
 | `BAUD_CALL_SHOTS=dir` | (Debug, demo data) Draw every state of the call screen to PNGs, then quit. |
 | `BAUD_COMPOSE=words` | (Debug) Start the composer with these words in it, for pictures. |
+| `BAUD_INFO=1` | (iPhone) Open the chat's details once it's on screen, with `BAUD_OPEN`, for pictures. |
 
 The linking smoke drives two or three real processes with no clicks:
 

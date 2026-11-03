@@ -127,10 +127,7 @@ struct HomeList: View {
 			let on = model.selectedConversation == c.id
 			Button { model.open(c.id) } label: { ChatRow(c: c, selected: on) }
 				.buttonStyle(RowStyle(selected: on, focused: focused)).id(c.id)
-				.contextMenu {
-					Button("Mark as Read") { try? model.core.markRead(c.id, c.lastEvent ?? "") }
-					Button(c.kind == .home ? "Clear…" : "Delete…", role: .destructive) { model.deleting = c }
-				}
+				.contextMenu { ChatMenu(c: c) }
 		}
 		ForEach(model.quiet) { f in
 			Button { if let id = model.startChat(with: f.user) { model.open(id) } } label: { NewChatRow(friend: f) }

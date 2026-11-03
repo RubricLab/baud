@@ -178,6 +178,22 @@ struct Tones {
 		return t
 	}
 
+	/// Leaving, removing, erasing: a clear red, solved to read at 4.5:1 on the ground. In a red, an
+	/// orange or a pink the red would vanish into the colour, so there it's the words' own ink, and
+	/// the place (last, on its own) and the question it asks first set it apart.
+	var danger: Color {
+		let red = 0.47
+		if tinted && chroma > 0.06 {
+			let d = abs(hue - red).truncatingRemainder(dividingBy: 2 * .pi)
+			if min(d, 2 * .pi - d) < 0.75 { return text }
+		}
+		let ground = OKLCH.luminance(l: base, c: tinted ? chroma : 0, h: hue)
+		let l = light
+			? OKLCH.reach(from: 0.66, to: 0.95, c: 0.15, h: red, on: [ground], ratio: 4.5)
+			: OKLCH.reach(from: 0.56, to: 0.25, c: 0.19, h: red, on: [ground], ratio: 4.5)
+		return OKLCH.color(l: l, c: light ? 0.15 : 0.19, h: red)
+	}
+
 	/// The colour of the mark on the app icon: the hue itself, light enough to read on the tile.
 	var iconMark: Color { tinted ? OKLCH.color(l: 0.82, c: chroma, h: hue) : Color(white: 0.96) }
 	/// The app icon's tile: the family's near-black, or the colour itself, a breath lighter at the

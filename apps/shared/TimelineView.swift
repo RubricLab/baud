@@ -148,12 +148,11 @@ struct SystemRow: View {
 	@Environment(\.tones) private var tones
 	let event: Event
 	var body: some View {
-		HStack(spacing: 6) {
-			Text(event.system ?? "").font(Theme.smallFont).foregroundStyle(tones.secondary)
-			Text(clock(event.at)).font(Theme.smallFont).foregroundStyle(tones.secondary)
-		}
-		.padding(.leading, 32).padding(.vertical, 2)
-		.listRowSeparator(.hidden).listRowInsets(Theme.rowInsets)
+		// Centred under the day, like it: what happened, then when, a step quieter.
+		(Text(event.system ?? "").foregroundColor(tones.secondary) + Text("  " + clock(event.at)).foregroundColor(tones.tertiary))
+			.font(Theme.smallFont).multilineTextAlignment(.center)
+			.frame(maxWidth: .infinity).padding(.vertical, 2)
+			.listRowSeparator(.hidden).listRowInsets(Theme.rowInsets)
 	}
 }
 
@@ -199,6 +198,10 @@ struct MessageRow: View {
 	@State private var showPath = false
 	/// Every emoji, for a reaction: from the menu, the hover button, or the + after the reactions.
 	@State private var picking = false
+	/// Who reacted with what; how my message got to each person; deleting it, asked first.
+	@State private var showReactions = false
+	@State private var showInfo = false
+	@State private var deleting = false
 	static func mark(_ v: Event.Via) -> Mark { switch v { case .direct: return .direct; case .relay: return .relayed; case .carried: return .held; case .waiting: return .waiting } }
 	/// How this message travelled, in a few words.
 	private func pathSentence(_ v: Event.Via) -> String {
@@ -240,13 +243,23 @@ struct MessageRow: View {
 				if !event.reactions.isEmpty {
 					HStack(spacing: 4) {
 						ForEach(event.reactions, id: \.key) { r in
+							// A tap gives mine or takes it back; resting on it says who (the Mac), and a
+							// long press (a right click) lists them, and everyone else's.
 							Button { model.attempt { try model.core.react(event.conv, event.id, r.key, on: !r.mine) } } label: {
 								Text("\(r.key) \(r.users.count)").font(Theme.smallFont)
 									.padding(.horizontal, 7).padding(.vertical, 3)
 									.background { if r.mine { Capsule().fill(tones.mine) } }
 									.foregroundStyle(r.mine ? tones.onMine : tones.text)
 									.glass(Capsule(), lifted: false)
-							}.buttonStyle(.plain)
+							}
+							.buttonStyle(.plain)
+							.help(reactors(r, model))
+							.accessibilityLabel(reactors(r, model))
+							.contextMenu {
+								Text(reactors(r, model))
+								Button { showReactions = true } label: { Label("Who reacted", systemImage: "person.2") }
+								Button { react(r.key) } label: { Label(r.mine ? "Take mine back" : "React \(r.key) too", systemImage: r.mine ? "minus.circle" : "plus.circle") }
+							}
 						}
 						Button { picking = true } label: {
 							Image(systemName: "face.smiling").font(Theme.smallFont)
@@ -286,9 +299,17 @@ struct MessageRow: View {
 		#if os(iOS)
 		.onTapGesture(count: 2) { react("👍") }
 		.sheet(isPresented: $picking) { EmojiPicker(pick: react).presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
+		.sheet(isPresented: $showReactions) { ScrollView { ReactionsList(reactions: event.reactions) }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible).presentationBackground(tones.surface) }
+		.sheet(isPresented: $showInfo) { ScrollView { MessageInfo(event: event) }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible).presentationBackground(tones.surface) }
 		#else
 		.popover(isPresented: $picking, arrowEdge: .trailing) { EmojiPicker(pick: react) }
+		.popover(isPresented: $showReactions, arrowEdge: event.mine ? .leading : .trailing) { ReactionsList(reactions: event.reactions).frame(width: 280).background(tones.surface) }
+		.popover(isPresented: $showInfo, arrowEdge: event.mine ? .leading : .trailing) { MessageInfo(event: event).frame(width: 300).background(tones.surface) }
 		#endif
+		.confirmationDialog("Delete this message?", isPresented: $deleting, titleVisibility: .visible) {
+			Button("Delete for everyone", role: .destructive) { model.attempt { try model.core.redact(event.conv, event.id) } }
+			Button("Cancel", role: .cancel) {}
+		} message: { Text("It goes for everyone in this chat.") }
 	}
 
 	/// The words, in a bubble: mine the strongest tint, theirs glass; a mention of me edged in the
@@ -374,20 +395,26 @@ struct MessageRow: View {
 		model.attempt { try model.core.react(event.conv, event.id, k, on: on) }
 	}
 
+	/// The same menu on a right click and a long press, in the same order everywhere: answering it,
+	/// copying it, what's known about it, changing it; deleting last, and asked first.
 	@ViewBuilder private var menu: some View {
 		if event.mine, let d = model.timeline(event.conv).delivery, d.event == event.id { Text(d.sentence.prefix(1).uppercased() + d.sentence.dropFirst()) }
-		Button("Reply") { onReply(event) }
-		Button("Thread") { onThread(event) }
-		Menu("React") {
+		Menu {
 			ForEach(Array(EmojiPicker.recent.prefix(6)), id: \.self) { k in Button(k) { react(k) } }
 			Divider()
 			Button("All Emoji…") { picking = true }
-		}
+		} label: { Label("React", systemImage: "face.smiling") }
+		Button { onReply(event) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+		Button { onThread(event) } label: { Label("Reply in thread", systemImage: "bubble.left.and.bubble.right") }
+		if let t = event.text, !t.isEmpty { Button { copy(t) } label: { Label("Copy", systemImage: "doc.on.doc") } }
+		Divider()
+		if !event.reactions.isEmpty { Button { showReactions = true } label: { Label("Who reacted", systemImage: "person.2") } }
 		if event.mine {
-			Button("Edit") { editText = event.text ?? ""; editing = true }
-			Button("Delete", role: .destructive) { model.attempt { try model.core.redact(event.conv, event.id) } }
+			Button { showInfo = true } label: { Label("Info", systemImage: "info.circle") }
+			if event.text != nil { Button { editText = event.text ?? ""; editing = true } label: { Label("Edit", systemImage: "pencil") } }
+			Divider()
+			Button(role: .destructive) { deleting = true } label: { Label("Delete", systemImage: "trash") }
 		}
-		Button("Copy") { copy(event.text ?? "") }
 	}
 }
 
@@ -433,9 +460,9 @@ struct AttachmentBlock: View {
 		.contentShape(RoundedRectangle(cornerRadius: 10))
 		.onTapGesture { open() }
 		.contextMenu {
-			Button("Open") { open() }.disabled(url == nil)
+			Button { open() } label: { Label("Open", systemImage: "eye") }.disabled(url == nil)
 			#if os(macOS)
-			Button("Save to Downloads") { save() }.disabled(url == nil)
+			Button { save() } label: { Label("Save to Downloads", systemImage: "arrow.down.circle") }.disabled(url == nil)
 			#else
 			if let url { ShareLink(item: viewable(url, name: name)) { Label("Share…", systemImage: "square.and.arrow.up") } }
 			#endif

@@ -135,9 +135,7 @@ struct Root: View {
 		.overlay { if model.removedHere { RemovedView() } }
 		.modifier(CallPresenter())
 		.font(Theme.font)
-		.confirmationDialog(model.deleting.map { $0.kind == .home ? "Clear your notes?" : "Delete \(model.title($0))?" } ?? "", isPresented: Binding(get: { model.deleting != nil }, set: { if !$0 { model.deleting = nil } }), titleVisibility: .visible) {
-			if let c = model.deleting { Button(c.kind == .home ? "Clear" : (c.isDirect ? "Delete" : "Leave and delete"), role: .destructive) { model.delete(c); model.deleting = nil } }
-		}
+		.modifier(DeleteChatQuestion())
 		.onChange(of: model.unread, initial: true) { _, n in NSApp.dockTile.badgeLabel = n > 0 ? "\(n)" : nil }
 		.sheet(isPresented: $palette) { Palette(shown: $palette, run: run) }
 		.sheet(item: $sheet) { NewSheet(what: $0, space: model.selectedSpace) }

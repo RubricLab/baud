@@ -40,6 +40,7 @@
 		4031A24BD57B1D0F97F03F7C /* CallShots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F5E94CA73FC1C09394C483 /* CallShots.swift */; };
 		4314316991EA40B478B69716 /* Journey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AF7D9CCE1363EE53ACE0054 /* Journey.swift */; };
 		4402230582625CE3D54E3E43 /* MacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 427C7C54ACB3A5DD62F4BCC1 /* MacApp.swift */; };
+		444C2E0876701E1B856DC0E1 /* Parts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A471EC4491D233135B47FCB /* Parts.swift */; };
 		4A6D8DBBCF3F8C7A602860C3 /* CallKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8717C133B6AE73D190377D60 /* CallKitBridge.swift */; };
 		4FF1B23CD5B433603CE0BF25 /* LocalNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6596BA47A6667B1752477E /* LocalNetwork.swift */; };
 		5083D674434306E73E94FB77 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BAD14B555891276F6DAAAA /* AppModel.swift */; };
@@ -93,6 +94,7 @@
 		AEBBA993F1512B1F78328CF7 /* AddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3332FE8571C2E8AF13D0E34 /* AddView.swift */; };
 		B031E7D112534BF317364ABC /* PeerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9E7BD9CF8F823A8E7F6472B4 /* PeerKit */; };
 		B04DFAA58033C5CC6CACEA4C /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0F5DABBADD00A013E72578 /* Theme.swift */; };
+		B28E85476C9BDA763F1F1B17 /* Parts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A471EC4491D233135B47FCB /* Parts.swift */; };
 		B4BA2E2CD996417F014DB1A6 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BAD14B555891276F6DAAAA /* AppModel.swift */; };
 		B61FD253F0DA3C1523C8F5FB /* Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A9454EAB1FCAAC7503A2A8D /* Timeline.swift */; };
 		B6EFE0868D291D181A7E310F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9B39DE5592DE65E4232419B /* SettingsView.swift */; };
@@ -140,6 +142,7 @@
 		24B7E6221F6F1DD1E2B1021D /* CallWindows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallWindows.swift; sourceTree = "<group>"; };
 		29BAD14B555891276F6DAAAA /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		2A0F1AD38248BB0463232C4A /* Rows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rows.swift; sourceTree = "<group>"; };
+		2A471EC4491D233135B47FCB /* Parts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parts.swift; sourceTree = "<group>"; };
 		2CA8473B4A71D70B4EFDE1E9 /* CallMini.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallMini.swift; sourceTree = "<group>"; };
 		316246AB1CCAE8FC33C72026 /* NetStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetStatus.swift; sourceTree = "<group>"; };
 		3523E6E377B1315F9F556B2A /* RateControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RateControl.swift; sourceTree = "<group>"; };
@@ -363,6 +366,7 @@
 				552AB03DC4FD2C334C21EE54 /* OnboardingView.swift */,
 				ABF2C8771ABCAA83D5896EF8 /* Overviews.swift */,
 				65D9746FB1B0F11B124AAD15 /* Palette.swift */,
+				2A471EC4491D233135B47FCB /* Parts.swift */,
 				9758F3F8F3585C72D89E9147 /* Places.swift */,
 				86B3B89BD043BCBC2C17B0E7 /* QRCode.swift */,
 				2A0F1AD38248BB0463232C4A /* Rows.swift */,
@@ -526,6 +530,7 @@
 				FD141AAC3E3D1F9C8F9F9583 /* Overviews.swift in Sources */,
 				A56110ADC4BA5231A2BF9637 /* Pacer.swift in Sources */,
 				6BF0E728E6769886CA8186F5 /* Palette.swift in Sources */,
+				444C2E0876701E1B856DC0E1 /* Parts.swift in Sources */,
 				53CB38C672B48BA520B3B43C /* PhoneComposerText.swift in Sources */,
 				5BD3399667E0CBE9B9DE9AE9 /* Places.swift in Sources */,
 				8F2B5EF789310B1507FAD53E /* Push.swift in Sources */,
@@ -589,6 +594,7 @@
 				5DCED25CB8F1E53E0BF347A2 /* Overviews.swift in Sources */,
 				8FE1423A9B5DBB8D70BFCB90 /* Pacer.swift in Sources */,
 				28A12C7F698BDFCAD316BED3 /* Palette.swift in Sources */,
+				B28E85476C9BDA763F1F1B17 /* Parts.swift in Sources */,
 				8201FF89C45982D303862177 /* Places.swift in Sources */,
 				5C30E3B3E0198AC5D2472135 /* QRCode.swift in Sources */,
 				3B5CDF3E1EA11306B0AE1109 /* RateControl.swift in Sources */,

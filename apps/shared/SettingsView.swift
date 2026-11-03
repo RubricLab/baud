@@ -67,11 +67,11 @@ struct Card<Content: View>: View {
 	@ViewBuilder var content: Content
 	var body: some View {
 		VStack(alignment: .leading, spacing: 8) {
-			Text(title).font(Theme.headingFont).foregroundStyle(tones.heading).accessibilityAddTraits(.isHeader)
+			SectionTitle(title)
 			VStack(alignment: .leading, spacing: 0) { content }
 				.padding(16)
 				.frame(maxWidth: .infinity, alignment: .leading)
-				.glass(corner: 18)
+				.glass(corner: Parts.corner)
 		}
 	}
 }
@@ -150,7 +150,7 @@ struct MeCard: View {
 		}
 		.padding(16)
 		.frame(maxWidth: .infinity, alignment: .leading)
-		.glass(corner: 18)
+		.glass(corner: Parts.corner)
 		.onChange(of: editing) { _, e in if !e, renaming { if name != model.me.name, !name.isEmpty { model.setName(name) }; renaming = false } }
 		.onChange(of: photo) { _, item in Task { await model.setPhoto(item) } }
 		.fileImporter(isPresented: $picking, allowedContentTypes: [.image]) { r in if case .success(let url) = r { _ = url.startAccessingSecurityScopedResource(); model.attempt { try model.core.setAvatar(url) }; model.refreshAll() } }
@@ -336,7 +336,8 @@ struct DeviceCard: View {
 				Button("Remove", role: .destructive) { confirm = true }.buttonStyle(Quiet(danger: true))
 					.confirmationDialog("Remove \(d.name)?", isPresented: $confirm, titleVisibility: .visible) {
 						Button("Remove", role: .destructive) { model.attempt { try model.core.revoke(d.id) }; model.refreshAll() }
-					}
+						Button("Cancel", role: .cancel) {}
+					} message: { Text("It stops getting your chats and friends. You can add it again later.") }
 			}
 		}
 		.frame(maxWidth: .infinity)
@@ -358,22 +359,21 @@ struct FriendsSection: View {
 		#endif
 	}
 	var body: some View {
-		Card(title: "Friends") {
+		ListCard(title: "Friends") {
+			Button { addFriend() } label: { ActionRow(symbol: "plus", title: "Add a friend") }.buttonStyle(RowStyle())
 			ForEach(model.contacts) { k in
 				Button { open = k.user } label: {
 					HStack(spacing: 10) {
-						Avatar(name: k.name, hash: k.avatar, size: 32)
+						Avatar(name: k.name, hash: k.avatar, size: Rows.face)
 						Text(k.name).font(Theme.font.weight(.medium)).lineLimit(1)
 						if k.verified { MarkView(mark: .verified, size: 14, color: tones.secondary) }
 						Spacer(minLength: 8)
 						StatusWord(on: k.online, word: presenceWord(k.devices).capitalizedFirst)
-					}.frame(minHeight: 44)
+					}.frame(height: Rows.chat)
 				}
-				.buttonStyle(RowStyle()).padding(.horizontal, -Rows.inset - Rows.pad)
+				.buttonStyle(RowStyle())
 				.modifier(ThingCard(shown: Binding(get: { open == k.user }, set: { if !$0 { open = nil } })) { FriendCard(k: k) })
 			}
-			Button { addFriend() } label: { Label("Add", systemImage: "plus").font(Theme.font.weight(.semibold)).frame(minHeight: 44) }
-				.buttonStyle(RowStyle()).padding(.horizontal, -Rows.inset - Rows.pad).accessibilityLabel("Add a friend")
 		}
 	}
 }
@@ -403,7 +403,8 @@ struct FriendCard: View {
 				Button("Remove friend", role: .destructive) { confirm = true }.buttonStyle(Quiet(danger: true))
 					.confirmationDialog("Remove \(k.name)?", isPresented: $confirm, titleVisibility: .visible) {
 						Button("Remove", role: .destructive) { model.unfriend(k.user) }
-					}
+						Button("Cancel", role: .cancel) {}
+					} message: { Text("You'll stop being friends.") }
 			}
 		}
 		.frame(maxWidth: .infinity)
@@ -457,7 +458,7 @@ struct AppCard: View {
 		#endif
 		}
 		.padding(16)
-		.glass(corner: 18)
+		.glass(corner: Parts.corner)
 	}
 }
 
@@ -475,18 +476,16 @@ struct BaudTile: View {
 	}
 }
 
-/// Start over on this device: keys, store, friends here, everything; a confirmation says so.
+/// Start over on this device: keys, store, friends here, everything. Last on the page, red, and
+/// it asks first.
 struct StartOver: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.restart) private var restart
-	@State private var confirm = false
 	var body: some View {
-		Button("Start over", role: .destructive) { confirm = true }
-			.buttonStyle(Quiet(danger: true))
-			.frame(maxWidth: .infinity)
-			.confirmationDialog("Erase this \(AppModel.thisKind)?", isPresented: $confirm, titleVisibility: .visible) {
-				Button("Erase chats, friends and keys", role: .destructive) { Task { await model.wipe(); restart() } }
-			}
+		DangerCard(symbol: "arrow.counterclockwise", title: "Start over", question: "Erase this \(AppModel.thisKind)?",
+			detail: "Its chats, friends and keys go for good. Your other devices keep theirs.", answer: "Erase") {
+			Task { await model.wipe(); restart() }
+		}
 	}
 }
 

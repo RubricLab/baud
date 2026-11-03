@@ -149,6 +149,7 @@ struct HomeTab: View {
 					} else {
 						ForEach(model.chats) { c in
 							Button { path.append(.conv(c.id)) } label: { ChatRow(c: c) }.buttonStyle(RowStyle())
+								.contextMenu { ChatMenu(c: c) }
 								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
 									Button(c.kind == .home ? "Clear" : "Delete", role: .destructive) { model.deleting = c }
 								}
@@ -164,9 +165,7 @@ struct HomeTab: View {
 				.listRowInsets(EdgeInsets()).listRowSeparator(.hidden).listRowBackground(Color.clear)
 			}
 			.listStyle(.plain).scrollContentBackground(.hidden)
-			.confirmationDialog(model.deleting.map { $0.kind == .home ? "Clear your notes?" : "Delete \(model.title($0))?" } ?? "", isPresented: Binding(get: { model.deleting != nil }, set: { if !$0 { model.deleting = nil } }), titleVisibility: .visible) {
-				if let c = model.deleting { Button(c.kind == .home ? "Clear" : (c.isDirect ? "Delete" : "Leave and delete"), role: .destructive) { model.delete(c); model.deleting = nil } }
-			}
+			.modifier(DeleteChatQuestion())
 			.background(Ground())
 			.toolbar(.hidden, for: .navigationBar)
 			.navigationDestination(for: Route.self) { r in RouteView(route: r) }
@@ -292,6 +291,8 @@ struct ConversationScreen: View {
 		ConversationView(conv: conv, showMembers: $members)
 			.background(Ground())
 			.sheet(isPresented: $members) { MembersView(conv: conv, close: { members = false }).presentationBackground(tones.raised) }
+			// `BAUD_INFO=1`: its details open once it's on screen, for the pictures.
+			.task { if ProcessInfo.processInfo.environment["BAUD_INFO"] == "1" { try? await Task.sleep(for: .milliseconds(700)); members = true } }
 	}
 }
 
