@@ -389,7 +389,7 @@ struct UpdatesCard: View {
 				.cardRow()
 			}
 			#if os(macOS)
-			ListCard(footer: "When there's a new baud, it's downloaded, checked against baud's signature and put in place by itself. Nothing restarts until you say so.") {
+			ListCard(footer: "A new baud downloads and is checked against baud's signature by itself, then goes in place the next time baud quits. Nothing restarts until you say so.") {
 				HStack(spacing: Rows.gap) {
 					Image(systemName: "arrow.down.circle").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
 					Text("Download and install updates automatically").font(Theme.font.weight(.medium))

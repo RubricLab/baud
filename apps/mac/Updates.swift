@@ -3,10 +3,12 @@
 /// when the app opens, when it comes to the front (at most every six hours), and when asked. A
 /// newer version shows as a bar at the foot of the sidebar. One press downloads it and checks three
 /// things: the record's signature, the download's hash against the record, and that the app inside
-/// is signed by baud's Apple team. It then puts the new app in place of this one, and Restart opens
-/// it. With "Download and install updates automatically" on (the default, the person's choice in
-/// Settings ▸ Updates), the installed app does the press itself, the same three checks and the
-/// same swap, then waits: nothing ever restarts by itself. Off, nothing downloads before the press.
+/// is signed by baud's Apple team. The new app then waits, checked, in baud's caches (named so macOS
+/// never takes it for a second baud), and goes in place of this one when baud quits or Restart is
+/// pressed: never under the running app, whose signature macOS keeps checking against what's on
+/// disk (a mismatch can cost a call its microphone). With "Download and install updates
+/// automatically" on (the default, the person's choice in Settings ▸ Updates), the press happens by
+/// itself; nothing ever restarts by itself. Off, nothing downloads before the press.
 /// Where this copy can't replace itself (a folder it may not write, a build run from Xcode, a beta
 /// copy), it only offers, and the press opens the disk image for the drag into Applications. An
 /// unsigned or wrongly signed record is never offered.
@@ -47,7 +49,8 @@ final class Updates {
 	}
 	var state: State = .idle
 	private var release: Release?
-	private var installed: URL?
+	/// The new version, checked and waiting to go in place of this one.
+	private var staged: URL?
 	static var current: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0" }
 
 	/// When the last answer came.
@@ -84,6 +87,22 @@ final class Updates {
 	var offering: Bool { switch state { case .available, .downloading, .ready: return true; default: return false } }
 
 	init() {
+		// Quitting: the waiting version goes in place, for the next launch. (Killed or crashed, it's
+		// still waiting at the next launch, and goes at the next quit.)
+		NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in
+			MainActor.assumeIsolated {
+				guard let self, let staged = self.staged else { return }
+				Measure.log("update: quitting, putting the new version in place")
+				_ = Self.swap(staged)
+			}
+		}
+		// One left waiting by an earlier run: ready again if it's newer and still baud's, else gone.
+		Task {
+			let found = await Task.detached { Self.waiting() }.value
+			guard let (url, version) = found, staged == nil else { return }
+			switch state { case .idle, .checking, .latest, .failed: break; default: return }
+			staged = url; state = .ready(version)
+		}
 		// Brought to the front after a while away: look again, at most every six hours.
 		NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
 			MainActor.assumeIsolated {
@@ -140,10 +159,12 @@ final class Updates {
 				let dmg = FileManager.default.temporaryDirectory.appendingPathComponent("baud-\(r.version).dmg")
 				try? FileManager.default.removeItem(at: dmg)
 				try FileManager.default.moveItem(at: tmp, to: dmg)
-				switch await Task.detached(operation: { Self.replace(with: dmg) }).value {
+				let version = r.version
+				switch await Task.detached(operation: { Self.stage(dmg, version: version) }).value {
 				case .success(let app):
-					installed = app; state = .ready(r.version)
-					Measure.log("update: \(r.version) in place")
+					try? FileManager.default.removeItem(at: dmg)
+					staged = app; state = .ready(r.version)
+					Measure.log("update: \(r.version) checked and waiting")
 				case .failure(let why):
 					// Not ours to replace in place: the disk image, for the drag into Applications.
 					Measure.log("update: \(why.message); opening the disk image")
@@ -157,23 +178,35 @@ final class Updates {
 		}
 	}
 
-	/// Open the new version and close this one.
+	/// The new version in place of this one, then opened as this one closes.
 	func restart() {
-		guard case .ready = state, let app = installed else { return }
+		guard case .ready = state, let new = staged else { return }
+		if case .failure(let why) = Self.swap(new) {
+			staged = nil
+			state = .failed("The new version couldn't be put in place: \(why.message).")
+			return
+		}
+		staged = nil
 		let p = Process()
 		p.executableURL = URL(fileURLWithPath: "/bin/sh")
-		p.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", app.path]
+		p.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", Bundle.main.bundleURL.path]
 		try? p.run()
 		NSApp.terminate(nil)
 	}
 
 	struct Refusal: Error { let message: String }
 
-	/// The disk image's app in place of this one, only if it is baud's, signed by baud's team, and
-	/// this copy is the installed one in a folder it may write.
-	nonisolated static func replace(with dmg: URL) -> Result<URL, Refusal> {
-		let current = Bundle.main.bundleURL
-		let folder = current.deletingLastPathComponent()
+	/// Where a new version waits: baud's caches, on the same disk as Applications (so going in
+	/// place is a rename), without ".app" in its name (so macOS never opens it as another baud).
+	nonisolated static var waitingRoom: URL {
+		FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("sh.rubric.baud.mac/update")
+	}
+
+	/// The disk image's app, copied whole into the waiting room, only if it is baud's, signed by
+	/// baud's team, the version the record names, and this copy is the installed one in a folder it
+	/// may write.
+	nonisolated static func stage(_ dmg: URL, version: String) -> Result<URL, Refusal> {
+		let folder = Bundle.main.bundleURL.deletingLastPathComponent()
 		guard Bundle.main.bundleIdentifier == "sh.rubric.baud.mac", FileManager.default.isWritableFile(atPath: folder.path) else {
 			return .failure(Refusal(message: "this copy can't replace itself"))
 		}
@@ -184,15 +217,41 @@ final class Updates {
 		defer { _ = run("/usr/bin/hdiutil", "detach", mount.path, "-force") }
 		let app = mount.appendingPathComponent("baud.app")
 		guard signedByBaud(app) else { return .failure(Refusal(message: "the app inside isn't signed by baud's team")) }
-		let staged = folder.appendingPathComponent(".baud-update.app")
-		try? FileManager.default.removeItem(at: staged)
-		guard run("/usr/bin/ditto", app.path, staged.path) == 0, signedByBaud(staged) else {
-			try? FileManager.default.removeItem(at: staged)
+		let room = waitingRoom
+		try? FileManager.default.removeItem(at: room)
+		try? FileManager.default.createDirectory(at: room, withIntermediateDirectories: true)
+		let staged = room.appendingPathComponent("baud-\(version).staged")
+		guard run("/usr/bin/ditto", app.path, staged.path) == 0, signedByBaud(staged), self.version(of: staged) == version else {
+			try? FileManager.default.removeItem(at: room)
 			return .failure(Refusal(message: "the new app couldn't be copied whole"))
 		}
-		do { _ = try FileManager.default.replaceItemAt(current, withItemAt: staged) }
-		catch { try? FileManager.default.removeItem(at: staged); return .failure(Refusal(message: "couldn't put it in place: \(error.localizedDescription)")) }
-		return .success(current)
+		return .success(staged)
+	}
+
+	/// The waiting version in place of this app: a rename on the same disk.
+	nonisolated static func swap(_ staged: URL) -> Result<Void, Refusal> {
+		do {
+			_ = try FileManager.default.replaceItemAt(Bundle.main.bundleURL, withItemAt: staged)
+			try? FileManager.default.removeItem(at: waitingRoom)
+			return .success(())
+		} catch { return .failure(Refusal(message: error.localizedDescription)) }
+	}
+
+	/// A version left waiting by an earlier run, if it's newer than this one and still baud's.
+	/// Anything else in the waiting room goes.
+	nonisolated static func waiting() -> (URL, String)? {
+		// Only the shipped app looks: a dev build shares the folder's name and must leave it be.
+		guard Bundle.main.bundleIdentifier == "sh.rubric.baud.mac" else { return nil }
+		let room = waitingRoom
+		guard let found = try? FileManager.default.contentsOfDirectory(at: room, includingPropertiesForKeys: nil).first(where: { $0.pathExtension == "staged" }) else { return nil }
+		let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+		if let v = version(of: found), newer(v, than: current), signedByBaud(found) { return (found, v) }
+		try? FileManager.default.removeItem(at: room)
+		return nil
+	}
+
+	nonisolated static func version(of app: URL) -> String? {
+		(NSDictionary(contentsOf: app.appendingPathComponent("Contents/Info.plist")) as? [String: Any])?["CFBundleShortVersionString"] as? String
 	}
 
 	nonisolated static func signedByBaud(_ app: URL) -> Bool {
@@ -211,7 +270,7 @@ final class Updates {
 	}
 
 	/// "0.1.10" is newer than "0.1.7": compare number by number.
-	static func newer(_ a: String, than b: String) -> Bool {
+	nonisolated static func newer(_ a: String, than b: String) -> Bool {
 		let x = a.split(separator: ".").map { Int($0) ?? 0 }, y = b.split(separator: ".").map { Int($0) ?? 0 }
 		for i in 0..<max(x.count, y.count) { let p = i < x.count ? x[i] : 0, q = i < y.count ? y[i] : 0; if p != q { return p > q } }
 		return false

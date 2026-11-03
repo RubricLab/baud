@@ -220,8 +220,9 @@ struct MessageRow: View {
 	@State private var forwarding = false
 	/// The reaction a double tap just gave, popping over the bubble.
 	@State private var popped: String?
-	/// Where the row is on screen, for the hold menu to lift it in place.
-	@State private var frame: CGRect = .zero
+	/// Where the row is on screen, for the hold menu to lift it in place. Kept in a box, not as
+	/// state: it changes on every frame of a scroll, and the row mustn't draw again for that.
+	@State private var spot = Spot()
 	static func mark(_ v: Event.Via) -> Mark { switch v { case .direct: return .direct; case .relay: return .relayed; case .carried: return .held; case .waiting: return .waiting } }
 	/// How this message travelled, in a few words.
 	private func pathSentence(_ v: Event.Via) -> String {
@@ -286,7 +287,7 @@ struct MessageRow: View {
 		.listRowSeparator(.hidden)
 		.listRowInsets(Theme.rowInsets)
 		.onHover { hover = $0 }
-		.modifier(HoldOrMenu(lifted: lifted, hold: hold.map { h in { h(Holding(event: event, first: first, last: last, frame: frame)) } }, frame: $frame) { menu })
+		.modifier(HoldOrMenu(lifted: lifted, hold: hold.map { h in { h(Holding(event: event, first: first, last: last, frame: spot.rect)) } }, spot: spot) { menu })
 		.swipeActions(edge: .leading, allowsFullSwipe: true) { Button("Reply") { onReply(event) } }
 		// VoiceOver: the same actions, in the same order, on the message itself.
 		.accessibilityAction(named: "Reply") { onReply(event) }
@@ -331,7 +332,7 @@ struct MessageRow: View {
 			let mine = timeline.events.last(where: { $0.mine && $0.type == .message && $0.text != nil })?.id == event.id
 			guard (theirs && (env["BAUD_HOLD"] == "1" || env["BAUD_PICKER"] == "1")) || (mine && env["BAUD_MSGINFO"] == "1") else { return }
 			try? await Task.sleep(for: .milliseconds(1500))
-			if theirs, env["BAUD_HOLD"] == "1", let h = hold { h(Holding(event: event, first: first, last: last, frame: frame)) }
+			if theirs, env["BAUD_HOLD"] == "1", let h = hold { h(Holding(event: event, first: first, last: last, frame: spot.rect)) }
 			if theirs, env["BAUD_PICKER"] == "1" { picking = true }
 			if mine, env["BAUD_MSGINFO"] == "1" { showInfo = true }
 		}
@@ -396,7 +397,7 @@ struct MessageRow: View {
 	/// Where my message is: on the last bubble of a run of mine, its time and one mark, in the
 	/// bubble's quiet ink: ○ on its way, ✓ held by a device for them, ✓✓ on their device, ● read.
 	private var delivery: Delivery? {
-		guard event.mine, last, !lifted || true else { return nil }
+		guard event.mine, last else { return nil }
 		let d = model.core.delivery(event.conv, event.id)
 		return d.devices.isEmpty ? nil : d
 	}
@@ -569,20 +570,22 @@ struct Holding: Equatable {
 	static func == (a: Holding, b: Holding) -> Bool { a.event.id == b.event.id && a.frame == b.frame }
 }
 extension EnvironmentValues { @Entry var hold: ((Holding) -> Void)? = nil }
+/// Where a row is on screen, written as it moves and read only when it's held.
+final class Spot { var rect: CGRect = .zero }
 
 /// A hold where there's a hold menu (the iPhone's conversation); the system's menu elsewhere (the
 /// Mac, a thread). Either way the row knows where it is.
 private struct HoldOrMenu<M: View>: ViewModifier {
 	let lifted: Bool
 	let hold: (() -> Void)?
-	@Binding var frame: CGRect
+	let spot: Spot
 	@ViewBuilder var menu: () -> M
 	func body(content: Content) -> some View {
 		#if os(iOS)
 		if lifted { content }
 		else if let hold {
 			content
-				.onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
+				.onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { spot.rect = $0 }
 				.onLongPressGesture(minimumDuration: 0.35) { Haptic.tap(); hold() }
 		} else { content.contextMenu { menu() } }
 		#else
