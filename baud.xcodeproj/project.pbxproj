@@ -14,10 +14,12 @@
 		09DBB37014593457D581BE90 /* NewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4707057B75471BB6616D1F72 /* NewSheet.swift */; };
 		0AA2F344CE0C854E2C688048 /* CallMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6A90C24F9850C2DA5A0AF7C /* CallMedia.swift */; };
 		0B6B3E3ED62C670106C69F42 /* Rows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A0F1AD38248BB0463232C4A /* Rows.swift */; };
+		10CF26A9C586F2B4BD84A63B /* CallMini.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA8473B4A71D70B4EFDE1E9 /* CallMini.swift */; };
 		122562BE326A38F9C13EAB9E /* EmojiPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F5302278BAA483D7DAF49FF /* EmojiPicker.swift */; };
 		13024C44EA54555E9B2E0B94 /* IconColour.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB065FCE67C439525356FC2 /* IconColour.swift */; };
 		145FFD2E5ED4363438438242 /* NetworkPicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B6C76ED97B2C75F52DB4388 /* NetworkPicture.swift */; };
 		162A5A9B2C24699F9677C43D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 41C65A0588DB0A438F215821 /* Assets.xcassets */; };
+		172A1C12130B70613DCAA173 /* CallMini.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA8473B4A71D70B4EFDE1E9 /* CallMini.swift */; };
 		19254B2D32805DE0587FCEC3 /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7E57609968840E32DE4A8D /* Notifier.swift */; };
 		1BD3354049E9ADD968846283 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DB63EC081D64513628AB58B5 /* PrivacyInfo.xcprivacy */; };
 		23197B2F6762DC0A0288F4F9 /* NetworkPicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B6C76ED97B2C75F52DB4388 /* NetworkPicture.swift */; };
@@ -44,6 +46,7 @@
 		5162398093B9DE54D0C668B9 /* Refresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E23687D0A963657133DA63E /* Refresh.swift */; };
 		51B10D7E298B1E3E4BD73698 /* NewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4707057B75471BB6616D1F72 /* NewSheet.swift */; };
 		53877AF515B05D6B408E7F25 /* Journey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AF7D9CCE1363EE53ACE0054 /* Journey.swift */; };
+		53CB38C672B48BA520B3B43C /* PhoneComposerText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5A80908C84B20C1E3D8A03 /* PhoneComposerText.swift */; };
 		5BD3399667E0CBE9B9DE9AE9 /* Places.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9758F3F8F3585C72D89E9147 /* Places.swift */; };
 		5C30E3B3E0198AC5D2472135 /* QRCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B3B89BD043BCBC2C17B0E7 /* QRCode.swift */; };
 		5DCED25CB8F1E53E0BF347A2 /* Overviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF2C8771ABCAA83D5896EF8 /* Overviews.swift */; };
@@ -135,6 +138,7 @@
 		24B7E6221F6F1DD1E2B1021D /* CallWindows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallWindows.swift; sourceTree = "<group>"; };
 		29BAD14B555891276F6DAAAA /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		2A0F1AD38248BB0463232C4A /* Rows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rows.swift; sourceTree = "<group>"; };
+		2CA8473B4A71D70B4EFDE1E9 /* CallMini.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallMini.swift; sourceTree = "<group>"; };
 		316246AB1CCAE8FC33C72026 /* NetStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetStatus.swift; sourceTree = "<group>"; };
 		3523E6E377B1315F9F556B2A /* RateControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RateControl.swift; sourceTree = "<group>"; };
 		35C8A49A8A4CDEECDB53107C /* Push.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Push.swift; sourceTree = "<group>"; };
@@ -159,6 +163,7 @@
 		86B3B89BD043BCBC2C17B0E7 /* QRCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCode.swift; sourceTree = "<group>"; };
 		8717C133B6AE73D190377D60 /* CallKitBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallKitBridge.swift; sourceTree = "<group>"; };
 		8E23687D0A963657133DA63E /* Refresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Refresh.swift; sourceTree = "<group>"; };
+		8F5A80908C84B20C1E3D8A03 /* PhoneComposerText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneComposerText.swift; sourceTree = "<group>"; };
 		8FC89CC1CA8EBF876B323305 /* EmojiData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiData.swift; sourceTree = "<group>"; };
 		93F49973438F663CE942069B /* LinkViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkViews.swift; sourceTree = "<group>"; };
 		9758F3F8F3585C72D89E9147 /* Places.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Places.swift; sourceTree = "<group>"; };
@@ -239,6 +244,7 @@
 			children = (
 				A8C27839C02609A0C304BB9B /* Engine */,
 				C261DF934B80DC19D0362C19 /* CallCenter.swift */,
+				2CA8473B4A71D70B4EFDE1E9 /* CallMini.swift */,
 				50190B256658506679782ED5 /* CallScreen.swift */,
 				21F5E94CA73FC1C09394C483 /* CallShots.swift */,
 				D94A66B72317CFFE43C9689B /* CrateCalls.swift */,
@@ -290,6 +296,7 @@
 				2260F47ACF99072A5B40144F /* CallPresenter.swift */,
 				D610A833ADF7DE411898B02A /* Info.plist */,
 				C829C3035C69096999B4F96E /* IOSApp.swift */,
+				8F5A80908C84B20C1E3D8A03 /* PhoneComposerText.swift */,
 				35C8A49A8A4CDEECDB53107C /* Push.swift */,
 				8E23687D0A963657133DA63E /* Refresh.swift */,
 			);
@@ -484,6 +491,7 @@
 				4A6D8DBBCF3F8C7A602860C3 /* CallKitBridge.swift in Sources */,
 				6E25926179C9DE3D3090CC32 /* CallLink.swift in Sources */,
 				9AF7666681A3770F08FDD520 /* CallMedia.swift in Sources */,
+				10CF26A9C586F2B4BD84A63B /* CallMini.swift in Sources */,
 				E94A4D862528F01C347FDC5D /* CallPresenter.swift in Sources */,
 				DC7AEF4C02CBF7409438DAB7 /* CallScreen.swift in Sources */,
 				4031A24BD57B1D0F97F03F7C /* CallShots.swift in Sources */,
@@ -513,6 +521,7 @@
 				FD141AAC3E3D1F9C8F9F9583 /* Overviews.swift in Sources */,
 				A56110ADC4BA5231A2BF9637 /* Pacer.swift in Sources */,
 				6BF0E728E6769886CA8186F5 /* Palette.swift in Sources */,
+				53CB38C672B48BA520B3B43C /* PhoneComposerText.swift in Sources */,
 				5BD3399667E0CBE9B9DE9AE9 /* Places.swift in Sources */,
 				8F2B5EF789310B1507FAD53E /* Push.swift in Sources */,
 				85CCE8B237A3689C6BC0D4C8 /* QRCode.swift in Sources */,
@@ -541,6 +550,7 @@
 				91945CEC7290526F878F5EE9 /* CallCenter.swift in Sources */,
 				B874484F7CD43BBB86090112 /* CallLink.swift in Sources */,
 				0AA2F344CE0C854E2C688048 /* CallMedia.swift in Sources */,
+				172A1C12130B70613DCAA173 /* CallMini.swift in Sources */,
 				2C586DE2111A5F365AC4A2F5 /* CallScreen.swift in Sources */,
 				C5760471B09B8634E3CA8916 /* CallShots.swift in Sources */,
 				70FD23FB3E9ED9160D3C8025 /* CallWindows.swift in Sources */,

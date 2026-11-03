@@ -18,7 +18,7 @@ enum CallShots {
 				s.cameraOn = camera; s.startedAt = Date().addingTimeInterval(-252); s.path = "Direct · 14 ms"; s.stillLevel = level
 				if phase == .live {
 					let p = CallCenter.Participant(device: "d", user: friend?.user ?? "", name: friend?.name ?? "Sam", avatar: friend?.avatar, camera: remoteCamera)
-					p.muted = muted; s.participants = [p]
+					p.muted = muted; p.showing = remoteCamera; s.participants = [p]
 				}
 				return s
 			}
@@ -54,9 +54,20 @@ enum CallShots {
 				("group-voice-3", CGSize(width: 640, height: 480), group(["Ana", "Jo", "Sam"], video: false), nil),
 				("group-ringing", tall, group([], video: true, phase: .ringing), nil),
 				("group-phone-4", CGSize(width: 390, height: 844), group(["Ana", "Jo", "Sam", "Lee"], video: true), stills),
+				("phone-calling-video", CGSize(width: 390, height: 844), session(video: true, outgoing: true, phase: .ringing, level: 0), CallStills(remote: nil, local: phone)),
 			]
 			for (name, size, s, st) in shots {
 				write(CallScreen(session: s).environment(model).environment(\.callStills, st).frame(width: size.width, height: size.height), to: "\(dir)/call-\(name).png")
+			}
+			// The call made small: their picture, and a voice call.
+			let small: [(String, CallCenter.Session, CallStills?)] = [
+				("mini-video", { let s = session(video: true, outgoing: true, phase: .live); s.remoteAspect = 16 / 9; return s }(), stills),
+				("mini-phone-video", { let s = session(video: true, outgoing: true, phase: .live); s.remoteAspect = 9 / 16; return s }(), CallStills(remote: phone, local: stills.local)),
+				("mini-voice", session(video: false, outgoing: true, phase: .live, muted: false, level: 0.4), nil),
+			]
+			for (name, s, st) in small {
+				let size = CallMini.size(s)
+				write(CallMini(session: s).environment(model).environment(\.callStills, st).frame(width: size.width, height: size.height).padding(24).background(Color(white: 0.55)), to: "\(dir)/call-\(name).png")
 			}
 			#if os(macOS)
 			write(IncomingCall(session: session(video: true, outgoing: false, phase: .incoming)).environment(model).frame(width: 372, height: 92).padding(24).background(Color(white: 0.55)), to: "\(dir)/call-panel.png")

@@ -114,7 +114,11 @@ final class CallKitBridge: NSObject, CXProviderDelegate {
 		start.isVideo = s.video
 		controller.request(CXTransaction(action: start)) { error in
 			guard let error else { return }
-			Task { @MainActor in s.callKit = false; Measure.log("call \(s.id.prefix(8)): CallKit wouldn't start it: \(error)") }
+			Task { @MainActor in
+				Measure.log("call \(s.id.prefix(8)): CallKit wouldn't start it: \(error)")
+				// My media may already be running, waiting on an audio session CallKit won't give.
+				self.center?.callKitRefused(s)
+			}
 		}
 	}
 

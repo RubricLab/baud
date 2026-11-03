@@ -1,6 +1,8 @@
 /// Calls on the Mac. A call that's ringing here is a small panel at the top right of the screen,
 /// over whatever is in front, until it's answered or it stops. A call under way has a window of
-/// its own, dark, with the traffic lights over it; closing it hangs up.
+/// its own, dark, with the traffic lights over it; closing it hangs up. Made small, the call is a
+/// little window over everything (their picture, or who and how long), on every desktop, that can
+/// be dragged anywhere; a click makes it big again.
 import AppKit
 import SwiftUI
 
@@ -11,6 +13,9 @@ struct CallPresenter: ViewModifier {
 		content
 			.onChange(of: model.calls.session?.id, initial: true) { _, _ in CallWindows.shared.sync(model) }
 			.onChange(of: model.calls.session?.phase) { _, _ in CallWindows.shared.sync(model) }
+			.onChange(of: model.calls.minimized) { _, _ in CallWindows.shared.sync(model) }
+			.onChange(of: model.calls.session?.remoteAspect) { _, _ in CallWindows.shared.sync(model) }
+			.onChange(of: model.calls.session?.participants.first?.showing) { _, _ in CallWindows.shared.sync(model) }
 	}
 }
 
@@ -20,16 +25,77 @@ final class CallWindows: NSObject, NSWindowDelegate {
 	private var panel: NSPanel?
 	private var window: NSWindow?
 	private var shown: String?
+	private var mini: NSPanel?
+	private var dragFrom: (mouse: NSPoint, origin: NSPoint)?
 
 	func sync(_ model: AppModel) {
-		guard let s = model.calls.session else { closePanel(); closeWindow(); return }
+		guard let s = model.calls.session else { closePanel(); closeWindow(); closeMini(); return }
 		if s.phase == .incoming {
-			closeWindow()
+			closeWindow(); closeMini()
 			if panel == nil { showPanel(s, model) }
-		} else {
-			closePanel()
-			if window == nil || shown != s.id { showWindow(s, model) }
+			return
 		}
+		closePanel()
+		if model.calls.minimized, !s.phase.over {
+			// Small: the big window steps away (kept, not closed: closing hangs up).
+			window?.orderOut(nil)
+			if mini == nil { showMini(s, model) } else { fitMini(s) }
+		} else if s.phase.over, mini != nil {
+			// Over while small: it goes quietly.
+			closeMini()
+		} else if window == nil || shown != s.id {
+			closeMini()
+			showWindow(s, model)
+		} else if mini != nil, let w = window {
+			// Big again: a fresh screen takes the pictures back from the small one.
+			closeMini()
+			w.contentView = NSHostingView(rootView: CallScreen(session: s).environment(model).modifier(Tinted(hex: model.accentHex)))
+			w.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
+		}
+	}
+
+	// MARK: small
+
+	private func showMini(_ s: CallCenter.Session, _ model: AppModel) {
+		let size = CallMini.size(s)
+		let p = NSPanel(contentRect: NSRect(origin: .zero, size: size), styleMask: [.nonactivatingPanel, .borderless, .fullSizeContentView], backing: .buffered, defer: false)
+		p.level = .floating
+		p.isFloatingPanel = true
+		p.hidesOnDeactivate = false
+		p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+		p.backgroundColor = .clear
+		p.isOpaque = false
+		p.hasShadow = true
+		p.contentView = NSHostingView(rootView: CallMini(session: s, move: { [weak self] d in self?.drag(d) }).environment(model).modifier(Tinted(hex: model.accentHex)))
+		if let screen = (window?.screen ?? NSScreen.main)?.visibleFrame { p.setFrameOrigin(NSPoint(x: screen.maxX - size.width - 16, y: screen.maxY - size.height - 16)) }
+		p.alphaValue = 0
+		p.orderFrontRegardless()
+		NSAnimationContext.runAnimationGroup { $0.duration = 0.2; p.animator().alphaValue = 1 }
+		mini = p
+	}
+
+	/// The shape of their picture as it arrives, the top right corner where it was.
+	private func fitMini(_ s: CallCenter.Session) {
+		guard let p = mini else { return }
+		let size = CallMini.size(s)
+		guard p.frame.size != size else { return }
+		let f = NSRect(x: p.frame.maxX - size.width, y: p.frame.maxY - size.height, width: size.width, height: size.height)
+		p.setFrame(f, display: true, animate: true)
+	}
+
+	/// Following the pointer in screen points while dragged.
+	private func drag(_ moving: CGSize?) {
+		guard let p = mini else { return }
+		guard moving != nil else { dragFrom = nil; return }
+		let now = NSEvent.mouseLocation
+		guard let from = dragFrom else { dragFrom = (now, p.frame.origin); return }
+		p.setFrameOrigin(NSPoint(x: from.origin.x + now.x - from.mouse.x, y: from.origin.y + now.y - from.mouse.y))
+	}
+
+	private func closeMini() {
+		guard let p = mini else { return }
+		mini = nil; dragFrom = nil
+		NSAnimationContext.runAnimationGroup({ $0.duration = 0.15; p.animator().alphaValue = 0 }, completionHandler: { p.orderOut(nil) })
 	}
 
 	// MARK: the ring
@@ -65,7 +131,10 @@ final class CallWindows: NSObject, NSWindowDelegate {
 
 	private func showWindow(_ s: CallCenter.Session, _ model: AppModel) {
 		closeWindow()
-		let size = s.video ? NSSize(width: 880, height: 560) : s.group ? NSSize(width: 640, height: 480) : NSSize(width: 400, height: 540)
+		// Video takes a good share of the screen (the green button, or a double-click, takes all of it).
+		let visible = NSScreen.main?.visibleFrame.size ?? NSSize(width: 1440, height: 900)
+		let wide = min(1280, max(880, visible.width * 0.62))
+		let size = s.video ? NSSize(width: wide, height: min(visible.height * 0.85, (wide * 0.625).rounded())) : s.group ? NSSize(width: 640, height: 480) : NSSize(width: 400, height: 540)
 		let w = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
 		w.titlebarAppearsTransparent = true
 		w.titleVisibility = .hidden

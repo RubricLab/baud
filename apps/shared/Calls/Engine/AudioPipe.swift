@@ -59,7 +59,12 @@ final class AudioPipe: @unchecked Sendable {
 		var last = [Float](repeating: 0, count: AudioPipe.samples)
 		var concealRun = 0
 		var level: Float = 0
-		init(decoder: AVAudioConverter) { self.decoder = decoder }
+		/// When it joined, and whether a word of theirs has played yet (for the record: how soon a
+		/// call is heard).
+		let added = Date()
+		var heard = false
+		let id: String
+		init(id: String, decoder: AVAudioConverter) { self.id = id; self.decoder = decoder }
 	}
 	/// Guards the remotes, the playout queue (the render thread reads it) and the counts below.
 	private let lock = OSAllocatedUnfairLock()
@@ -104,7 +109,7 @@ final class AudioPipe: @unchecked Sendable {
 
 	func add(_ id: String) {
 		guard let dec = AVAudioConverter(from: opus, to: pcm) else { return }
-		lock.withLockUnchecked { if remotes[id] == nil { remotes[id] = Remote(decoder: dec) } }
+		lock.withLockUnchecked { if remotes[id] == nil { remotes[id] = Remote(id: id, decoder: dec) } }
 	}
 	func remove(_ id: String) { lock.withLockUnchecked { _ = remotes.removeValue(forKey: id) } }
 
@@ -443,6 +448,7 @@ final class AudioPipe: @unchecked Sendable {
 			r.level *= 0.8
 			return nil
 		case .frame(let opus, let level):
+			if !r.heard { r.heard = true; callLog("audio: first sound from \(r.id.prefix(8)) \(Int(Date().timeIntervalSince(r.added) * 1000)) ms after they joined") }
 			r.concealRun = 0
 			r.level = r.level * 0.5 + Float(level) / 255 * 0.5
 			r.last = decode(opus, r.decoder) ?? r.last

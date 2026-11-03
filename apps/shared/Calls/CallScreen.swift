@@ -1,11 +1,14 @@
 /// The call, on screen. Always dark, and always the person's colour: the colour's own near-black,
-/// their face on the loud fill with a ring of it that swells with their voice. Two people: their video fills it
-/// edge to edge; on a voice call (or with their camera off) their face sits in the middle and
-/// breathes with their voice. A group: everyone in tiles (one fills the screen, two split it, up to
-/// four share it two by two, more scroll), the one speaking lit by their voice. Mine is a small
-/// picture in a corner I can drag it to. One row of round controls floats at the bottom and steps
-/// aside while video plays, back on a tap or a move of the mouse. Status is one line: "Ringing…",
-/// "4:12 · Direct · 14 ms", "3:02 · 4 in the call", "Ana declined".
+/// their face on the loud fill with a ring of it that swells with their voice. Two people: their
+/// video fills the whole screen, edge to edge, under the status bar and the home indicator; on a
+/// voice call (or with their camera off) their face sits in the middle and breathes with their
+/// voice. A video call that's still ringing shows my own camera full screen, the way I'll be seen.
+/// A group: everyone in tiles (one fills the screen, two split it, up to four share it two by two,
+/// more scroll), the one speaking lit by their voice. Mine is a small picture in a corner I can drag
+/// it to, mirrored for the front camera only. One row of round controls floats at the bottom and
+/// steps aside while video plays, back on a tap anywhere or a move of the mouse; the button at the
+/// top makes the call small (`CallMini`) so the rest of baud can be used. Status is one line:
+/// "Ringing…", "4:12 · Direct · 14 ms", "3:02 · 4 in the call", "Ana declined".
 import AVFoundation
 import BaudCore
 import SwiftUI
@@ -22,52 +25,78 @@ struct CallScreen: View {
 
 	private var calls: CallCenter { model.calls }
 	private var grid: Bool { session.group && !session.participants.isEmpty && !session.phase.over }
-	private var theirVideo: Bool { !session.group && session.video && session.remoteCamera && session.phase == .live }
+	/// Their picture, arriving, fills the screen.
+	private var theirVideo: Bool {
+		guard !session.group, session.video, session.remoteCamera, session.phase == .live else { return false }
+		return stills != nil || session.participants.first?.showing == true
+	}
 	/// Video fills the screen: the controls step aside after a while.
 	private var immersive: Bool { theirVideo || (grid && session.video) }
-	private var myVideo: Bool { session.video && session.cameraOn && (session.phase == .live || session.phase == .connecting) }
+	private var cameraUp: Bool { session.video && session.cameraOn && !session.phase.over && session.phase != .incoming }
+	/// Mine fills the screen while it rings, and until their picture comes: how I'll look.
+	private var mineFull: Bool { cameraUp && !grid && !theirVideo && !(session.phase == .live && !session.remoteCamera) }
+	/// Otherwise mine is the small one in the corner: over their picture, or beside their face when
+	/// their camera is off.
+	private var mineSmall: Bool { cameraUp && !grid && !mineFull }
+	private var shown: Bool { controls || !immersive }
 
 	var body: some View {
 		let ink = Tones.make(hex: model.accentHex, dark: true)
-		GeometryReader { geo in
-			ZStack {
-				ink.surface.ignoresSafeArea()
-				if grid {
-					Tiles(session: session, size: geo.size, still: still).transition(.opacity)
-				} else if theirVideo {
-					Group {
-						if let still = stills?.remote { Image(decorative: still, scale: 1).resizable().scaledToFill() } else { VideoLayer(layer: session.remote) }
+		ZStack {
+			// Edge to edge: the room, and whatever picture fills it.
+			GeometryReader { geo in
+				ZStack {
+					ink.surface
+					if theirVideo {
+						RemoteVideo(session: session, size: geo.size).transition(.opacity)
+					} else if mineFull {
+						LocalVideo(session: session).frame(width: geo.size.width, height: geo.size.height).clipped().transition(.opacity)
 					}
-					.frame(width: geo.size.width, height: geo.size.height).clipped()
-					.ignoresSafeArea().transition(.opacity)
-				} else {
-					Presence(session: session, still: still).transition(.opacity)
 				}
-				if theirVideo || grid { header.opacity(controls || !immersive ? 1 : 0) }
-				if myVideo && !grid { mine(geo.size) }
-				VStack {
-					Spacer()
-					notes
-					bar.opacity(controls || !immersive ? 1 : 0).offset(y: controls || !immersive ? 0 : 24)
-				}
-				.padding(.bottom, Self.barBottom)
 			}
-			.animation(still ? nil : .smooth(duration: 0.35), value: theirVideo)
-			.animation(still ? nil : .smooth(duration: 0.35), value: session.participants.count)
-			.animation(still ? nil : .smooth(duration: 0.3), value: controls)
+			.ignoresSafeArea()
+			// Inside the safe area: faces, tiles and the controls.
+			GeometryReader { geo in
+				ZStack {
+					if grid {
+						Tiles(session: session, size: geo.size, still: still).transition(.opacity)
+					} else if !theirVideo {
+						if mineFull { Calling(session: session).transition(.opacity) } else { Presence(session: session, still: still).transition(.opacity) }
+					}
+					if mineSmall { mine(geo.size) }
+					top.opacity(shown ? 1 : 0)
+					VStack(spacing: 0) {
+						Spacer()
+						notes
+						bar.opacity(shown ? 1 : 0).offset(y: shown ? 0 : 24)
+					}
+					.padding(.bottom, Self.barBottom)
+				}
+			}
 		}
+		.animation(still ? nil : .smooth(duration: 0.35), value: theirVideo)
+		.animation(still ? nil : .smooth(duration: 0.35), value: mineFull)
+		.animation(still ? nil : .smooth(duration: 0.35), value: session.participants.count)
+		.animation(still ? nil : .smooth(duration: 0.3), value: controls)
 		.environment(\.colorScheme, .dark)
 		.environment(\.tones, ink)
 		.contentShape(Rectangle())
+		#if os(macOS)
+		// A double-click takes the whole screen, and gives it back, as a video player does.
+		.onTapGesture(count: 2) { if session.video { NSApp.keyWindow?.toggleFullScreen(nil) } }
+		#endif
 		.onTapGesture { touch(toggle: true) }
 		#if os(macOS)
 		.onContinuousHover { _ in touch() }
 		#endif
 		.task(id: touched) {
-			// Five quiet seconds into a video call and the controls step aside.
-			try? await Task.sleep(for: .seconds(5))
+			// Five quiet seconds into a video call and the controls step aside. A touch in those five
+			// seconds starts them again: the wait it cuts short hides nothing (it used to hide the
+			// controls the instant a tap showed them, so on a video call they never came back).
+			do { try await Task.sleep(for: .seconds(5)) } catch { return }
 			if immersive, session.phase == .live { controls = false }
 		}
+		.onChange(of: immersive) { _, on in if on { touch() } }
 	}
 
 	private func touch(toggle: Bool = false) {
@@ -79,39 +108,57 @@ struct CallScreen: View {
 	static let barBottom: CGFloat = 26
 	static let tile = CGSize(width: 208, height: 130)
 	#else
-	static let barBottom: CGFloat = 18
+	static let barBottom: CGFloat = 12
 	static let tile = CGSize(width: 108, height: 152)
 	#endif
 
 	// MARK: pieces
 
-	/// Over their video: who, and the line, on a solid chip of the call's dark so it reads on any picture.
-	private var header: some View {
-		VStack(spacing: 2) {
-			Text(session.name).font(.system(size: 16, weight: .bold))
-			StatusLine(session: session).font(.system(size: 12, weight: .medium)).monospacedDigit()
+	/// The top row: the call made small, and over a picture, who and how it's going.
+	private var top: some View {
+		let ink = Tones.make(hex: model.accentHex, dark: true)
+		return ZStack(alignment: .top) {
+			if theirVideo || grid || mineFull && session.phase == .live {
+				VStack(spacing: 2) {
+					Text(session.name).font(.system(size: 16, weight: .bold)).lineLimit(1)
+					StatusLine(session: session).font(.system(size: 12, weight: .medium)).monospacedDigit().lineLimit(1)
+				}
+				.foregroundStyle(ink.text)
+				.padding(.horizontal, 16).padding(.vertical, 8)
+				.background(Capsule().fill(ink.raised))
+				.padding(.horizontal, 64)
+			}
+			if !session.phase.over, session.phase != .incoming {
+				HStack {
+					#if os(macOS)
+					Spacer()
+					#endif
+					CallButton(symbol: "pip.enter", label: "Make the call small", style: .glass, small: true) { calls.minimized = true }
+						.keyboardShortcut("m", modifiers: [.command, .shift])
+					#if os(iOS)
+					Spacer()
+					#endif
+				}
+				.padding(.horizontal, 16)
+			}
 		}
-		.foregroundStyle(Tones.make(hex: model.accentHex, dark: true).text)
-		.padding(.horizontal, 16).padding(.vertical, 8)
-		.background(Capsule().fill(Tones.make(hex: model.accentHex, dark: true).raised))
 		.frame(maxHeight: .infinity, alignment: .top)
 		#if os(macOS)
 		.padding(.top, 34)
 		#else
-		.padding(.top, 12)
+		.padding(.top, 8)
 		#endif
 	}
 
-	/// My own picture, mirrored, in the corner I last dragged it to.
+	/// My own picture, in the corner I last dragged it to.
 	private func mine(_ size: CGSize) -> some View {
-		Group {
-			if let still = stills?.local { Image(decorative: still, scale: 1).resizable().scaledToFill().scaleEffect(x: -1) } else { VideoLayer(layer: session.local, mirrored: true) }
-		}
+		let ink = Tones.make(hex: model.accentHex, dark: true)
+		return LocalVideo(session: session)
 			.frame(width: Self.tile.width, height: Self.tile.height)
 			.clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-			.overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Tones.make(hex: model.accentHex, dark: true).raised, lineWidth: 2))
+			.overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(ink.raised, lineWidth: 2))
 			.shadow(color: .black.opacity(0.5), radius: 16, y: 8)
-			.overlay { if session.videoPaused { Text("Paused").font(.system(size: 12, weight: .bold)).foregroundStyle(.white).padding(.horizontal, 10).padding(.vertical, 5).background(Tones.make(hex: model.accentHex, dark: true).raised, in: Capsule()) } }
+			.overlay { if session.videoPaused { Text("Paused").font(.system(size: 12, weight: .bold)).foregroundStyle(.white).padding(.horizontal, 10).padding(.vertical, 5).background(ink.raised, in: Capsule()) } }
 			.offset(drag)
 			.gesture(DragGesture()
 				.onChanged { drag = $0.translation }
@@ -125,11 +172,13 @@ struct CallScreen: View {
 				})
 			.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: corner)
 			.padding(.horizontal, 16)
+			// Clear of the controls while they're up; lower when they step aside.
 			#if os(macOS)
-			.padding(.top, 36).padding(.bottom, 100)
+			.padding(.top, 76).padding(.bottom, shown ? 100 : 26)
 			#else
-			.padding(.top, 8).padding(.bottom, 96)
+			.padding(.top, 60).padding(.bottom, shown ? 96 : 16)
 			#endif
+			.animation(still ? nil : .smooth(duration: 0.3), value: shown)
 	}
 
 	/// A word above the controls when something about the call changed underneath it.
@@ -160,13 +209,20 @@ struct CallScreen: View {
 		case .ended:
 			EmptyView()
 		default:
-			HStack(spacing: 14) {
-				CallButton(symbol: session.muted ? "mic.slash.fill" : "mic.fill", label: session.muted ? "Unmute" : "Mute", style: session.muted ? .on : .glass) { calls.toggleMute() }
+			HStack(spacing: 12) {
+				#if os(iOS)
+				if session.video {
+					CallButton(symbol: "arrow.triangle.2.circlepath.camera.fill", label: session.front ? "Use the back camera" : "Use the front camera", style: .glass) { calls.flip() }
+						.disabled(!session.cameraOn).opacity(session.cameraOn ? 1 : 0.45)
+				}
+				#endif
 				if session.video {
 					CallButton(symbol: session.cameraOn ? "video.fill" : "video.slash.fill", label: session.cameraOn ? "Turn camera off" : "Turn camera on", style: session.cameraOn ? .glass : .on) { calls.toggleCamera() }
+						.keyboardShortcut("v", modifiers: [.command, .shift])
 				}
+				CallButton(symbol: session.muted ? "mic.slash.fill" : "mic.fill", label: session.muted ? "Unmute" : "Mute", style: session.muted ? .on : .glass) { calls.toggleMute() }
+					.keyboardShortcut("a", modifiers: [.command, .shift])
 				#if os(iOS)
-				if session.video && session.cameraOn { CallButton(symbol: "arrow.triangle.2.circlepath.camera.fill", label: "Flip camera", style: .glass) { calls.flip() } }
 				CallButton(symbol: session.speaker ? "speaker.wave.2.fill" : "speaker.fill", label: session.speaker ? "Speaker off" : "Speaker", style: session.speaker ? .on : .glass) { calls.toggleSpeaker() }
 				#endif
 				CallButton(symbol: "phone.down.fill", label: session.phase == .live ? "End call" : "Cancel", style: .danger) { calls.end() }
@@ -175,6 +231,62 @@ struct CallScreen: View {
 			.background(Capsule().fill(Tones.make(hex: model.accentHex, dark: true).raised))
 			.shadow(color: .black.opacity(0.45), radius: 20, y: 10)
 		}
+	}
+}
+
+/// Their picture, the whole screen. Filled when it's the same way round as the screen; whole, on the
+/// room's colour, when it isn't (a phone held upright on a wide Mac window), so no one is cut to a
+/// sliver of forehead.
+private struct RemoteVideo: View {
+	@Environment(\.callStills) private var stills
+	let session: CallCenter.Session
+	let size: CGSize
+	var body: some View {
+		let fill = Self.fills(session.remoteAspect, size)
+		Group {
+			if let still = stills?.remote { Image(decorative: still, scale: 1).resizable().aspectRatio(contentMode: fill ? .fill : .fit) }
+			else { VideoLayer(layer: session.remote, gravity: fill ? .resizeAspectFill : .resizeAspect) }
+		}
+		.frame(width: size.width, height: size.height).clipped()
+	}
+	static func fills(_ aspect: CGFloat?, _ size: CGSize) -> Bool {
+		guard let aspect, size.height > 0 else { return true }
+		return (aspect >= 1) == (size.width / size.height >= 1)
+	}
+}
+
+/// My camera: mirrored for the front one, as a mirror would show me; the back one as it is.
+private struct LocalVideo: View {
+	@Environment(\.callStills) private var stills
+	let session: CallCenter.Session
+	var body: some View {
+		if let still = stills?.local { Image(decorative: still, scale: 1).resizable().scaledToFill().scaleEffect(x: session.front ? -1 : 1) }
+		else { VideoLayer(layer: session.local, mirrored: session.front) }
+	}
+}
+
+/// A video call still ringing, over my own camera: who, and the line, on a solid card at the top.
+private struct Calling: View {
+	@Environment(\.tones) private var tones
+	let session: CallCenter.Session
+	var body: some View {
+		HStack(spacing: 12) {
+			Face(name: session.name, hash: session.avatar, group: session.group).frame(width: 48, height: 48)
+			VStack(alignment: .leading, spacing: 2) {
+				Text(session.name).font(.system(size: 18, weight: .heavy)).foregroundStyle(tones.text).lineLimit(1)
+				StatusLine(session: session).font(.system(size: 14, weight: .medium)).monospacedDigit().foregroundStyle(tones.secondary).lineLimit(1)
+			}
+		}
+		.padding(.leading, 10).padding(.trailing, 18).padding(.vertical, 10)
+		.background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(tones.raised))
+		.frame(maxWidth: 360)
+		.padding(.horizontal, 16)
+		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+		#if os(macOS)
+		.padding(.top, 76)
+		#else
+		.padding(.top, 64)
+		#endif
 	}
 }
 
@@ -200,28 +312,7 @@ private struct Presence: View {
 	let still: Bool
 	var body: some View {
 		VStack(spacing: 22) {
-			SwiftUI.TimelineView(.animation(minimumInterval: 1 / 30, paused: still)) { ctx in
-				let level = CGFloat(session.phase == .live ? session.remoteLevel : 0)
-				let t = ctx.date.timeIntervalSinceReferenceDate
-				// A slow breath when nobody speaks; their voice on top of it when they do.
-				let breath = still ? 0 : 0.025 * sin(t * 2 * .pi / 4.5)
-				let swell = 1 + breath + level * 0.28
-				ZStack {
-					// A ring of the loud colour, a gap of the room inside it: it thickens and swells as
-					// they speak, and breathes slowly when nobody does.
-					Circle().strokeBorder(tones.loud, lineWidth: 6 + level * 14)
-						.frame(width: 160, height: 160).scaleEffect(swell)
-					Face(name: session.name, hash: session.avatar, group: session.group).frame(width: 128, height: 128)
-						.overlay(alignment: .bottomTrailing) {
-							if session.remoteMuted {
-								Image(systemName: "mic.slash.fill").font(.system(size: 13, weight: .bold)).foregroundStyle(tones.text)
-									.frame(width: 34, height: 34).background(Circle().fill(tones.raised)).overlay(Circle().strokeBorder(tones.surface, lineWidth: 3))
-									.offset(x: 2, y: 2).accessibilityLabel("\(session.first) is muted").transition(.scale.combined(with: .opacity))
-							}
-						}
-				}
-				.frame(width: 260, height: 260)
-			}
+			Ring(session: session, still: still, size: 128)
 			VStack(spacing: 6) {
 				Text(session.name).font(.system(size: 30, weight: .heavy)).foregroundStyle(tones.text).multilineTextAlignment(.center)
 				StatusLine(session: session).font(.system(size: 15, weight: .medium)).monospacedDigit().foregroundStyle(tones.secondary).multilineTextAlignment(.center)
@@ -234,8 +325,39 @@ private struct Presence: View {
 	}
 }
 
+/// Their face with the ring of the loud colour: it thickens and swells as they speak, and breathes
+/// slowly when nobody does.
+struct Ring: View {
+	@Environment(\.tones) private var tones
+	let session: CallCenter.Session
+	let still: Bool
+	let size: CGFloat
+	var body: some View {
+		SwiftUI.TimelineView(.animation(minimumInterval: 1 / 30, paused: still)) { ctx in
+			let level = CGFloat(session.phase == .live ? session.remoteLevel : 0)
+			let t = ctx.date.timeIntervalSinceReferenceDate
+			let breath = still ? 0 : 0.025 * sin(t * 2 * .pi / 4.5)
+			let swell = 1 + breath + level * 0.28
+			let k = size / 128
+			ZStack {
+				Circle().strokeBorder(tones.loud, lineWidth: (6 + level * 14) * k)
+					.frame(width: size * 1.25, height: size * 1.25).scaleEffect(swell)
+				Face(name: session.name, hash: session.avatar, group: session.group).frame(width: size, height: size)
+					.overlay(alignment: .bottomTrailing) {
+						if session.remoteMuted {
+							Image(systemName: "mic.slash.fill").font(.system(size: 13 * max(k, 0.7), weight: .bold)).foregroundStyle(tones.text)
+								.frame(width: 34 * max(k, 0.7), height: 34 * max(k, 0.7)).background(Circle().fill(tones.raised)).overlay(Circle().strokeBorder(tones.surface, lineWidth: 3))
+								.offset(x: 2, y: 2).accessibilityLabel("\(session.first) is muted").transition(.scale.combined(with: .opacity))
+						}
+					}
+			}
+			.frame(width: size * 2.03, height: size * 2.03)
+		}
+	}
+}
+
 /// Their photo, or their initials on a soft disc.
-private struct Face: View {
+struct Face: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
 	let name: String
@@ -270,7 +392,7 @@ private struct Tiles: View {
 	#if os(macOS)
 	private let top: CGFloat = 92, bottom: CGFloat = 100
 	#else
-	private let top: CGFloat = 76, bottom: CGFloat = 108
+	private let top: CGFloat = 68, bottom: CGFloat = 96
 	#endif
 	var body: some View {
 		let ps = session.participants
@@ -319,8 +441,8 @@ private struct Tile: View {
 		tones.card
 			.overlay {
 				if camera {
-					if let image { Image(decorative: image, scale: 1).resizable().scaledToFill().scaleEffect(x: p == nil ? -1 : 1) }
-					else if let p { VideoLayer(layer: p.layer) } else { VideoLayer(layer: session.local, mirrored: true) }
+					if let image { Image(decorative: image, scale: 1).resizable().scaledToFill().scaleEffect(x: p == nil && session.front ? -1 : 1) }
+					else if let p { VideoLayer(layer: p.layer) } else { VideoLayer(layer: session.local, mirrored: session.front) }
 				} else {
 					GeometryReader { g in
 						let side = min(g.size.width, g.size.height) * 0.42
@@ -355,6 +477,7 @@ private struct Tile: View {
 /// "Calling…", "Ringing…", "4:12 · Direct · 14 ms", or why it ended.
 struct StatusLine: View {
 	let session: CallCenter.Session
+	var short = false
 	var body: some View {
 		SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { ctx in Text(words(at: ctx.date)) }
 	}
@@ -368,7 +491,7 @@ struct StatusLine: View {
 		case .live:
 			let s = Int(now.timeIntervalSince(session.startedAt ?? now))
 			let clock = s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) : String(format: "%d:%02d", s / 60, s % 60)
-			return session.path.isEmpty ? clock : "\(clock) · \(session.path)"
+			return short || session.path.isEmpty ? clock : "\(clock) · \(session.path)"
 		}
 	}
 }
@@ -377,17 +500,19 @@ struct StatusLine: View {
 /// green that answers.
 struct CallButton: View {
 	@Environment(\.tones) private var tones
+	@Environment(\.isEnabled) private var enabled
 	enum Style { case glass, on, danger, accept }
 	let symbol: String
 	let label: String
 	var style: Style = .glass
 	var big = false
+	var small = false
 	let action: () -> Void
 	@State private var hover = false
 	#if os(macOS)
-	private var size: CGFloat { big ? 56 : 46 }
+	private var size: CGFloat { big ? 56 : small ? 34 : 46 }
 	#else
-	private var size: CGFloat { big ? 68 : 54 }
+	private var size: CGFloat { big ? 68 : small ? 40 : 54 }
 	#endif
 	var body: some View {
 		Button {
@@ -402,9 +527,11 @@ struct CallButton: View {
 					.foregroundStyle(style == .on ? tones.onLoud : .white)
 					.frame(width: size, height: size)
 					.background(Circle().fill(fill))
-					.scaleEffect(hover ? 1.05 : 1)
+					.scaleEffect(hover && enabled ? 1.05 : 1)
 				if big { Text(label).font(.system(size: 13, weight: .semibold)).foregroundStyle(tones.text) }
 			}
+			// A finger's worth around the small ones.
+			.padding(small ? 4 : 0)
 			.contentShape(Rectangle())
 		}
 		.buttonStyle(Press())
@@ -429,35 +556,64 @@ struct CallButton: View {
 }
 
 /// A sample-buffer layer as a view: frames go to the layer straight from the decoder, no copies.
+/// The view takes no clicks or touches (the screen's own tap and hover pass through it), and a
+/// layer is in one place at a time: when the call moves (made small, made big again), the newest
+/// view holds it and an old one lets it be.
 #if os(macOS)
 struct VideoLayer: NSViewRepresentable {
 	let layer: AVSampleBufferDisplayLayer
 	var mirrored = false
-	func makeNSView(context: Context) -> NSView {
-		let v = LayerHost(); v.wantsLayer = true; v.hosted = layer; v.layer?.addSublayer(layer)
-		v.layer?.backgroundColor = NSColor.black.cgColor
-		layer.setAffineTransform(mirrored ? CGAffineTransform(scaleX: -1, y: 1) : .identity)
+	var gravity: AVLayerVideoGravity = .resizeAspectFill
+	func makeNSView(context: Context) -> LayerHost {
+		let v = LayerHost(); v.wantsLayer = true
+		v.hold(layer)
+		update(v)
 		return v
 	}
-	func updateNSView(_ v: NSView, context: Context) {}
+	func updateNSView(_ v: LayerHost, context: Context) { update(v) }
+	private func update(_ v: LayerHost) {
+		CATransaction.begin(); CATransaction.setDisableActions(true)
+		layer.setAffineTransform(mirrored ? CGAffineTransform(scaleX: -1, y: 1) : .identity)
+		layer.videoGravity = gravity
+		CATransaction.commit()
+	}
 	final class LayerHost: NSView {
-		var hosted: CALayer?
-		override func layout() { super.layout(); CATransaction.begin(); CATransaction.setDisableActions(true); hosted?.bounds = bounds; hosted?.position = CGPoint(x: bounds.midX, y: bounds.midY); CATransaction.commit() }
+		private var hosted: CALayer?
+		func hold(_ l: CALayer) { hosted = l; layer?.addSublayer(l); needsLayout = true }
+		override func hitTest(_ point: NSPoint) -> NSView? { nil }
+		override func layout() {
+			super.layout()
+			guard let hosted, hosted.superlayer === layer else { return }
+			CATransaction.begin(); CATransaction.setDisableActions(true); hosted.bounds = bounds; hosted.position = CGPoint(x: bounds.midX, y: bounds.midY); CATransaction.commit()
+		}
 	}
 }
 #else
 struct VideoLayer: UIViewRepresentable {
 	let layer: AVSampleBufferDisplayLayer
 	var mirrored = false
-	func makeUIView(context: Context) -> UIView {
-		let v = LayerHost(); v.hosted = layer; v.layer.addSublayer(layer); v.backgroundColor = .black
-		layer.setAffineTransform(mirrored ? CGAffineTransform(scaleX: -1, y: 1) : .identity)
+	var gravity: AVLayerVideoGravity = .resizeAspectFill
+	func makeUIView(context: Context) -> LayerHost {
+		let v = LayerHost(); v.isUserInteractionEnabled = false
+		v.hold(layer)
+		update(v)
 		return v
 	}
-	func updateUIView(_ v: UIView, context: Context) {}
+	func updateUIView(_ v: LayerHost, context: Context) { update(v) }
+	private func update(_ v: LayerHost) {
+		CATransaction.begin(); CATransaction.setDisableActions(true)
+		layer.setAffineTransform(mirrored ? CGAffineTransform(scaleX: -1, y: 1) : .identity)
+		layer.videoGravity = gravity
+		CATransaction.commit()
+	}
 	final class LayerHost: UIView {
-		var hosted: CALayer?
-		override func layoutSubviews() { super.layoutSubviews(); CATransaction.begin(); CATransaction.setDisableActions(true); hosted?.bounds = bounds; hosted?.position = CGPoint(x: bounds.midX, y: bounds.midY); CATransaction.commit() }
+		private var hosted: CALayer?
+		func hold(_ l: CALayer) { hosted = l; layer.addSublayer(l); setNeedsLayout() }
+		override func layoutSubviews() {
+			super.layoutSubviews()
+			guard let hosted, hosted.superlayer === layer else { return }
+			CATransaction.begin(); CATransaction.setDisableActions(true); hosted.bounds = bounds; hosted.position = CGPoint(x: bounds.midX, y: bounds.midY); CATransaction.commit()
+		}
 	}
 }
 #endif

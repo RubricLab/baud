@@ -95,6 +95,8 @@ final class CallMedia: @unchecked Sendable {
 			for peer in media.all() { media.pacer.now(d, to: peer.lane) }
 		}
 		self.video = video ? VideoPipe(test: test) { e in ref.value?.send(e) } : nil
+		// Nobody in yet: my picture shows, nothing is encoded.
+		self.video?.idle = true
 		ref.value = self
 	}
 
@@ -121,7 +123,9 @@ final class CallMedia: @unchecked Sendable {
 		// A link through someone in the call hasn't heard mine yet; a direct one has, but twice is harmless.
 		Task { await link.send(.caps(Self.mine)) }
 		video?.keyframe()
+		// The encoder's shape for this peer first (codec, size, rate), then the first frame, a key.
 		fit()
+		video?.idle = false
 	}
 
 	func remove(_ device: String) {
@@ -129,6 +133,7 @@ final class CallMedia: @unchecked Sendable {
 		pacer.remove(peer.lane)
 		peer.decoder?.stop()
 		audio.remove(device)
+		if count == 0 { video?.idle = true }
 		fit()
 	}
 
@@ -164,10 +169,11 @@ final class CallMedia: @unchecked Sendable {
 		ticker = k
 	}
 
+	/// Once, however many ask at once (the media starting and CallKit handing over the audio can
+	/// cross).
 	func startAudio() throws {
-		guard !lock.withLock({ audioOn }) else { return }
-		try audio.start()
-		lock.withLock { audioOn = true }
+		guard lock.withLock({ () -> Bool in defer { audioOn = true }; return !audioOn }) else { return }
+		do { try audio.start() } catch { lock.withLock { audioOn = false }; throw error }
 	}
 
 	func stop() {

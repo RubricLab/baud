@@ -47,6 +47,9 @@ final class VideoPipe: NSObject, @unchecked Sendable, AVCaptureVideoDataOutputSa
 	var onLocal: (@Sendable (CMSampleBuffer) -> Void)?
 
 	private let queue = DispatchQueue(label: "baud.video", qos: .userInteractive)
+	/// Where old encoders go to be put away. Putting one away waits on the system's encoder, which
+	/// has been seen to stall for good; waiting here, it stalls nobody else.
+	private let retired = DispatchQueue(label: "baud.video.retired", qos: .utility)
 	private var capture: AVCaptureSession?
 	private var encoder: VTCompressionSession?
 	private var encoderShape: (w: Int32, h: Int32, hevc: Bool)?
@@ -74,6 +77,9 @@ final class VideoPipe: NSObject, @unchecked Sendable, AVCaptureVideoDataOutputSa
 	var periodicKeys = true { didSet { if oldValue != periodicKeys { queue.async { self.applyKeys() } } } }
 	/// The link is too weak for video (CallMedia): nothing is encoded until it calms.
 	var paused = false
+	/// Nobody to send to yet (my camera is up while the call rings): the camera feeds my own
+	/// picture and nothing is encoded, so the encoder is made once, for the first one in.
+	var idle = false
 	/// The person's switch. Off stops the capture itself, so the camera's light goes out.
 	private(set) var cameraOn = true
 	private(set) var front = true
@@ -95,9 +101,9 @@ final class VideoPipe: NSObject, @unchecked Sendable, AVCaptureVideoDataOutputSa
 	func stop() {
 		timer?.cancel(); timer = nil
 		let c = capture; capture = nil
-		queue.async { c?.stopRunning() }
-		queue.sync {
-			if let e = encoder { VTCompressionSessionInvalidate(e) }; encoder = nil
+		queue.async { [self] in
+			c?.stopRunning()
+			retire()
 		}
 	}
 
@@ -184,17 +190,18 @@ final class VideoPipe: NSObject, @unchecked Sendable, AVCaptureVideoDataOutputSa
 		#endif
 	}
 
-	/// The other camera, on the iPhone.
-	func flip() {
+	/// The other camera, on the iPhone; `done` hears which one is on now (true: the front).
+	func flip(done: @escaping @Sendable (Bool) -> Void = { _ in }) {
 		#if os(iOS)
 		queue.async { [self] in
-			guard let s = capture, let current = s.inputs.first as? AVCaptureDeviceInput, let next = camera(front: !front), let input = try? AVCaptureDeviceInput(device: next) else { return }
+			guard let s = capture, let current = s.inputs.first as? AVCaptureDeviceInput, let next = camera(front: !front), let input = try? AVCaptureDeviceInput(device: next) else { done(front); return }
 			s.beginConfiguration()
 			s.removeInput(current)
 			if s.canAddInput(input) { s.addInput(input); front.toggle(); choose(next) } else { s.addInput(current) }
 			if let out = s.outputs.first as? AVCaptureVideoDataOutput { orient(out) }
 			s.commitConfiguration()
 			forceKey = true
+			done(front)
 		}
 		#endif
 	}
@@ -243,12 +250,12 @@ final class VideoPipe: NSObject, @unchecked Sendable, AVCaptureVideoDataOutputSa
 		guard on != cameraOn else { return }
 		cameraOn = on
 		if test { return }
-		if on { if let c = capture { queue.async { c.startRunning(); self.forceKey = true } } else { try? startCamera() } }
+		if on { if let c = capture { queue.async { c.startRunning(); self.forceKey = true } } else { queue.async { try? self.startCamera() } } }
 		else { let c = capture; queue.async { c?.stopRunning() } }
 	}
 
 	private func encode(_ pb: CVPixelBuffer, at pts: CMTime, capture: UInt32) {
-		guard cameraOn, !paused else { return }
+		guard cameraOn, !paused, !idle else { return }
 		// Every frame, or every other: whichever the rate allows.
 		let t = CMTimeGetSeconds(pts)
 		if let last = lastEncoded, t - last < 1 / Double(fps) * 0.9 { return }
@@ -273,8 +280,7 @@ final class VideoPipe: NSObject, @unchecked Sendable, AVCaptureVideoDataOutputSa
 	}
 
 	private func makeEncoder(_ size: (Int32, Int32)) {
-		if let e = encoder { VTCompressionSessionInvalidate(e) }
-		encoder = nil
+		retire()
 		var s: VTCompressionSession?
 		var codec = hevc && Self.hevcEncode ? kCMVideoCodecType_HEVC : kCMVideoCodecType_H264
 		let spec = [kVTVideoEncoderSpecification_EnableLowLatencyRateControl: true] as CFDictionary
@@ -291,14 +297,25 @@ final class VideoPipe: NSObject, @unchecked Sendable, AVCaptureVideoDataOutputSa
 		VTCompressionSessionPrepareToEncodeFrames(s)
 		encoder = s; encoderShape = (size.0, size.1, isHevc); forceKey = true
 		generation += 1
+		out.withLock { live = generation; shape = encoderShape }
 		acked = []
 		applyRate(); applyKeys()
 	}
 
-	private func resetEncoder() {
-		if let e = encoder { VTCompressionSessionInvalidate(e) }
+	private func resetEncoder() { retire() }
+
+	/// The encoder put away, off this queue; whatever it still hands back is dropped (`live`).
+	private func retire() {
+		guard let e = encoder else { return }
 		encoder = nil
+		generation += 1
+		out.withLock { live = generation }
+		retired.async { VTCompressionSessionInvalidate(e) }
 	}
+	/// The encoder whose frames go out, and its shape, for any thread to read without waiting on
+	/// the video queue.
+	private var live = 0
+	private var shape: (w: Int32, h: Int32, hevc: Bool)?
 
 	private func applyRate() {
 		guard let e = encoder else { return }
@@ -332,19 +349,21 @@ final class VideoPipe: NSObject, @unchecked Sendable, AVCaptureVideoDataOutputSa
 		let n = CMBlockBufferGetDataLength(block)
 		var nals = Data(count: n)
 		nals.withUnsafeMutableBytes { _ = CMBlockBufferCopyDataBytes(block, atOffset: 0, dataLength: n, destination: $0.baseAddress!) }
-		let id: UInt32 = out.withLock {
+		let id: UInt32? = out.withLock {
+			guard session == live else { return nil }
 			encoded += 1; if key { keyframes += 1 } else if refresh { refreshes += 1 }
 			bytesSent += n
 			encodeTimes.append((seconds() - submitted) * 1000); if encodeTimes.count > 100 { encodeTimes.removeFirst() }
 			defer { nextId &+= 1 }
 			return nextId
 		}
+		guard let id else { return }
 		send(Encoded(id: id, key: key, refresh: refresh && !key, hevc: hevc, capture: capture, sets: sets, nals: nals, token: token, session: session))
 	}
 
 	/// The codec going out now.
-	var codec: String { queue.sync { encoderShape.map { $0.hevc ? "HEVC" : "H.264" } ?? (hevc ? "HEVC" : "H.264") } }
+	var codec: String { out.withLock { shape.map { $0.hevc ? "HEVC" : "H.264" } } ?? (hevc ? "HEVC" : "H.264") }
 	/// The size going out now, "1920×1080".
-	var size: String { queue.sync { encoderShape.map { "\($0.w)×\($0.h)" } ?? "-" } }
+	var size: String { out.withLock { shape.map { "\($0.w)×\($0.h)" } } ?? "-" }
 }
 

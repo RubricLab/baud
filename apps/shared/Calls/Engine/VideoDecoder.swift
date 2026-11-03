@@ -81,7 +81,9 @@ final class VideoDecoder: @unchecked Sendable {
 	}
 
 	func stop() {
-		queue.sync { if let d = decoder { VTDecompressionSessionInvalidate(d) }; decoder = nil }
+		// Not waited on: the system's decoder can be slow to let go, and the caller is often the
+		// main thread.
+		queue.async { [self] in if let d = decoder { VTDecompressionSessionInvalidate(d) }; decoder = nil }
 	}
 
 	private func want(_ w: Feedback.Want) {

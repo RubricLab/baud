@@ -56,6 +56,11 @@ flag (`SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) BAUD_SPACES'`) to show 
 | `BAUD_SHOTS=dir` | (Mac) Walk the screens and save every window into `dir`. `BAUD_SHOTS_STEPS=dm,home,…` picks screens, `BAUD_APPEARANCE=light` or `dark` the look. |
 | `BAUD_TAB=spaces BAUD_OPEN=general` | (iPhone) Open a screen, for `simctl io screenshot`. |
 | `BAUD_LOG_FILE=path` | Keep a copy of the log, for where stderr can't be read. |
+| `BAUD_CALL_TEST=1` | Calls use a drawn picture and a synthetic voice instead of the camera and the microphone, play nothing, and skip CallKit. `BAUD_CALL_SPEAKER=silent` plays through the real speaker at zero volume. |
+| `BAUD_CALL_AUTO=voice` or `video`, `BAUD_CALL_SECONDS=10` | (Debug) Call the first direct chat whose other side is online, talk, hang up. The other side answers with `BAUD_CALL_ANSWER=1` (or `decline`). |
+| `BAUD_CALL_SMALL=s` | (Debug) Make a call small that many seconds after it goes live. |
+| `BAUD_CALL_SHOTS=dir` | (Debug, demo data) Draw every state of the call screen to PNGs, then quit. |
+| `BAUD_COMPOSE=words` | (Debug) Start the composer with these words in it, for pictures. |
 
 The linking smoke drives two or three real processes with no clicks:
 

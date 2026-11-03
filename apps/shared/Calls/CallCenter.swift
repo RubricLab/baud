@@ -29,6 +29,10 @@ final class CallCenter {
 		let avatar: BlobHash?
 		var muted = false
 		var camera: Bool
+		/// Their picture has started to arrive: until then the screen shows their face, not a black
+		/// rectangle.
+		var showing = false
+		@ObservationIgnored let firstFrame = Once()
 		nonisolated var id: String { device }
 		var first: String { name.split(separator: " ").first.map(String.init) ?? name }
 		@ObservationIgnored let layer = AVSampleBufferDisplayLayer()
@@ -63,7 +67,13 @@ final class CallCenter {
 		var muted = false
 		var cameraOn: Bool
 		var speaker: Bool
+		/// The iPhone's front camera (my picture is mirrored, as a mirror would show me); the back
+		/// one shows the world as it is. The Mac's camera faces me.
+		var front = true
 		var videoPaused = false
+		/// Their picture's width over its height, once it's showing: a picture the other way round
+		/// from the screen is fitted whole rather than cropped to a sliver.
+		var remoteAspect: CGFloat?
 		/// "Direct · 14 ms", "Through your Mac mini": the honest status, in a few words.
 		var path = ""
 		var participants: [Participant] = []
@@ -84,6 +94,11 @@ final class CallCenter {
 		@ObservationIgnored var ringLink: CallLink?
 		@ObservationIgnored var callerUser: UserId?
 		@ObservationIgnored var media: CallMedia?
+		/// The media on its way up (the audio engine and the camera can take a second): whoever
+		/// needs it waits on this one start rather than making another.
+		@ObservationIgnored var starting: Task<Bool, Never>?
+		/// When I answered, or when they did: how long the call took to come up is in the record.
+		@ObservationIgnored var answeredAt: Date?
 		@ObservationIgnored var failures = 0
 		/// Mine: ring a device again on a new connection (its last one dropped while it rang).
 		@ObservationIgnored var ringAgain: ((String, UserId) -> Void)?
@@ -106,7 +121,10 @@ final class CallCenter {
 		func level(_ p: Participant) -> Float { media?.level(p.device) ?? p.stillLevel }
 	}
 
-	private(set) var session: Session?
+	private(set) var session: Session? { didSet { if session !== oldValue { minimized = false }; stayAwake() } }
+	/// The call is a small picture over the app (the iPhone) or the screen (the Mac), so the rest
+	/// of baud can be used while it goes on; a tap brings it back.
+	var minimized = false
 	/// A call is ringing, waiting for its ring after a wake, or going on: the device stays online
 	/// whatever the app's lifecycle says, or the call's connection goes with it.
 	var holdsOnline: Bool {
@@ -191,10 +209,13 @@ final class CallCenter {
 			finish(s, (own ? "Your other devices aren't online." : group ? "Nobody in \(s.title) is online." : "\(s.first) isn't online.") + " A device rings only while baud is open on it.", record: nil)
 			return
 		}
-		Task { await Permissions.ask(video: video) }
 		#if os(iOS)
 		if !Self.test { kit.outgoing(s) }
 		#endif
+		// My voice and picture start while it rings, so the moment they answer we're talking: the
+		// audio engine and the camera take a second or more to come up, and that second used to
+		// come after their yes.
+		Task { await Permissions.ask(video: video); _ = await media(s) }
 		let me = model.me
 		callLog("call \(s.id.prefix(8)): ringing \(targets.count) device(s)\(sleepers.isEmpty ? "" : ", waking \(sleepers.count)") of \(Set((targets + sleepers).map(\.user)).count) \(group ? "in \(s.title)" : s.first)\(video ? ", video" : "")")
 		let total = targets.count + sleepers.count
@@ -278,7 +299,7 @@ final class CallCenter {
 		callLog("call \(s.id.prefix(8)): joining \(targets.count) in \(s.title)")
 		Task {
 			await Permissions.ask(video: p.video)
-			guard begin(s) else { return }
+			guard await media(s), session === s, !s.phase.over else { return }
 			for t in targets { connect(s, to: t, introducer: first.device) }
 		}
 		Task {
@@ -377,11 +398,14 @@ final class CallCenter {
 		ringer.stop()
 		s.cameraOn = s.video && camera
 		s.phase = .connecting
+		s.answeredAt = Date()
+		stayAwake()
 		Task {
 			await Permissions.ask(video: s.cameraOn)
-			// Yes goes to the caller only once this side can carry the call: a yes followed by
-			// nothing left the caller in a call the other side had already ended.
-			guard begin(s) else { return }
+			// Yes goes now, and my media starts alongside it: the caller's is already running, so
+			// their voice reaches me as soon as mine is up, not a round trip and an engine start
+			// later. Should mine fail to start, `failed` tells them it's over.
+			let ready = Task { await media(s) }
 			// The ring's connection may have dropped (a phone just woken): the caller rings again on
 			// a new one, and the yes goes there.
 			var to = link
@@ -392,6 +416,7 @@ final class CallCenter {
 				if let l = s.ringLink, l !== to { to = l; said = await l.send(.accept(video: s.cameraOn)) }
 			}
 			guard said else { callLog("call \(s.id.prefix(8)): the caller's connection is gone"); failed(s, CallError.audio("The call didn't connect.")); return }
+			guard await ready.value, session === s, !s.phase.over else { return }
 			admit(s, to, user: caller, camera: s.video, dialedByMe: false)
 		}
 	}
@@ -436,15 +461,39 @@ final class CallCenter {
 		if s.cameraOn { Task { await Permissions.ask(video: true); s.media?.video?.setCamera(true) } } else { s.media?.video?.setCamera(false) }
 		if !s.cameraOn { s.local.sampleBufferRenderer.flush(removingDisplayedImage: true) {} }
 		sendState(s)
+		stayAwake()
 	}
 
-	func flip() { session?.media?.video?.flip() }
+	/// The other camera; my picture is mirrored for the front one only, once the switch is made.
+	func flip() {
+		guard let s = session, let v = s.media?.video else { return }
+		v.flip { front in Task { @MainActor in s.front = front } }
+	}
 
 	func toggleSpeaker() {
 		guard let s = session else { return }
 		s.speaker.toggle()
 		#if os(iOS)
 		try? AVAudioSession.sharedInstance().overrideOutputAudioPort(s.speaker ? .speaker : .none)
+		#endif
+		stayAwake()
+	}
+
+	#if os(macOS)
+	@ObservationIgnored private var activity: NSObjectProtocol?
+	#endif
+
+	/// While a call goes on the device stays awake: the screen never dims or locks on a call (a
+	/// video call would lose its camera with it). On the iPhone, a call through the earpiece turns
+	/// the screen off at the ear, as a phone call does, so a cheek can't mute it or end it.
+	private func stayAwake() {
+		let s = session.flatMap { $0.phase.over || $0.phase == .incoming ? nil : $0 }
+		#if os(iOS)
+		UIApplication.shared.isIdleTimerDisabled = s != nil
+		UIDevice.current.isProximityMonitoringEnabled = s.map { !$0.speaker && !($0.video && $0.cameraOn) } ?? false
+		#else
+		if s != nil, activity == nil { activity = ProcessInfo.processInfo.beginActivity(options: [.idleSystemSleepDisabled, .idleDisplaySleepDisabled, .userInitiated], reason: "A call is going on") }
+		else if s == nil, let a = activity { ProcessInfo.processInfo.endActivity(a); activity = nil }
 		#endif
 	}
 
@@ -475,8 +524,8 @@ final class CallCenter {
 			// Everyone already here, for it to connect to.
 			let others = s.participants.map { CallPeer(device: $0.device, user: $0.user, name: $0.name) }
 			Task { await link.send(.roster(others)) }
-			guard begin(s) else { return }
-			admit(s, link, user: r.user, camera: video, dialedByMe: true)
+			if s.answeredAt == nil { s.answeredAt = Date() }
+			withMedia(s) { [weak self] in self?.admit(s, link, user: r.user, camera: video, dialedByMe: true) }
 		case .decline, .busy:
 			guard s.outgoing, let r = s.ringing.removeValue(forKey: link.device) else { return }
 			link.close("done")
@@ -498,7 +547,7 @@ final class CallCenter {
 		case .state(let muted, let camera):
 			guard let p = s.participants.first(where: { $0.link === link }) else { return }
 			p.muted = muted; p.camera = camera
-			if !camera { p.layer.sampleBufferRenderer.flush(removingDisplayedImage: true) {} }
+			if !camera { p.layer.sampleBufferRenderer.flush(removingDisplayedImage: true) {}; p.showing = false; p.firstFrame.reset() }
 		case .ring, .join, .keyframe, .stats, .forward, .caps: break
 		}
 	}
@@ -589,7 +638,7 @@ final class CallCenter {
 			let old = p.link
 			p.link = link; p.dialedByMe = dialedByMe
 			media.remove(p.device)
-			media.add(link, onFrame: Self.renderer(p.layer))
+			media.add(link, onFrame: Self.renderer(p))
 			old?.close("duplicate")
 			return
 		}
@@ -598,10 +647,17 @@ final class CallCenter {
 		let p = Participant(device: link.device, user: user, name: (user == model.me.user ? deviceName(link.device) : nil) ?? who?.name ?? model.core.members(s.conv).first { $0.user == user }?.name ?? name ?? "Someone", avatar: who?.avatar, camera: camera)
 		p.link = link; p.dialedByMe = dialedByMe
 		s.participants.append(p)
-		media.add(link, onFrame: Self.renderer(p.layer))
+		media.add(link, onFrame: Self.renderer(p))
 		if s.phase != .live {
 			s.phase = .live
 			s.startedAt = Date()
+			if let a = s.answeredAt { callLog("call \(s.id.prefix(8)): live \(Int(Date().timeIntervalSince(a) * 1000)) ms after the answer") }
+			#if DEBUG
+			// `BAUD_CALL_SMALL=s` (Debug): the call made small that long after it goes live.
+			if let t = ProcessInfo.processInfo.environment["BAUD_CALL_SMALL"].flatMap(Double.init) {
+				Task { try? await Task.sleep(for: .seconds(t)); if session === s { minimized = true; callLog("call \(s.id.prefix(8)): made small") } }
+			}
+			#endif
 			#if os(iOS)
 			if !Self.test { kit.connected(s) }
 			#endif
@@ -614,35 +670,85 @@ final class CallCenter {
 		announce(s)
 	}
 
-	private static func renderer(_ layer: AVSampleBufferDisplayLayer) -> @Sendable (CMSampleBuffer) -> Void {
-		let r = Renderer(layer.sampleBufferRenderer)
-		return { r.r.enqueue($0) }
+	/// Their frames to their layer; the first one (and the first after their camera comes back)
+	/// says the picture is showing.
+	private static func renderer(_ p: Participant) -> @Sendable (CMSampleBuffer) -> Void {
+		let r = Renderer(p.layer.sampleBufferRenderer)
+		let first = p.firstFrame
+		return { [weak p] in
+			r.r.enqueue($0)
+			if first.take() { Task { @MainActor in p?.showing = true } }
+		}
 	}
 
 	// MARK: media
 
-	/// The media starts with the first one in: my voice and picture out, everyone's in.
-	@discardableResult private func begin(_ s: Session) -> Bool {
-		guard s.media == nil else { return true }
+	/// My voice and picture out, everyone's in: started once per call, by whichever comes first of
+	/// placing it, answering it and joining it, and waited on by the rest. True once it runs.
+	private func media(_ s: Session) async -> Bool {
+		if s.media != nil { return true }
+		if let t = s.starting { return await t.value }
+		let t = Task { await startMedia(s) }
+		s.starting = t
+		return await t.value
+	}
+
+	/// Run `then` with the media up: at once when it already is (the usual case for a call I
+	/// placed), else once it starts, if the call is still on.
+	private func withMedia(_ s: Session, _ then: @escaping @MainActor () -> Void) {
+		if s.media != nil { then(); return }
+		Task { if await media(s), session === s, !s.phase.over { then() } }
+	}
+
+	/// The audio engine and the camera start off the main thread: either can take a second, and
+	/// the screen keeps moving meanwhile.
+	private func startMedia(_ s: Session) async -> Bool {
 		#if os(iOS)
 		if !s.callKit, !Self.test { kit.takeAudio(s) }
 		#endif
-		do {
-			let m = try CallMedia(video: s.video, test: Self.test, me: model?.me.thisDevice ?? "")
-			let local = Renderer(s.local.sampleBufferRenderer)
-			m.video?.onLocal = { local.r.enqueue($0) }
-			if !s.cameraOn { m.video?.setCamera(false) }
-			m.audio.muted = s.muted
-			m.onChange = { [weak self, weak s] in Task { @MainActor in if let s, let self { s.videoPaused = m.videoPaused; s.path = self.pathLine(s) } } }
+		let video = s.video, camera = s.cameraOn, muted = s.muted, audio = audioReady, test = Self.test
+		let me = model?.me.thisDevice ?? ""
+		let local = Renderer(s.local.sampleBufferRenderer)
+		let t0 = Date()
+		let made = await Task.detached(priority: .userInitiated) { () -> Result<CallMedia, Error> in
+			do {
+				let m = try CallMedia(video: video, test: test, me: me)
+				m.video?.onLocal = { local.r.enqueue($0) }
+				// Off before it starts, so a call answered without video never lights the camera.
+				if !camera { m.video?.setCamera(false) }
+				m.audio.muted = muted
+				try m.start(audio: audio)
+				return .success(m)
+			} catch { return .failure(error) }
+		}.value
+		switch made {
+		case .failure(let error):
+			callLog("call \(s.id.prefix(8)): media failed: \(error)")
+			if session === s { failed(s, error) }
+			return false
+		case .success(let m):
+			guard session === s, !s.phase.over else { Task.detached { m.stop() }; return false }
+			m.onChange = { [weak self, weak s] in Task { @MainActor in if let s, let self { self.changed(s, m) } } }
 			s.media = m
-			try m.start(audio: audioReady)
-			if m.audio.micOff { callLog("call \(s.id.prefix(8)): the microphone is off for baud; listening only") }
+			// Changed while it started: the switches as they stand now.
+			m.audio.muted = s.muted
+			if s.video, s.cameraOn != camera { m.video?.setCamera(s.cameraOn) }
+			callLog("call \(s.id.prefix(8)): media up in \(Int(Date().timeIntervalSince(t0) * 1000)) ms\(m.audio.micOff ? "; the microphone is off for baud, listening only" : "")")
+			// CallKit may have handed over the audio while the engine was being made.
+			if !audio, audioReady { audioActivated() }
 			s.path = pathLine(s)
 			return true
-		} catch {
-			callLog("call \(s.id.prefix(8)): media failed: \(error)")
-			failed(s, error)
-			return false
+		}
+	}
+
+	/// Once a second, from the media: how the picture is going.
+	private func changed(_ s: Session, _ m: CallMedia) {
+		s.videoPaused = m.videoPaused
+		s.path = pathLine(s)
+		if let d = s.participants.first?.device, let q = m.quality(d) {
+			let sides = q.inSize.split { $0 == "×" || $0 == "x" }.compactMap { Double($0) }
+			let aspect = sides.count == 2 && sides[1] > 0 ? CGFloat(sides[0] / sides[1]) : nil
+			if aspect != s.remoteAspect { s.remoteAspect = aspect }
 		}
 	}
 
@@ -665,11 +771,32 @@ final class CallCenter {
 		return true
 		#endif
 	}
-	/// CallKit activated the audio session.
+	/// CallKit activated the audio session: the engine starts, off the main thread. Before the media
+	/// is made, the media starts it itself.
 	func audioActivated() {
 		guard let s = session, let m = s.media else { return }
-		do { try m.startAudio(); s.path = pathLine(s) } catch { callLog("call \(s.id.prefix(8)): audio failed: \(error)"); failed(s, error) }
+		let t0 = Date()
+		Task {
+			let error = await Task.detached(priority: .userInitiated) { () -> Error? in
+				do { try m.startAudio(); return nil } catch { return error }
+			}.value
+			guard session === s, !s.phase.over else { return }
+			if let error { callLog("call \(s.id.prefix(8)): audio failed: \(error)"); failed(s, error); return }
+			callLog("call \(s.id.prefix(8)): audio up in \(Int(Date().timeIntervalSince(t0) * 1000)) ms")
+			s.path = pathLine(s)
+		}
 	}
+
+	#if os(iOS)
+	/// CallKit wouldn't carry a call I placed (a Focus, a restriction): baud takes the audio itself.
+	func callKitRefused(_ s: Session) {
+		guard session === s, !s.phase.over else { return }
+		s.callKit = false
+		guard !Self.test else { return }
+		kit.takeAudio(s)
+		audioActivated()
+	}
+	#endif
 
 	/// Two people: how the link goes. More: how many, and the worst of the links.
 	func pathLine(_ s: Session) -> String {
@@ -723,7 +850,8 @@ final class CallCenter {
 		guard session === s, !s.phase.over else { return }
 		ringer.stop()
 		let wasIn = s.startedAt != nil
-		s.media?.stop(); s.media = nil
+		// Stopped off the main thread: the audio engine and the system's encoder can be slow to let go.
+		if let m = s.media { s.media = nil; Task.detached { m.stop() } }
 		// The links go half a second later, so the last signal (end, decline) gets there first:
 		// closing at once can cut it off, and the other side would hear "dropped".
 		let links: [CallRoute] = s.participants.compactMap(\.link) + (s.ringLink.map { [$0] } ?? [])
@@ -734,6 +862,7 @@ final class CallCenter {
 			try? model?.local.recordCall(s.conv, video: s.video, outcome: outcome, seconds: seconds)
 		}
 		s.phase = .ended(why)
+		stayAwake()
 		if !s.outgoing, why == "Missed call" { Notifier.shared.missedCall(from: s.caller, conv: s.conv, video: s.video) }
 		if wasIn { announce(s) }
 		if ongoing[s.conv]?.id == s.id, s.group == false { ongoing[s.conv] = nil }
@@ -826,6 +955,14 @@ final class Ringer {
 		}
 		return b
 	}
+}
+
+/// True the first time it's asked, until it's reset.
+final class Once: @unchecked Sendable {
+	private let lock = NSLock()
+	private var done = false
+	func take() -> Bool { lock.withLock { defer { done = true }; return !done } }
+	func reset() { lock.withLock { done = false } }
 }
 
 /// A sample-buffer renderer handed to a media queue: each is fed from one queue only.
