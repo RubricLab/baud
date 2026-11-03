@@ -262,7 +262,7 @@ final class AppModel {
 		#endif
 	}
 	/// A chat read to its newest message (the list's menu, a swipe, ⇧⌘U).
-	func markRead(_ c: Conversation) { attempt { try core.markRead(c.id, c.lastEvent ?? "") } }
+	func markRead(_ c: Conversation) { try? core.markRead(c.id, c.lastEvent ?? "") }
 	/// A call to a friend, in our chat (made if there is none yet).
 	func call(_ user: UserId, video: Bool) {
 		guard let id = chat(with: user)?.id ?? startChat(with: user) else { return }

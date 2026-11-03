@@ -152,7 +152,7 @@ struct HomeTab: View {
 					.overlay {
 						VStack(spacing: 0) {
 							Text("Chats").font(Theme.headingFont).accessibilityAddTraits(.isHeader)
-							NetStatusChip()
+							NetStatusChip().fixedSize()
 						}
 					}
 					.padding(.horizontal, Rows.inset).padding(.top, 4)
