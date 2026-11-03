@@ -82,7 +82,15 @@ struct MacComposerText: NSViewRepresentable {
 			case #selector(NSResponder.insertNewline(_:)):
 				if NSApp.currentEvent?.modifierFlags.contains(.shift) == true { tv.insertNewlineIgnoringFieldEditor(nil); return true }
 				if parent.onAccept() { return true }
-				parent.onSend(); return true
+				// The word being composed (marked text, an accent being picked) belongs to this
+				// message: committed, and the text taken as it stands, before it goes.
+				if tv.hasMarkedText() { tv.unmarkText() }
+				if parent.text != tv.string { parent.text = tv.string }
+				parent.onSend()
+				// Sent: emptied here and now, not on SwiftUI's next pass, so no late keystroke
+				// lands on the old text.
+				if parent.text.isEmpty, !tv.string.isEmpty { tv.string = ""; tv.invalidateIntrinsicContentSize(); tv.needsDisplay = true }
+				return true
 			case #selector(NSResponder.insertTab(_:)): return parent.onAccept()
 			case #selector(NSResponder.cancelOperation(_:)): return parent.onEscape()
 			case #selector(NSResponder.moveUp(_:)):

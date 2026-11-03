@@ -21,6 +21,11 @@ struct ComposerView: View {
 	@State private var editing: Event?
 	@State private var mentionIndex = 0
 	@FocusState private var focused: Bool
+	#if os(iOS)
+	@State private var field = ComposerField()
+	#endif
+	/// Where this composer's draft is kept: the chat, or a thread in it.
+	private var draftKey: String { thread == nil ? conv : conv + "/" + (thread ?? "") }
 
 	private var online: Bool { model.core.members(conv).contains { !$0.me && $0.online } }
 	/// People who match the @prefix being typed: members of this conversation first.
@@ -69,7 +74,7 @@ struct ComposerView: View {
 				Menu {
 					Button { choosingPhotos = true } label: { Label("Photos", systemImage: "photo.on.rectangle") }
 					Button { importing = true } label: { Label("Files", systemImage: "folder") }
-				} label: { Image(systemName: "plus").font(.system(size: 14, weight: .semibold)).frame(width: 24, height: 24) }
+				} label: { Image(systemName: "plus").font(.system(size: 14, weight: .semibold)).frame(width: 24, height: PhoneComposerText.line) }
 					.foregroundStyle(tones.secondary).accessibilityLabel("Attach")
 				#else
 				Button { importing = true } label: { Image(systemName: "plus").font(.system(size: 14, weight: .semibold)) }
@@ -88,11 +93,8 @@ struct ComposerView: View {
 				Button { NSApp.orderFrontCharacterPalette(nil) } label: { Image(systemName: "face.smiling").font(.system(size: 13)) }
 					.buttonStyle(.plain).foregroundStyle(tones.secondary).frame(width: 24, height: 24).help("Emoji (⌃⌘Space); :tada: works too")
 				#else
-				// One line sits centred on the send button's height; more lines grow the field upward.
-				TextField("", text: $text, prompt: Text(placeholder).foregroundStyle(tones.secondary), axis: .vertical)
-					.textFieldStyle(.plain).font(Theme.font).lineLimit(1...8)
-					.frame(minHeight: 30)
-					.focused($focused)
+				// One line sits centred on the buttons' height; more lines grow the field upward.
+				PhoneComposerText(text: $text, placeholder: placeholder, field: field)
 					.onChange(of: text) { _, new in changed(new) }
 				#endif
 				#if os(iOS)
@@ -110,7 +112,13 @@ struct ComposerView: View {
 			.background(RoundedRectangle(cornerRadius: 21, style: .continuous).fill(tones.field).lifted(tones))
 			.padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 14)
 		}
-		.onAppear { text = model.draft(thread == nil ? conv : conv + "/" + (thread ?? "")); focused = Theme.autofocus; Bench.typeInto = { text += $0 } }
+		.onAppear {
+			text = model.draft(draftKey); focused = Theme.autofocus; Bench.typeInto = { text += $0 }
+			#if DEBUG
+			// `BAUD_COMPOSE=words` (Debug): typed into the composer, for pictures of it.
+			if text.isEmpty, let t = ProcessInfo.processInfo.environment["BAUD_COMPOSE"] { text = t }
+			#endif
+		}
 		.onChange(of: conv) { _, c in text = model.draft(c); focused = Theme.autofocus }
 		// Dropped on the conversation, not on the field: staged here all the same.
 		.onChange(of: model.dropped[conv], initial: true) { _, urls in
@@ -139,7 +147,7 @@ struct ComposerView: View {
 		let expanded = Composing.expandShortcodes(new)
 		if expanded != new { text = expanded; return }
 		mentionIndex = 0
-		if editing == nil { model.setDraft(thread == nil ? conv : conv + "/" + (thread ?? ""), new) }
+		if editing == nil { model.setDraft(draftKey, new) }
 		// One typing frame every two seconds while the text keeps changing, not one per keystroke:
 		// the other side keeps "is typing" for five seconds after the last frame it saw.
 		if !new.isEmpty, Date().timeIntervalSince(typingSent) > 2 { typingSent = Date(); model.core.typing(conv) }
@@ -155,6 +163,10 @@ struct ComposerView: View {
 	private func cancelEdit() { editing = nil; text = model.draft(conv) }
 
 	private func send() {
+		#if os(iOS)
+		// The keyboard's word in progress belongs to this message, not the next.
+		if let typed = field.commit(), typed != text { text = typed }
+		#endif
 		let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
 		if let e = editing {
 			guard !t.isEmpty else { return }
@@ -162,10 +174,16 @@ struct ComposerView: View {
 			editing = nil; text = model.draft(conv); return
 		}
 		guard !t.isEmpty || !files.isEmpty else { return }
-		model.send(conv, Draft(text: t, attachments: files, reply: reply?.id, thread: thread, mentions: mentions(in: t)))
+		let draft = Draft(text: t, attachments: files, reply: reply?.id, thread: thread, mentions: mentions(in: t))
+		// Emptied before it goes, the draft too: a composer drawn afresh as the message lands (a new
+		// view of this chat) loaded the old draft and showed the message still waiting to be sent.
+		model.setDraft(draftKey, "")
 		text = ""; files = []; reply = nil
+		#if os(iOS)
+		field.clear(sent: t)
+		#endif
+		model.send(conv, draft)
 		Haptic.send()
-		if thread != nil { model.setDraft(conv + "/" + (thread ?? ""), "") }
 	}
 
 	private func mentions(in t: String) -> [UserId] {
