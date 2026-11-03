@@ -86,6 +86,7 @@ The linking smoke drives two or three real processes with no clicks:
 | `scripts/ship-mac.sh` | Release build, Developer ID signing, notarization and a stapled DMG. Needs an Apple developer account. |
 | `scripts/ship-ios.sh` | Archive and upload to TestFlight. |
 | `apps/android/scripts/ship-android.sh` | The signed release APK and its checksum for `site/releases.json`. |
+| `scripts/sign-release.swift` | Signs `site/releases.json` with baud's release key (P-256, kept only in the shipping Mac's keychain). Run it after every change to the record: the Mac and Android apps take an update only from a record it signed. `--new-key` makes the key, once. |
 | `peer/lab/lab.py` | The network lab: real nodes behind emulated home, carrier and office routers in Docker. See [`peer/lab`](../peer/lab). |
 | `peer/scripts/bench.sh` | Latency table between this machine and one you own, over ssh. |
 | `tools/calltest/scenarios.sh` | Call quality across five network paths. |

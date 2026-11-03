@@ -416,8 +416,12 @@ struct AppCard: View {
 			}
 			Spacer(minLength: 8)
 			#if os(macOS)
-			if case .available = updates.state { Button("Download") { updates.download() }.buttonStyle(Quiet(strong: true)) }
-			else { Button("Check") { updates.check(quiet: false) }.buttonStyle(Quiet()).disabled(updates.state == .checking) }
+			switch updates.state {
+			case .available: Button("Update") { updates.install() }.buttonStyle(Quiet(strong: true))
+			case .downloading: Button("Updating…") {}.buttonStyle(Quiet()).disabled(true)
+			case .ready: Button("Restart") { updates.restart() }.buttonStyle(Quiet(strong: true))
+			default: Button("Check") { updates.check(quiet: false) }.buttonStyle(Quiet()).disabled(updates.state == .checking)
+			}
 			#endif
 		}
 		#if os(macOS)

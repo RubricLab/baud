@@ -12,6 +12,7 @@ struct Sidebar: View {
 	@Binding var sheet: NewSheet.What?
 	@FocusState private var focused: Bool
 	@State private var query = ""
+	@Environment(Updates.self) private var updates
 
 	var body: some View {
 		VStack(spacing: 0) {
@@ -52,6 +53,8 @@ struct Sidebar: View {
 				.onChange(of: model.selectedConversation) { _, id in if let id { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(id) } } }
 			}
 
+			// A newer baud, where it's seen: one press updates, another restarts into it.
+			if updates.offering { UpdateBar().padding(.horizontal, 10).padding(.bottom, 8).transition(.move(edge: .bottom).combined(with: .opacity)) }
 			// This Mac's status at the foot: the mark and the words; a tap explains.
 			Hairline()
 			HStack { NetStatusChip(); Spacer() }.padding(.horizontal, 11).padding(.vertical, 8)
