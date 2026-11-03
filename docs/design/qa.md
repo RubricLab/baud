@@ -35,6 +35,85 @@ At the end it lists the baud apps this Mac still knows, so you can check that on
 `/Applications/baud.app` is left. Xcode's own dev build may also be listed, if you've built
 baud in Xcode yourself.
 
+## Round 2 (about 15 minutes)
+
+What changed after the first QA. The round 1 checks follow; where the two disagree, this one
+is right. The demo has no archived chats and no muted ones until you make some.
+
+### Mac: Settings and Friends (3 min)
+
+- [ ] ⌘, opens Settings in the main window, not a window of its own: a narrow list (you at the
+      top, then Devices, Notifications, Calls, Connection, Updates, Data) beside the section.
+      ⎋, ✕ or a click on a chat goes back.
+- [ ] You: the colours, then a Hue strip and a Lightness strip. Drag the hue: the whole app
+      changes as you drag, nothing is clipped, and the Dock icon changes when you let go.
+- [ ] Devices: this Mac, then "Add a device" last. Click it: "Add a device that's yours?" with
+      "Add my device" and Cancel. Press Cancel.
+- [ ] Updates: "Download and install updates automatically" is on. Turn it off and back on.
+- [ ] Data: the store's size, then Start over in red, last; it asks first. Press Cancel.
+- [ ] The people button at the top of the sidebar (or ⇧⌘1) opens Friends: Add a friend, a map
+      with Ana and Jo (the beta has them sharing where they are), then the friends. Click a face
+      on the map: a card with Apple Maps and Google Maps. Click Sam in the list: his page.
+- [ ] "··· Online" at the foot opens Connection: this Mac and one word, your other devices, no
+      drawing.
+
+### Mac: messages (4 min)
+
+- [ ] Open Sam. Your last message in each run has its time and a mark inside the bubble (✓
+      held for him, ✓✓ delivered, filled when read). Rest on the mark: its sentence. There's no
+      status line under the conversation, and the header says "Last seen 1 d ago".
+- [ ] Hover a message: React, Reply and ⋯ sit in the space beside it. Make the window as narrow
+      as it goes, open ⌘I, and hover again: everything stays inside the column and no message is
+      cut to "…". Then make it full screen.
+- [ ] Hover's React: six recent reactions and +. Give one, then give it again: it's taken back.
+      + opens every emoji, with the cursor in its search.
+- [ ] Right-click a message: Reply, React ▸, Forward, Copy text, Info, Edit (yours), then Delete
+      alone at the end. Each has its icon.
+- [ ] Forward a message to Ana: pick her, and it's there, with no "Forwarded".
+- [ ] Info on your newest message to Sam: the bubble, Sent, Copy text, then "Held for" Sam and
+      which devices hold it. Info on one of Sam's: From "Sam's Mac", How it came.
+- [ ] The composer's smiley opens the same emoji picker; a pick goes into the text.
+- [ ] Open weekend: no "Reply in thread" anywhere. The beta stages two replies an older baud made
+      in a thread ("count me in", "same, if it isn't raining"); they show in the conversation,
+      each quoting "who's in for saturday?".
+
+### Mac: chats (3 min)
+
+- [ ] Right-click weekend: Mark as read, Pin chat, Mute notifications ▸, Archive, then Leave and
+      delete… last. Each has its icon.
+- [ ] Mark Sam as unread: a dot and a bold name. ⇧⌘U toggles it back. Open it: it's read.
+- [ ] Pin Jo: it goes to the top. Pin five chats: Pin chat greys out for a sixth.
+- [ ] Mute Ana for 1 hour: a bell with a slash after her name, and her count goes quiet.
+- [ ] Archive hike: it leaves the list, and an "Archived" row with 1 appears at the foot. Open
+      it there, and Unarchive.
+
+### Details and people (2 min)
+
+- [ ] Sam's details (⌘I): his name, then Video, Call, Mute, Search; one card with Disappearing
+      messages (and what it does), Nickname, Notifications, Media, links and files, Safety
+      number; "No groups in common" with Add to a group; his device; Remove friend last.
+- [ ] Click his name: give him a nickname. It shows everywhere, with "Calls themself Sam" under
+      it. Remove it the same way.
+- [ ] Search: type "files", and a click opens the message where it is.
+- [ ] hike's details: the same tiles, Notifications, Media, links and files. Your row says
+      "You · Set your label"; set one ("organiser") and it shows after your name. Ana's page
+      from hike shows "Label in hike", not editable (you aren't an admin of hike).
+
+### iPhone (3 min)
+
+- [ ] Chats: the people button beside compose opens Friends: Add a friend, a map with Ana and Jo,
+      then the friends. Tap a face on the map: a card with Apple Maps and Google Maps.
+- [ ] Hold one of Ana's messages: it lifts in place, the rest dims in your colour, six reactions
+      above (+ at the end), and Reply, Forward, Copy text, Info below. Tap outside: it closes.
+      Hold one of yours near the bottom: the menu flips to fit, with Edit and Delete (red, last).
+- [ ] + in the hold menu: every emoji, search at the top with the keyboard up. A tap reacts and
+      closes.
+- [ ] Double-tap a message: your most recent reaction pops on, and off again with a second
+      double tap.
+- [ ] Swipe a chat from the left: Read or Unread. From the right: Mute (asks how long) and Delete.
+- [ ] Tap your face: You lists the sections; each opens a page. Settings ▸ You: drag the hue and
+      the app follows.
+
 ## Mac (about 8 minutes)
 
 ### First look (30 s)

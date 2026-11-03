@@ -17,13 +17,11 @@
 		10CF26A9C586F2B4BD84A63B /* CallMini.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA8473B4A71D70B4EFDE1E9 /* CallMini.swift */; };
 		122562BE326A38F9C13EAB9E /* EmojiPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F5302278BAA483D7DAF49FF /* EmojiPicker.swift */; };
 		13024C44EA54555E9B2E0B94 /* IconColour.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB065FCE67C439525356FC2 /* IconColour.swift */; };
-		145FFD2E5ED4363438438242 /* NetworkPicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B6C76ED97B2C75F52DB4388 /* NetworkPicture.swift */; };
 		162A5A9B2C24699F9677C43D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 41C65A0588DB0A438F215821 /* Assets.xcassets */; };
 		172A1C12130B70613DCAA173 /* CallMini.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA8473B4A71D70B4EFDE1E9 /* CallMini.swift */; };
 		183280395854C835FA573BAF /* Location.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BA6EFBFA6DFBB5DDC71A06C /* Location.swift */; };
 		19254B2D32805DE0587FCEC3 /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7E57609968840E32DE4A8D /* Notifier.swift */; };
 		1BD3354049E9ADD968846283 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DB63EC081D64513628AB58B5 /* PrivacyInfo.xcprivacy */; };
-		23197B2F6762DC0A0288F4F9 /* NetworkPicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B6C76ED97B2C75F52DB4388 /* NetworkPicture.swift */; };
 		23EADF0E8283FC539883DBE4 /* EmojiData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC89CC1CA8EBF876B323305 /* EmojiData.swift */; };
 		26CFFC47093B0CD45FF18B18 /* TestPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF699966B28FC0EB064B804D /* TestPattern.swift */; };
 		287E67277E87FB0F4A6A08C5 /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7E57609968840E32DE4A8D /* Notifier.swift */; };
@@ -184,7 +182,6 @@
 		976059C32A259F8859DE15A2 /* AudioRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRoutes.swift; sourceTree = "<group>"; };
 		9A9454EAB1FCAAC7503A2A8D /* Timeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Timeline.swift; sourceTree = "<group>"; };
 		9B4EE71A5BEFDE3A0174BC15 /* MembersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembersView.swift; sourceTree = "<group>"; };
-		9B6C76ED97B2C75F52DB4388 /* NetworkPicture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkPicture.swift; sourceTree = "<group>"; };
 		9F59F9BD62A5C9792D65ADC0 /* Baud.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Baud.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B7405D45CFD740E11957F6 /* ComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerView.swift; sourceTree = "<group>"; };
 		A6A90C24F9850C2DA5A0AF7C /* CallMedia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallMedia.swift; sourceTree = "<group>"; };
@@ -371,7 +368,6 @@
 				C39DEDDAF42C92108F6DE60A /* Measure.swift */,
 				9B4EE71A5BEFDE3A0174BC15 /* MembersView.swift */,
 				316246AB1CCAE8FC33C72026 /* NetStatus.swift */,
-				9B6C76ED97B2C75F52DB4388 /* NetworkPicture.swift */,
 				4707057B75471BB6616D1F72 /* NewSheet.swift */,
 				FD7E57609968840E32DE4A8D /* Notifier.swift */,
 				552AB03DC4FD2C334C21EE54 /* OnboardingView.swift */,
@@ -537,7 +533,6 @@
 				36111723E9D7C5F60320EBDB /* Measure.swift in Sources */,
 				28CFBCA5504A9300D5590687 /* MembersView.swift in Sources */,
 				FAF808F8A696DD0BABFFA652 /* NetStatus.swift in Sources */,
-				145FFD2E5ED4363438438242 /* NetworkPicture.swift in Sources */,
 				51B10D7E298B1E3E4BD73698 /* NewSheet.swift in Sources */,
 				19254B2D32805DE0587FCEC3 /* Notifier.swift in Sources */,
 				898EBA25E2CDB07B080E0CE7 /* OnboardingView.swift in Sources */,
@@ -604,7 +599,6 @@
 				D86568E04D8A626F92F8C855 /* Measure.swift in Sources */,
 				6329A4142E225B7A19BE1DCE /* MembersView.swift in Sources */,
 				C1252B2FE9CCF0C77F22A7A3 /* NetStatus.swift in Sources */,
-				23197B2F6762DC0A0288F4F9 /* NetworkPicture.swift in Sources */,
 				09DBB37014593457D581BE90 /* NewSheet.swift in Sources */,
 				287E67277E87FB0F4A6A08C5 /* Notifier.swift in Sources */,
 				D0ED12144D4D93F8CA4790A3 /* OnboardingView.swift in Sources */,

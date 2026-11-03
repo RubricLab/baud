@@ -85,7 +85,10 @@ phone() { # fresh: a new store; first: no demo, no name
     return
   fi
   mkdir -p "$store"
+  # Ana and Jo share where they are (the Friends map), and weekend has two replies an older baud
+  # made in a thread (shown in the conversation now).
   env SIMCTL_CHILD_BAUD_DEMO=1 SIMCTL_CHILD_BAUD_NAME="$NAME" SIMCTL_CHILD_BAUD_DIR="$store" SIMCTL_CHILD_BAUD_NOTIFY=log \
+    SIMCTL_CHILD_BAUD_DEMO_PLACES=1 SIMCTL_CHILD_BAUD_DEMO_THREAD=1 \
     xcrun simctl launch "$SIM" sh.rubric.baud.ios >/dev/null
   echo "iPhone: open in the \"$SIM_NAME\" simulator. The first launch takes about 20 seconds to fill the demo."
 }
@@ -104,8 +107,9 @@ mac_copy() {
   # Links stay with the real baud.
   plutil -remove CFBundleURLTypes "$plist" 2>/dev/null || true
   # Its launch switches, so a double-click is the launcher: demo data, its own store, no port
-  # mapping, no relaying, no notifications (it says what it would have shown in its log).
-  plutil -replace LSEnvironment -json "{\"BAUD_DEMO\":\"1\",\"BAUD_NAME\":\"$NAME\",\"BAUD_DIR\":\"$BETA/mac-store\",\"BAUD_PORTMAP\":\"0\",\"BAUD_RELAY\":\"0\",\"BAUD_NOTIFY\":\"log\"}" "$plist"
+  # mapping, no relaying, no notifications (it says what it would have shown in its log); Ana and
+  # Jo sharing where they are, and weekend's two replies from an older baud's thread.
+  plutil -replace LSEnvironment -json "{\"BAUD_DEMO\":\"1\",\"BAUD_NAME\":\"$NAME\",\"BAUD_DIR\":\"$BETA/mac-store\",\"BAUD_PORTMAP\":\"0\",\"BAUD_RELAY\":\"0\",\"BAUD_NOTIFY\":\"log\",\"BAUD_DEMO_PLACES\":\"1\",\"BAUD_DEMO_THREAD\":\"1\"}" "$plist"
   codesign --force --deep -s - "$APP" 2>/dev/null
   "$LSREG" -f "$APP"
 }

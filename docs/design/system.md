@@ -466,6 +466,148 @@ the list as built.
 | Empty Mac pane | New friend / New group tiles | "No chat open" and four actions with their keys | Mac only |
 | Mac sidebar | Face, "Chats", compose; status at the foot | Compose by the traffic lights; you and your status at the foot | Mac only |
 
+## Round 2, as built
+
+The owner's QA of round 1, and Signal's patterns where they were asked for. Where this and the
+sections above disagree, this wins.
+
+### Friends, devices and the connection
+
+- **Friends have a page of their own,** not a Settings section. On it: "Add a friend", then a map
+  of everyone sharing where they are (from any chat, the newest place per person; a tap on a face
+  gives a card with the name, how fresh it is, how far, and Apple Maps and Google Maps), then the
+  friends, a row each, opening their page. The iPhone opens it from a people button beside
+  compose; the Mac from the people button at the top of the sidebar, ⇧⌘1, ⌘K "Friends" and Go ▸
+  Friends. On the Mac, Friends and Settings fill the main window's right side; ⎋, ✕ or clicking a
+  chat goes back.
+- **Adding a device lives only in Settings ▸ Devices,** as its last row, and asks first: "Add a
+  device that's yours?" / "It gets all your chats, your friends and your identity. Never add
+  someone else's device." / "Add my device" / "Cancel".
+- **The network drawing is gone.** In its place, Connection: this device and one word for how it's
+  doing, my other devices a line each, and the sentence about a Mac at home. The status chip
+  ("··· Online") opens it as a small sheet; Settings ▸ Connection shows the same.
+
+### Settings, in sections
+
+The Mac's main window shows Settings as a narrow list of sections (me at the top, "Face, name and
+colour" under my name) beside the section open. The iPhone's You lists the same sections, each a
+page. ⌘, and "Settings…" open it; the old Settings window is gone.
+
+| Section | What's in it |
+| --- | --- |
+| You | Face, name, colour: the presets, then a hue strip and a lightness strip, inline (no sheet). The app recolours while you drag; the icon changes when you let go. |
+| Devices | My devices, then "Add a device" last, asked first |
+| Notifications | On or off, and that muting one chat is in its menu or page |
+| Calls | Microphone and Camera, each with its access ("Allowed", "Asked on your first call"), and Open System Settings when refused |
+| Connection | As above, and Open at login (Mac) |
+| Updates | "baud 0.2.22" over its state, with Check, Update or Restart; "Download and install updates automatically", on by default |
+| Data | What's stored on this device and its size; then Start over, red, last, asked first |
+
+**Updates.** With the switch on (the default), a new baud downloads, is checked against baud's
+signature and put in place by itself; it then says "Restart to update" and never restarts on its
+own. With it off, an update waiting shows clearly: the bar at the foot of the sidebar, a dot on
+You and on Updates, and "0.2.22 available" with Update.
+
+### Messages
+
+- **Delivery marks are back, Signal's way,** in my last bubble of each run, small, after the time,
+  in the bubble's quiet ink: ○ sending, ✓ held by a device for them, ✓✓ delivered, a filled ✓✓
+  read. The chat list shows the same mark beside the time when the last message is mine. There's
+  no line of status under the conversation. The mark's sentence ("Waiting for Ana") is its
+  tooltip and what VoiceOver says. The time and its mark wrap together, never the mark alone.
+- **Less status everywhere.** A one-person header says "Online" or "Last seen 2 h ago"; a group's
+  "3 people · 2 online". Member and friend rows: a presence dot and one word. How a message
+  travelled ("··· direct") shows only on a hover (Mac) or a drag to the left (iPhone).
+- **The Mac's hover strip stays inside the column** at every width: the words take the room they
+  need and the strip sits in the side they leave (at least 160 pt). A bubble is never cut to "…":
+  its rows are measured with the strip's side and the space before it. Checked at the narrowest
+  window (900 pt, details open) and at 1,800 pt.
+- **Holding a message (iPhone)** lifts it in place over a dim in the chosen colour, with a light
+  tap. Above it: six recent reactions (yours ringed; a tap takes it back) and + for every emoji.
+  Below it: Reply, Forward, Copy text, Info, Edit (mine), a divider, Delete (mine, red, asked
+  first). A tap outside closes it. Near the top or bottom of the screen it flips so it all fits.
+- **Every emoji:** search at the top (it takes the keyboard), Recent first, then the categories in
+  a big grid. One tap reacts and closes. The Mac composer's smiley opens the same picker (the
+  iPhone's composer has none: the keyboard has emoji).
+- **Double tap** gives or takes back your most recent reaction, with a small pop (none with Reduce
+  Motion).
+- **The Mac:** a hover's React opens the six recents and +; the right-click menu (and ⋯ in the
+  hover strip) is Reply, React ▸ (the six and More…), Forward, Copy text, Info, Edit, a divider,
+  Delete. Every item has its icon. No Pin, no Select.
+- **Recent reactions** are this device's own, updated with every reaction given (seeded ❤️ 👍 😂 😮
+  😢 🙏).
+- **Forward** picks a chat (recent first, a search) and sends a copy: the words and whatever
+  photos and files are on this device. One that isn't yet says "The photo isn't on this device
+  yet", and the words go alone. A place goes as a place. No "Forwarded" label.
+- **Threads are gone from chats.** No "Reply in thread". Replies made in a thread by older versions
+  show in the conversation in time order, quoting the message they answer. Channels keep threads.
+- **Info**, for any message: the bubble at the top, then Sent (date and time), Copy text, and
+  Disappears when the chat's messages disappear. Mine: who has it, person by person, in cards:
+  Read by, Delivered to, Held for (and by whose devices), Not yet. Theirs: From (the device) and
+  How it came. Then the reactions and who gave each.
+
+### Chats
+
+- **A chat's actions** (right click on the Mac, a long press on the iPhone, ⌘K for the open one):
+  Mark as unread or Mark as read; Pin chat or Unpin chat (at most five, kept at the top); Mute
+  notifications ▸ For 1 hour, For 8 hours, For a week, Always (or Unmute); Archive or Unarchive;
+  then Delete… or Leave and delete…, last. Every item has its icon.
+- **Marked unread:** a dot and a bold name until it's opened.
+- **Muted:** a bell with a slash after the name, and a quiet count. No notifications; a call still
+  rings.
+- **Archived** chats leave the list for an "Archived" row with their count at its foot. A new
+  message from someone else brings one back, unless it's muted.
+- **iPhone swipes:** from the left, Read or Unread; from the right, Mute (or Unmute) and Delete.
+  The Mac: ⇧⌘U toggles read and unread.
+- These live in the profile, so they follow me to my other devices: `unread.<chat>`,
+  `pin.<chat>` (the time pinned), `mute.<chat>` (until when), `archive.<chat>`.
+
+### A person, and a group's details
+
+- **The name** is a button for a friend: a tap gives them a nickname only I see, on all my
+  devices. With one set, "Calls themself Sam" is under it.
+- **Round tiles:** Video, Call, Mute (a menu), Search (in our chat). Outside our chat, Message
+  comes first.
+- **One card:** Disappearing messages (with what it does under the title), Nickname,
+  Notifications, "Media, links and files" (photos in a grid, files and links as rows, each opening
+  where it is in the chat), Safety number, and, opened from a group, "Label in weekend".
+- **Groups in common,** with "Add to a group" first (a friend into one of my groups).
+- **Devices,** then Remove friend, last. No Block, no Report.
+- **A group's details** get the same tiles (Video, Call, Mute, Search) and the same card rows.
+- **Labels in a group** (24 characters at most): after a member's name in the people list, and
+  small after the name over their messages. My own row says "Set your label". I can change mine;
+  an admin can change anyone's; nobody else is offered it.
+
+### Round 2's words and behaviour, for Android
+
+| Where | Was (round 1) | Becomes | Android |
+| --- | --- | --- | --- |
+| Friends | A section of You | A page: Add a friend, the map of who's sharing, the friends; a people button beside compose | `ui/You.kt` → a Friends screen; `ui/Chats.kt`'s top row |
+| Add a device | Devices' first row, no question | Settings ▸ Devices, last row; "Add a device that's yours?" / "It gets all your chats, your friends and your identity. Never add someone else's device." / "Add my device" / "Cancel" | `ui/You.kt` |
+| Network | A drawing of the network | Connection: this device and one word; my devices a line each; the Mac-at-home sentence | the status sheet |
+| You | One long page | Sections: You, Devices, Notifications, Calls, Connection, Updates, Data, each a page | `ui/You.kt` |
+| Colour | A sheet of its own | Presets, then a hue strip and a lightness strip, inline; live while dragging | `ui/You.kt` |
+| Updates | Download when asked | "Download and install updates automatically", on by default: downloads, checks the signature, puts it in place, says "Restart to update", never restarts itself; off: the update waits, with a dot | the Android updater |
+| A place, a live map | Open in Maps | Apple Maps and Google Maps, two buttons | `ui/Location.kt` |
+| Conversation header | "Online · direct, 4 ms" | "Online", "Last seen 2 h ago", "3 people · 2 online" | `ui/Conversation.kt` |
+| Member and friend rows | Words for each device | A presence dot and one word | `ui/ChatInfo.kt`, Friends |
+| Delivery | A status line under the newest message | ○ ✓ ✓✓ ● after the time in my last bubble of each run; the same mark in the chat list | `ui/TimelineView.kt`, `ui/Chats.kt` |
+| Long press on a message | A system menu | The hold menu: six recent reactions and +, then Reply, Forward, Copy text, Info, Edit, divider, Delete | `ui/TimelineView.kt` |
+| Emoji | A short list | Every emoji: search, Recent, categories; one tap reacts and closes; the composer's too | a new picker |
+| Double tap | 👍 | My most recent reaction, given or taken back | `ui/TimelineView.kt` |
+| Recent reactions | (none) | This device's own six, seeded ❤️ 👍 😂 😮 😢 🙏 | local preferences |
+| Forward | (none) | Pick a chat; a copy goes; a missing photo says "The photo isn't on this device yet" | new |
+| Threads in chats | Reply in thread, a thread pane | Gone: replies show in the conversation, quoting what they answer; channels keep threads | `ui/TimelineView.kt` |
+| Info | Mine only, a short list | Any message: the bubble, Sent, Copy text, Disappears; mine: Read by, Delivered to, Held for, Not yet; theirs: From, How it came; Reactions | new |
+| Chat actions | Delete | Mark as unread/read, Pin chat (five at most), Mute notifications ▸, Archive, Delete… last; profile keys `unread.`, `pin.`, `mute.`, `archive.` | `ui/Chats.kt` |
+| Chat list | Unread count | Also a dot and bold for marked unread; a bell-slash and a quiet count for muted; pinned first; "Archived" at the foot | `ui/Chats.kt` |
+| Swipes | Read; Delete | From the left: Read/Unread; from the right: Mute/Unmute, Delete | `ui/Chats.kt` |
+| Notifications | Every chat | A muted chat is skipped | the notifier |
+| Person page | Call and Video tiles, cards | The name sets a nickname ("Calls themself …"); tiles Video, Call, Mute, Search (Message outside the chat); one card: Disappearing messages, Nickname, Notifications, Media links and files, Safety number, Label in <group>; groups in common with Add to a group; Devices; Remove friend | `ui/PersonPage.kt`, `ui/ChatInfo.kt` |
+| Group details | Hero, people | The same tiles and card rows; members show their label; mine says "Set your label" | `ui/ChatInfo.kt`, with `Member.label` and `set_label` (24 characters; mine, or anyone's as admin) |
+| Messages in a group | The sender's name | The name, then their label, small | `ui/TimelineView.kt` |
+| Mac | A Settings window | Settings and Friends in the main window; ⇧⌘1 Friends, ⇧⌘2 Connection, ⇧⌘U read/unread | Mac only |
+
 ## The order of the work
 
 Each step is a commit or two, photographed again before the next.
