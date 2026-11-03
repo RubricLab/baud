@@ -43,7 +43,7 @@ struct ComposerView: View {
 					ForEach(Array(matches.prefix(6).enumerated()), id: \.element.id) { i, m in
 						HStack(spacing: 8) { Avatar(name: m.name, size: 18, presence: Mark.presence(m.devices)); Text(m.name).font(Theme.font); Spacer(); Text(presenceWord(m.devices)).font(Theme.smallFont).foregroundStyle(tones.secondary) }
 							.padding(.horizontal, 8).frame(height: Theme.row - 6)
-							.background(i == mentionIndex ? tones.hover : Color.clear, in: RoundedRectangle(cornerRadius: Theme.corner))
+							.background(i == mentionIndex ? tones.hover : Color.clear, in: RoundedRectangle(cornerRadius: Radius.row))
 							.contentShape(Rectangle()).onTapGesture { text = Composing.complete(text, with: m.name) }
 					}
 				}.padding(.horizontal, 12).padding(.top, 6)

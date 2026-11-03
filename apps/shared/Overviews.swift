@@ -112,37 +112,3 @@ struct HomeOverview: View {
 		}
 	}
 }
-
-/// A thing you can open: a solid card that lifts further on hover and settles pressed; on, the
-/// loud fill; `empty` is the dashed outline of something not made yet.
-struct TileStyle: ButtonStyle {
-	var empty = false
-	var on = false
-	/// No outline at rest: a thing that is its own picture (a device) only shows its tile on hover.
-	var bare = false
-	func makeBody(configuration: Configuration) -> some View { Look(configuration: configuration, empty: empty, on: on, bare: bare) }
-	struct Look: View {
-		@Environment(\.tones) private var tones
-		@State private var hover = false
-		let configuration: Configuration
-		let empty: Bool
-		let on: Bool
-		let bare: Bool
-		var body: some View {
-			configuration.label
-				.environment(\.tones, on ? tones.onLoudTones : tones)
-				.foregroundStyle(on ? tones.onLoud : tones.text)
-				.background {
-					let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-					if bare { shape.fill(configuration.isPressed ? tones.pressed : on || hover ? tones.hover : .clear) }
-					else if !empty { shape.fill(on ? tones.loud : tones.card).lifted(tones, by: configuration.isPressed ? 0.3 : hover ? 1.4 : 1) }
-				}
-				// A bare tile draws its own outline (Add a device): it only shows the tile's on a hover.
-				.overlay { if empty && (!bare || hover) { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(hover ? tones.text : tones.tertiary, style: StrokeStyle(lineWidth: 1.5, dash: [4, 4])) } }
-				.scaleEffect(configuration.isPressed ? 0.98 : 1)
-				.contentShape(RoundedRectangle(cornerRadius: 10))
-				.onHover { hover = $0 }
-				.animation(.easeOut(duration: 0.1), value: hover)
-		}
-	}
-}

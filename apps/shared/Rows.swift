@@ -6,13 +6,15 @@ import SwiftUI
 
 enum Rows {
 	#if os(macOS)
-	static let chat: CGFloat = 44, compact: CGFloat = 28, space: CGFloat = 40
-	static let face: CGFloat = 28, smallFace: CGFloat = 20, tile: CGFloat = 26
-	static let inset: CGFloat = 8, pad: CGFloat = 8
+	/// One line (a setting, an action); a face and two lines (a person, a device); a chat in the list.
+	static let line: CGFloat = 32, person: CGFloat = 40, chat: CGFloat = 40, compact: CGFloat = 28, space: CGFloat = 40
+	static let face: CGFloat = 28, personFace: CGFloat = 28, smallFace: CGFloat = 20, tile: CGFloat = 26
+	/// A row's fill is set in from its card or column, its words a further step; between the face and the words.
+	static let inset: CGFloat = 8, pad: CGFloat = 8, gap: CGFloat = 8
 	#else
-	static let chat: CGFloat = 66, compact: CGFloat = 46, space: CGFloat = 60
-	static let face: CGFloat = 44, smallFace: CGFloat = 30, tile: CGFloat = 40
-	static let inset: CGFloat = 8, pad: CGFloat = 10
+	static let line: CGFloat = 48, person: CGFloat = 60, chat: CGFloat = 66, compact: CGFloat = 46, space: CGFloat = 60
+	static let face: CGFloat = 44, personFace: CGFloat = 40, smallFace: CGFloat = 30, tile: CGFloat = 40
+	static let inset: CGFloat = 8, pad: CGFloat = 8, gap: CGFloat = 12
 	#endif
 }
 
@@ -37,28 +39,34 @@ struct RowStyle: ButtonStyle {
 				.foregroundStyle(on ? tones.onLoud : tones.text)
 				.padding(.horizontal, Rows.pad)
 				.frame(maxWidth: .infinity, alignment: .leading)
-				.background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(fill))
-
+				.background(RoundedRectangle(cornerRadius: Radius.row, style: .continuous).fill(fill))
 				.contentShape(Rectangle())
 				.padding(.horizontal, Rows.inset)
 				.onHover { hover = $0 }
-				.animation(.easeOut(duration: 0.08), value: hover)
-				.animation(.easeOut(duration: 0.05), value: configuration.isPressed)
+				.animation(Motion.quick, value: hover)
+				.animation(Motion.press, value: configuration.isPressed)
 		}
 		private var fill: Color { configuration.isPressed ? tones.pressed : selected ? tones.loud : hover ? tones.hover : .clear }
 	}
 }
 
-/// A small action in a heading or a header: a 24 pt target around a 12 pt glyph, lifting on hover.
+/// A small action in a heading or a header: a 24 pt target (44 on the iPhone) around its glyph,
+/// lifting on hover, filled while pressed. Its tooltip names it and its keys.
 struct IconButton: View {
 	@Environment(\.tones) private var tones
 	let symbol: String
 	let help: String
-	var size: CGFloat = 12
+	var size: CGFloat = Icon.row
 	let action: () -> Void
+	/// How far the target reaches past its glyph on each side: what lines a row of them up with words.
+	#if os(macOS)
+	static let slack: CGFloat = 6
+	#else
+	static let slack: CGFloat = 12
+	#endif
 	var body: some View {
-		Button(action: action) { Image(systemName: symbol).font(.system(size: size, weight: .semibold)) }
-			.buttonStyle(IconStyle()).help(help).accessibilityLabel(help)
+		Button(action: action) { Image(systemName: symbol).font(Icon.font(size)) }
+			.buttonStyle(IconStyle()).help(help).accessibilityLabel(spoken(help))
 	}
 	struct IconStyle: ButtonStyle {
 		func makeBody(configuration: Configuration) -> some View { Look(configuration: configuration) }
@@ -79,6 +87,7 @@ struct IconButton: View {
 					.background(Circle().fill(configuration.isPressed ? tones.pressed : hover ? tones.hover : .clear))
 					.contentShape(Circle())
 					.onHover { hover = $0 }
+					.animation(Motion.quick, value: hover)
 			}
 		}
 	}
@@ -191,43 +200,6 @@ struct UnreadBadge: View {
 	}
 }
 
-/// A friend in Home: face, presence, name, one short phrase about reaching them.
-struct FriendRow: View {
-	@Environment(\.tones) private var tones
-	let c: Contact
-	var body: some View {
-		HStack(spacing: 8) {
-			Avatar(name: c.name, hash: c.avatar, size: Rows.smallFace, presence: Mark.presence(c.devices))
-			Text(c.name).font(Theme.font).lineLimit(1)
-			if c.verified { MarkView(mark: .verified, size: Theme.small + 1, color: tones.secondary) }
-			Spacer(minLength: 4)
-			Text(presenceWord(c.devices)).font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1)
-		}
-		.frame(minHeight: Rows.compact)
-		.accessibilityElement(children: .combine)
-	}
-}
-
-/// One of my devices in Home: its drawing with the light on when it is reachable, its name, how.
-struct DeviceRow: View {
-	@Environment(\.tones) private var tones
-	let d: Device
-	let this: Bool
-	var body: some View {
-		HStack(spacing: 8) {
-			DeviceGlyph(shape: DeviceShape(d), lit: this || d.online, size: Rows.smallFace - 2).frame(width: Rows.smallFace)
-			Text(d.name).font(Theme.font).lineLimit(1)
-			Spacer(minLength: 4)
-			HStack(spacing: 4) {
-				if !this, d.online, let m = Mark.path(d.path) { MarkView(mark: m, size: Theme.small + 1, color: tones.secondary) }
-				Text(this ? "this \(AppModel.thisKind)" : d.word).font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1)
-			}
-		}
-		.frame(minHeight: Rows.compact)
-		.accessibilityElement(children: .combine)
-	}
-}
-
 /// A space in the list of spaces: its tile, its name, who is in it and who is online.
 struct SpaceRow: View {
 	@Environment(\.tones) private var tones
@@ -284,9 +256,9 @@ struct ChannelRow: View {
 	}
 }
 
-/// A person in a space or a conversation: face and presence, the name they go by here, the
+/// A person in a space: face and presence, the name they go by here, the
 /// identity mark, and how they are reached: a friend, or through the friends we share.
-struct PersonRow: View {
+struct SpacePersonRow: View {
 	@Environment(\.tones) private var tones
 	@Environment(AppModel.self) private var model
 	let m: Member
@@ -350,3 +322,9 @@ extension NSColor { static var windowBackground: NSColor { .windowBackgroundColo
 #else
 extension UIColor { static var windowBackground: UIColor { .systemBackground } }
 #endif
+
+/// A tooltip read aloud: its words without the keys in brackets ("Details (⌘I)" is "Details").
+func spoken(_ help: String) -> String {
+	guard help.hasSuffix(")"), let open = help.lastIndex(of: "(") else { return help }
+	return String(help[..<open]).trimmingCharacters(in: .whitespaces)
+}

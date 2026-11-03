@@ -7,7 +7,7 @@ struct QRCode: View {
 	var body: some View {
 		if let image = Self.render(text) {
 			Image(decorative: image, scale: 1).interpolation(.none).resizable().scaledToFit()
-				.clipShape(RoundedRectangle(cornerRadius: Theme.sheetCorner))
+				.clipShape(RoundedRectangle(cornerRadius: Radius.row))
 		}
 	}
 	static func render(_ text: String) -> CGImage? {

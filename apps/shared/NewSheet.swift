@@ -19,7 +19,7 @@ struct NewSheet: View {
 			Text(title).font(Theme.headingFont)
 			if what != .chat {
 				TextField(what == .channel ? "channel-name" : "Name", text: $name).textFieldStyle(.plain).font(Theme.font)
-					.padding(8).overlay(RoundedRectangle(cornerRadius: Theme.corner).stroke(tones.hairline)).focused($focused)
+					.padding(8).overlay(RoundedRectangle(cornerRadius: Radius.row).stroke(tones.hairline)).focused($focused)
 					.onSubmit(make)
 			}
 			if what == .chat || what == .group {

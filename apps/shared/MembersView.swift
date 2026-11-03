@@ -29,7 +29,7 @@ struct MembersView: View {
 				}
 				.padding(.horizontal, 16)
 				#if os(macOS)
-				.frame(height: Theme.header + 4)
+				.frame(height: Theme.header)
 				#else
 				.frame(height: 52)
 				#endif
@@ -179,64 +179,3 @@ struct MemberRow: View {
 		.accessibilityElement(children: .combine)
 	}
 }
-
-/// A text field that looks like the text it holds until you point at it.
-struct Field: View {
-	@Environment(\.tones) private var tones
-	let placeholder: String
-	@Binding var text: String
-	let commit: () -> Void
-	@State private var hover = false
-	@FocusState private var focused: Bool
-	var body: some View {
-		TextField(placeholder, text: $text).textFieldStyle(.plain).font(Theme.font)
-			.padding(.horizontal, 6).frame(minHeight: Rows.compact)
-			.background(RoundedRectangle(cornerRadius: 6).fill(focused ? tones.field : hover ? tones.hover : .clear))
-			.overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(focused ? tones.strong : hover ? tones.hairline : .clear))
-			.focused($focused).onHover { hover = $0 }
-			.onSubmit(commit)
-	}
-}
-
-/// The app's buttons: a word on a quiet fill with a hairline, lifting on hover and darkening
-/// pressed; `strong` is the one filled action on a surface, `large` the linking surfaces' size.
-struct Quiet: ButtonStyle {
-	var strong = false
-	var danger = false
-	var large = false
-	func makeBody(configuration: Configuration) -> some View { Look(configuration: configuration, strong: strong, danger: danger, large: large) }
-	struct Look: View {
-		@Environment(\.tones) private var tones
-		@Environment(\.isEnabled) private var enabled
-		@State private var hover = false
-		let configuration: Configuration
-		let strong: Bool
-		let danger: Bool
-		let large: Bool
-		var body: some View {
-			// Solid pills: the loud one lifted off the page, the quiet one a card; disabled is a flat
-			// step with tertiary words, never the same button faded.
-			let fill = !enabled ? tones.quiet : strong ? tones.loud : tones.card
-			configuration.label
-				.font(Theme.font.weight(.bold))
-				.foregroundStyle(!enabled ? tones.tertiary : strong ? tones.onLoud : danger ? tones.danger : tones.text)
-				.padding(.horizontal, large ? 20 : 14)
-				#if os(macOS)
-				.frame(minHeight: large ? 38 : 28)
-				#else
-				.frame(minHeight: large ? 50 : 40)
-				#endif
-				.background {
-					let shape = Capsule()
-					if enabled && !configuration.isPressed { shape.fill(fill).lifted(tones, by: hover ? 1.2 : 0.7) } else { shape.fill(fill) }
-				}
-				.scaleEffect(configuration.isPressed ? 0.97 : 1)
-				.animation(.easeOut(duration: 0.12), value: configuration.isPressed)
-				.contentShape(Capsule())
-				.onHover { hover = $0 }
-		}
-	}
-}
-
-/// A conversation id that can drive `.sheet(item:)`.
-struct Adding: Identifiable { let id: ConversationId }

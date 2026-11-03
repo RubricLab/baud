@@ -53,15 +53,23 @@ struct ConversationView: View {
 	}
 }
 
-/// Name, topic, and the status sentence: "direct, 14 ms" · "last online 2 h ago · you're holding 1
-/// for them". On the Mac it fills the window's top band, its content centred in it and level with the
-/// thread's and the people's headers beside it; its edges are the timeline's and the composer's.
+/// Who it is and how they're reached: their face, the name, and the status sentence ("Online ·
+/// direct, 14 ms", "Last online 2 h ago"); the calls and the details at the end. On the iPhone the
+/// one back comes first, then a gap nothing answers to, then the face and the name, which open the
+/// details: a thumb meant for one never lands on the other. On the Mac it fills the window's top
+/// band, level with the thread's and the details' headers beside it.
 struct Header: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
 	let conversation: Conversation
 	@Binding var showMembers: Bool
 	@Environment(\.dismiss) private var dismiss
+	/// The face before the name; the space between the actions at the end.
+	#if os(macOS)
+	static let face: CGFloat = 24, actions: CGFloat = 4
+	#else
+	static let face: CGFloat = 32, actions: CGFloat = 0
+	#endif
 
 	var body: some View {
 		let members = model.core.members(conversation.id)
@@ -72,43 +80,42 @@ struct Header: View {
 		// Asleep, but woken by a ring: a sleeping iPhone I hold a wake ticket for can be called.
 		let wakeable = (own ? model.me.devices.filter { $0.id != model.me.thisDevice } : others.flatMap(\.devices)).contains { model.local.canWake($0.id) }
 		let reachable = live || wakeable
-		HStack(spacing: 8) {
+		HStack(spacing: 0) {
 			#if os(iOS)
-			// Back: a wide target from the screen's edge (a thumb that lands a little right still goes
-			// back), and a gap before the name, which opens the details.
-			Button { dismiss() } label: {
-				Image(systemName: "chevron.left").font(.system(size: 19, weight: .semibold))
-					.frame(width: 46, height: 48, alignment: .leading).padding(.leading, 16)
-					.contentShape(Rectangle())
-			}
-			.buttonStyle(Pressed()).foregroundStyle(tones.text)
-			.padding(.leading, -16).padding(.trailing, 2)
-			.accessibilityLabel("Back")
+			BackButton { dismiss() }
+			// Dead space: a touch between back and the name does nothing.
+			Color.clear.frame(width: 12, height: 1).allowsHitTesting(false)
 			#endif
-			VStack(alignment: .leading, spacing: 3) {
-				HStack(alignment: .firstTextBaseline, spacing: 8) {
-					Text(model.title(conversation)).font(Theme.titleFont).foregroundStyle(tones.heading).lineLimit(1)
-					if conversation.disappear > 0 { DisappearMark(seconds: conversation.disappear) }
-					if let t = conversation.topic, !t.isEmpty { Text(t).font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1) }
-				}
-				HStack(spacing: 5) {
-					if conversation.isDirect, let o = others.first {
-						let p = Mark.presence(o.devices)
-						if p == .online || p == .onlineRelayed { PresenceLight(relayed: p == .onlineRelayed, size: 8).transition(.scale.combined(with: .opacity)) }
-					} else if let s = conversation.space.flatMap(model.conversation) {
-						Text(s.name ?? "").font(Theme.smallFont.weight(.semibold)).foregroundStyle(tones.secondary)
-						Text("·").font(Theme.smallFont).foregroundStyle(tones.secondary)
+			HStack(spacing: Rows.gap) {
+				face(others)
+				VStack(alignment: .leading, spacing: 1) {
+					HStack(alignment: .firstTextBaseline, spacing: 6) {
+						Text(model.title(conversation)).font(Theme.headingFont).foregroundStyle(tones.heading).lineLimit(1)
+						if conversation.disappear > 0 { DisappearMark(seconds: conversation.disappear) }
+						#if os(macOS)
+						if let t = conversation.topic, !t.isEmpty { Text(t).font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1) }
+						#endif
 					}
-					Text(model.status(conversation)).font(Theme.smallFont.weight(.medium)).foregroundStyle(live ? tones.text : tones.secondary).lineLimit(1)
-						.contentTransition(.opacity)
+					HStack(spacing: 4) {
+						if let s = conversation.space.flatMap(model.conversation) {
+							Text(s.name ?? "").font(Theme.smallFont.weight(.semibold)).foregroundStyle(tones.secondary)
+							Text("·").font(Theme.smallFont).foregroundStyle(tones.secondary)
+						}
+						Text(model.status(conversation)).font(Theme.smallFont).foregroundStyle(live ? tones.text : tones.secondary).lineLimit(1)
+							.minimumScaleFactor(0.85)
+							.contentTransition(.opacity)
+					}
 				}
 			}
-			// The name opens the chat's details, as the button at the end does.
+			// The face and the name open the chat's details, as the button at the end does.
 			.contentShape(Rectangle())
 			.onTapGesture { showMembers.toggle() }
+			.help("Details (⌘I)")
+			.accessibilityElement(children: .combine)
 			.accessibilityAddTraits(.isButton)
 			.accessibilityHint("Shows the chat's details")
-			Spacer()
+			Spacer(minLength: 8)
+			HStack(spacing: Self.actions) {
 			// Calls: two people, or a group of up to eight. A call already going on in the chat shows
 			// who's in it and a way in instead.
 			if model.calls.callable(conversation.id) {
@@ -118,36 +125,50 @@ struct Header: View {
 				} else {
 					let who = own ? "your other devices" : conversation.isDirect ? others.first.map { $0.name.split(separator: " ").first.map(String.init) ?? $0.name } ?? "" : "everyone"
 					let away = own ? "Your other devices aren't online" : conversation.isDirect ? "\(who) isn't online" : "Nobody here is online"
-					IconButton(symbol: "phone.fill", help: reachable ? "Call \(who)" : away, size: 14) { model.calls.start(conversation.id, video: false) }
+					IconButton(symbol: "phone", help: reachable ? "Call \(who)" : away, size: Icon.bar) { model.calls.start(conversation.id, video: false) }
 						.disabled(busy || !reachable)
-					IconButton(symbol: "video.fill", help: reachable ? "Video call \(who)" : away, size: 14) { model.calls.start(conversation.id, video: true) }
+					IconButton(symbol: "video", help: reachable ? "Video call \(who)" : away, size: Icon.bar) { model.calls.start(conversation.id, video: true) }
 						.disabled(busy || !reachable)
 				}
 			}
-			// A group's people and how many; one other person's details.
+			// One other person's details; a group's people and how many.
 			Button { showMembers.toggle() } label: {
 				HStack(spacing: 4) {
-					if conversation.isDirect || own { Image(systemName: "info.circle").font(.system(size: 13, weight: .semibold)) }
-					else { Image(systemName: "person.2").font(.system(size: 12, weight: .semibold)); Text("\(conversation.members.count)").font(Theme.smallFont.weight(.semibold)).monospacedDigit() }
+					if conversation.isDirect || own { Image(systemName: "info.circle").font(Icon.font(Icon.bar)) }
+					else { Image(systemName: "person.2").font(Icon.font(Icon.row)); Text("\(conversation.members.count)").font(Theme.smallFont.weight(.semibold)).monospacedDigit() }
 				}
-				.padding(.horizontal, 8).frame(height: 24)
+				.padding(.horizontal, conversation.isDirect || own ? 4 : 8).frame(height: 24)
 				#if os(iOS)
 				.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
 				#endif
 			}
 			.buttonStyle(Pill(on: showMembers)).keyboardShortcut("i", modifiers: .command).help(conversation.isDirect || own ? "Details (⌘I)" : "People (⌘I)")
 			.accessibilityLabel(conversation.isDirect || own ? "Details" : "\(conversation.members.count) people")
+			}
 		}
-		.padding(.horizontal, 16)
 		#if os(macOS)
-		.frame(height: Theme.header + 4)
+		.padding(.horizontal, Space.side)
+		.frame(height: Theme.header)
 		.background(tones.surface.contentShape(Rectangle()).modifier(DragsWindow()))
 		#else
-		.frame(minHeight: Theme.row + 12)
+		.padding(.leading, 8).padding(.trailing, 4)
+		.frame(minHeight: Theme.header)
 		.background(tones.surface.ignoresSafeArea(edges: .top))
 		#endif
 		.overlay(alignment: .bottom) { Hairline() }
-		.animation(.easeInOut(duration: 0.2), value: live)
+		.animation(Motion.standard, value: live)
+	}
+
+	/// Their face (its light when they're online), the group's faces, mine for my own chat, a
+	/// channel's space.
+	@ViewBuilder private func face(_ others: [Member]) -> some View {
+		let c = conversation
+		if c.kind == .home { Avatar(name: model.me.name, hash: model.me.avatar, size: Self.face) }
+		else if c.kind == .chat && !c.isDirect { GroupFace(conversation: c, size: Self.face) }
+		else if c.kind == .channel { SpaceTile(name: c.space.flatMap(model.conversation)?.name ?? c.name ?? "", size: Self.face) }
+		else if let o = others.first {
+			Avatar(name: model.title(c), hash: model.contacts.first { $0.user == o.user }?.avatar, size: Self.face, presence: Mark.presence(o.devices))
+		}
 	}
 }
 
@@ -201,25 +222,6 @@ struct CallInProgress: View {
 	}
 }
 
-/// A small capsule control: lifts on hover, darkens pressed, filled when on.
-struct Pill: ButtonStyle {
-	var on = false
-	func makeBody(configuration: Configuration) -> some View { Look(configuration: configuration, on: on) }
-	struct Look: View {
-		@Environment(\.tones) private var tones
-		@State private var hover = false
-		let configuration: Configuration
-		let on: Bool
-		var body: some View {
-			configuration.label
-				.foregroundStyle(on ? tones.onLoud : hover ? tones.text : tones.secondary)
-				.background(Capsule().fill(configuration.isPressed ? tones.pressed : on ? tones.loud : hover ? tones.hover : .clear))
-				.contentShape(Capsule())
-				.onHover { hover = $0 }
-		}
-	}
-}
-
 /// A thread: the root, its replies, a composer that writes into it.
 struct ThreadView: View {
 	@Environment(\.tones) private var tones
@@ -240,7 +242,7 @@ struct ThreadView: View {
 				#endif
 			}
 			#if os(macOS)
-			.padding(.horizontal, 16).frame(height: Theme.header + 4).overlay(alignment: .bottom) { Hairline() }
+			.padding(.horizontal, 16).frame(height: Theme.header).overlay(alignment: .bottom) { Hairline() }
 			#else
 			.padding(.horizontal, 16).frame(minHeight: Theme.row + 16).overlay(alignment: .bottom) { Hairline() }
 			#endif
@@ -269,11 +271,3 @@ struct DragsWindow: ViewModifier {
 	}
 }
 #endif
-
-/// A press that shows: a little smaller and dimmer under the finger.
-struct Pressed: ButtonStyle {
-	func makeBody(configuration: Configuration) -> some View {
-		configuration.label.opacity(configuration.isPressed ? 0.55 : 1).scaleEffect(configuration.isPressed ? 0.94 : 1)
-			.animation(.easeOut(duration: 0.12), value: configuration.isPressed)
-	}
-}

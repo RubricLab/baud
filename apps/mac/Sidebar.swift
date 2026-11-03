@@ -234,7 +234,7 @@ struct SpaceList: View {
 			IconButton(symbol: "plus", help: "Add someone to \(space.name ?? "the space")") { model.addingTo = space.id }
 		}
 		ForEach(people) { m in
-			Button { person = m } label: { PersonRow(m: m, conv: space.id) }
+			Button { person = m } label: { SpacePersonRow(m: m, conv: space.id) }
 				.buttonStyle(RowStyle())
 				.popover(isPresented: Binding(get: { person?.id == m.id }, set: { if !$0 { person = nil } }), arrowEdge: .trailing) { PersonPage(user: m.user, conv: space.id).frame(width: 360, height: 560) }
 		}

@@ -418,7 +418,8 @@ enum Accent {
 	}
 }
 
-/// One type scale: small, body, heading, title, display. Nothing else is set in another size.
+/// One type scale, six steps: small, body, message, heading, title, display. Nothing else is set in
+/// another size (docs/design/system.md). On the iPhone every step follows Dynamic Type.
 enum Theme {
 	#if os(macOS)
 	static let row: CGFloat = 32
@@ -437,38 +438,51 @@ enum Theme {
 	static var message: CGFloat { scaled(17, .body) }
 	static func scaled(_ v: CGFloat, _ style: UIFont.TextStyle) -> CGFloat { min(UIFontMetrics(forTextStyle: style).scaledValue(for: v), v * 2) }
 	#endif
-	static let corner: CGFloat = 6
 	static let rowInsets = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
-	/// The conversation title and the space's name: much larger and heavier than rows.
-	static var title: CGFloat { body + 6 }
-	/// Section headings (Chats, Friends, Channels): set apart by size and the space above them.
-	static var heading: CGFloat { body + 3 }
+	/// The name at the top of a person, a group or You.
+	static var title: CGFloat { body + 7 }
+	/// A pane's or a sheet's title, and the conversation's name: semibold, two steps over the rows.
+	static var heading: CGFloat { body + 2 }
 	/// Between message groups; within one; under the last of one.
-	static let groupGap: CGFloat = 14
+	static let groupGap: CGFloat = 12
 	static let rowGap: CGFloat = 2
 	static let groupBottom: CGFloat = 2
 	/// Above a sidebar section heading.
-	static let sectionGap: CGFloat = 28
-	/// The Mac's top band: the traffic lights, the mode switch beside them, the conversation's title
-	/// level with them. Everything starts at the window's top edge.
+	static let sectionGap: CGFloat = 24
+	/// The Mac's top band: the traffic lights and the compose button beside them. Everything starts
+	/// at the window's top edge.
 	static let band: CGFloat = 32
-	/// The conversation header under the band's top edge.
-	static let header: CGFloat = 54
+	/// A header: the conversation's, a pane's, a thread's, a sheet's.
+	#if os(macOS)
+	static let header: CGFloat = 52
+	#else
+	static let header: CGFloat = 56
+	#endif
 	/// The Mac composer takes the keyboard on open; the phone waits for a tap so the keyboard doesn't cover the chat.
 	#if os(macOS)
 	static let autofocus = true
 	#else
 	static let autofocus = false
 	#endif
-	static let sheetCorner: CGFloat = 10
 
 	static var font: Font { .system(size: body) }
 	static var messageFont: Font { .system(size: message) }
-	static var headingFont: Font { .system(size: heading, weight: .bold) }
+	static var headingFont: Font { .system(size: heading, weight: .semibold) }
 	static var titleFont: Font { .system(size: title, weight: .bold) }
 	static var displayFont: Font { .system(size: display, weight: .bold) }
 	static var smallFont: Font { .system(size: small) }
 	static var mono: Font { .system(size: small, design: .monospaced) }
+}
+
+/// Three speeds and a spring: a press, a hover or a mark changing, things coming and going, and
+/// things a finger moved settling. Under Reduce Motion they are a short fade, or nothing moving.
+enum Motion {
+	static let press = Animation.easeOut(duration: 0.08)
+	static let quick = Animation.easeOut(duration: 0.12)
+	static let standard = Animation.easeOut(duration: 0.2)
+	static let settle = Animation.spring(response: 0.35, dampingFraction: 0.85)
+	/// The animation to use, with Reduce Motion on: a fade at most, never a slide or a spring.
+	static func or(_ a: Animation, still: Bool) -> Animation { still ? .easeOut(duration: 0.12) : a }
 }
 
 struct Hairline: View {

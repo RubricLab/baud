@@ -261,6 +261,13 @@ final class AppModel {
 		reveal = selectedConversation
 		#endif
 	}
+	/// A chat read to its newest message (the list's menu, a swipe, ⇧⌘U).
+	func markRead(_ c: Conversation) { attempt { try core.markRead(c.id, c.lastEvent ?? "") } }
+	/// A call to a friend, in our chat (made if there is none yet).
+	func call(_ user: UserId, video: Bool) {
+		guard let id = chat(with: user)?.id ?? startChat(with: user) else { return }
+		calls.start(id, video: video)
+	}
 	/// Open anything: a chat, a channel, a space.
 	func open(_ id: ConversationId?) { selectedConversation = id }
 	/// Out of the space, back to the list of spaces.
@@ -285,9 +292,12 @@ final class AppModel {
 	init() {
 		// A dev build (bundle id ending in .dev) keeps its own store and keychain service, so local
 		// runs never touch the shipped app's data or fight it for the bundle id.
-		let dev = Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true
-		if dev { AppleKeychain.service = "sh.rubric.baud.dev" }
-		let dir = ProcessInfo.processInfo.environment["BAUD_DIR"].map { URL(fileURLWithPath: $0) } ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent(dev ? "baud-dev" : "baud")
+		// The design beta (`.beta`) is a dev build too, and more: its keys are only ever in its own
+		// folder, and with no `BAUD_DIR` that folder is its own, never the shipped app's or a dev build's.
+		let beta = Bundle.main.bundleIdentifier?.hasSuffix(".beta") == true
+		let dev = beta || Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true
+		if dev { AppleKeychain.service = beta ? "sh.rubric.baud.beta" : "sh.rubric.baud.dev" }
+		let dir = ProcessInfo.processInfo.environment["BAUD_DIR"].map { URL(fileURLWithPath: $0) } ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent(beta ? "baud-beta" : dev ? "baud-dev" : "baud")
 		try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 		// Lab copies (a Debug build given its own `BAUD_DIR`) keep their keys in that folder: in the
 		// one dev keychain service, each copy's launch overwrote the others' and a relaunch was locked out.
@@ -296,7 +306,8 @@ final class AppModel {
 		#else
 		let lab = false
 		#endif
-		keys = AppleKeychain(fallbackDir: dir, fileOnly: lab)
+		// Never the keychain for a beta copy, whatever it was built as.
+		keys = AppleKeychain(fallbackDir: dir, fileOnly: lab || beta)
 		// Before the first unlock after a restart (a background wake, a call coming in), neither the
 		// keychain nor the store can be read. Opening anyway made a nameless stand-in, and baud asked
 		// for a name; it waits instead, on an empty store in memory that touches neither, and the app

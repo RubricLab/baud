@@ -292,7 +292,7 @@ struct SpaceScreen: View {
 					}.buttonStyle(RowStyle())
 				}
 				SectionHeading(title: "People")
-				ForEach(people) { m in Button { person = m } label: { PersonRow(m: m, conv: space) }.buttonStyle(RowStyle()) }
+				ForEach(people) { m in Button { person = m } label: { SpacePersonRow(m: m, conv: space) }.buttonStyle(RowStyle()) }
 			}
 			.padding(.bottom, 24)
 		}
