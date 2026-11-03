@@ -321,7 +321,7 @@ struct MessageRow: View {
 		let text = model.timeline(event.conv).text(for: event)
 		if editing || text != nil || quoted != nil {
 			VStack(alignment: .leading, spacing: 5) {
-				if let quoted { Quote(name: model.name(of: quoted.user), text: quoted.text ?? (quoted.attachments.isEmpty ? "" : "attachment"), onMine: event.mine) }
+				if let quoted { Quote(name: model.name(of: quoted.user), text: PlaceText.words(quoted.text) ?? (quoted.attachments.isEmpty ? "" : "attachment"), onMine: event.mine) }
 				if editing {
 					TextField("", text: $editText, axis: .vertical).textFieldStyle(.plain).font(Theme.font)
 						.onSubmit { model.attempt { try model.core.edit(event.conv, event.id, text: editText) }; editing = false }

@@ -68,6 +68,11 @@ struct ActionRow: View {
 	}
 }
 
+extension View {
+	/// A row in a card that isn't a button: set in from the card's edge as a button row is.
+	func cardRow() -> some View { padding(.horizontal, Rows.pad).padding(.horizontal, Rows.inset) }
+}
+
 /// One of a few equal tiles side by side, a glyph over a word: what a page is for (message, call,
 /// video), a tap each.
 struct ActionTile: View {
@@ -250,7 +255,7 @@ struct DeleteChatQuestion: ViewModifier {
 			Button("Cancel", role: .cancel) { model.deleting = nil }
 		} message: {
 			if let c {
-				Text(c.kind == .home ? "Everything here goes from this device." : c.isDirect ? "It leaves your list until \(name) writes again." + (other.map(model.isFriend) == true ? " You stay friends." : "") : "You'll stop getting its messages. Someone still in it can add you back.")
+				Text(c.kind == .home ? "Everything in them goes, on all your devices." : c.isDirect ? "It leaves your list until \(name) writes again." + (other.map(model.isFriend) == true ? " You stay friends." : "") : "You'll stop getting its messages. Someone still in it can add you back.")
 			}
 		}
 	}

@@ -91,11 +91,11 @@ struct PersonPage: View {
 		let first = name.split(separator: " ").first.map(String.init) ?? name
 		ListCard(title: "Safety number", footer: verified ? "You compared safety numbers with \(first): nobody is in between." : friend != nil ? "Compare the number with \(first) in person or on a call. If it matches, nobody is in between." : "Only a friend's number can be compared.") {
 			if verified {
-				ActionRow(symbol: "checkmark.shield.fill", title: "Verified")
+				ActionRow(symbol: "checkmark.shield.fill", title: "Verified").cardRow()
 			} else if let friend {
 				Button { verifying = friend } label: { ActionRow(symbol: "shield", title: "Verify \(first)") }.buttonStyle(RowStyle())
 			} else {
-				ActionRow(symbol: "shield", title: friend?.vouched == true ? "Vouched for" : "Not verified")
+				ActionRow(symbol: "shield", title: friend?.vouched == true ? "Vouched for" : "Not verified").cardRow()
 			}
 		}
 	}
@@ -113,7 +113,7 @@ struct PersonPage: View {
 					StatusWord(on: this || d.online, word: this ? "This \(AppModel.thisKind)" : d.word.capitalizedFirst)
 				}
 				.frame(height: Rows.chat)
-				.padding(.horizontal, Rows.pad)
+				.cardRow()
 			}
 		}
 	}

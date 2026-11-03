@@ -152,7 +152,7 @@ struct ChatRow: View {
 		// An empty second line still takes its line (a no-break space), so every row is two lines tall;
 		// my own chat says what it is until there's something in it.
 		guard let raw = c.lastText else { return c.isDirect || c.kind == .home ? model.status(c) : "\u{00A0}" }
-		let t = PlaceText.parse(raw) != nil ? "📍 Location" : raw
+		let t = PlaceText.words(raw) ?? raw
 		if c.kind == .home { return t }
 		let who = c.lastUser == model.me.user ? "You: " : (c.isDirect ? "" : (c.lastUser.map { model.name(of: $0) + ": " } ?? ""))
 		return who + t

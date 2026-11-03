@@ -93,7 +93,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 		let n = UNMutableNotificationContent()
 		let who = model.name(of: from)
 		if c.isDirect || c.kind == .home { n.title = who } else { n.title = model.title(c); n.subtitle = who }
-		n.body = c.lastText.flatMap { $0.isEmpty ? nil : $0 } ?? "New message"
+		n.body = PlaceText.words(c.lastText).flatMap { $0.isEmpty ? nil : $0 } ?? "New message"
 		n.sound = .default
 		n.threadIdentifier = c.id
 		n.userInfo = ["conversation": c.id]

@@ -12,6 +12,8 @@ import SwiftUI
 /// A place sent once is a message in plain words (a pin and an Apple Maps link), so every baud
 /// reads it, old or new, on any device: this one draws it as a map, an older one shows the link.
 enum PlaceText {
+	/// What a place says where only words fit: a quote, a notification, the chat list.
+	static func words(_ s: String?) -> String? { parse(s) != nil ? "📍 Location" : s }
 	static let prefix = "📍 https://maps.apple.com/?ll="
 	static func make(_ c: CLLocationCoordinate2D) -> String { prefix + String(format: "%.5f,%.5f", c.latitude, c.longitude) }
 	static func parse(_ s: String?) -> CLLocationCoordinate2D? {
@@ -180,7 +182,7 @@ struct LocationSheet: View {
 						}
 						if let until {
 							ListCard(title: "Sharing live", footer: "Your place updates here as you move.") {
-								ActionRow(symbol: "location.fill", title: until == .distantFuture ? "Until you stop" : "Until \(clock(until))")
+								ActionRow(symbol: "location.fill", title: until == .distantFuture ? "Until you stop" : "Until \(clock(until))").cardRow()
 								Button { model.local.stopSharing(conv); dismiss() } label: { ActionRow(symbol: "location.slash", title: "Stop sharing", danger: true) }.buttonStyle(RowStyle())
 							}
 						} else {

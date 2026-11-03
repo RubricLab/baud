@@ -58,7 +58,7 @@ struct ComposerView: View {
 			}
 			if let r = reply {
 				HStack {
-					Quote(name: model.name(of: r.user), text: r.text ?? "attachment")
+					Quote(name: model.name(of: r.user), text: PlaceText.words(r.text) ?? "attachment")
 					Spacer()
 					Button { reply = nil } label: { Image(systemName: "xmark").font(.system(size: 10)) }.buttonStyle(.plain).foregroundStyle(tones.secondary)
 				}.padding(.horizontal, 16).padding(.top, 6)
