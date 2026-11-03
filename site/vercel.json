@@ -10,12 +10,12 @@
   "redirects": [
     {
       "source": "/download/mac",
-      "destination": "/baud-0.2.20.dmg",
+      "destination": "/baud-0.2.21.dmg",
       "permanent": false
     },
     {
       "source": "/download/android",
-      "destination": "/baud-0.2.20.apk",
+      "destination": "/baud-0.2.21.apk",
       "permanent": false
     },
     {
