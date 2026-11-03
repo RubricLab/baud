@@ -34,10 +34,11 @@ struct SettingsView: View {
 	}
 }
 
-/// Everything You shows, top to bottom; the window scrolls it, the pictures render it whole.
+/// Everything You shows, top to bottom, as titled cards of rows; the window scrolls it, the pictures
+/// render it whole.
 struct SettingsPage: View {
 	var body: some View {
-		VStack(alignment: .leading, spacing: Settings.gap) {
+		VStack(alignment: .leading, spacing: Space.section) {
 			MeCard().id("you")
 			NotifyCard()
 			DevicesSection().id("devices")
@@ -46,7 +47,7 @@ struct SettingsPage: View {
 			AppCard().id("app")
 			StartOver()
 		}
-		.padding(.horizontal, Settings.side).padding(.top, Settings.top).padding(.bottom, 40)
+		.padding(.horizontal, Settings.side).padding(.top, Settings.top).padding(.bottom, 32)
 		.frame(maxWidth: 720, alignment: .leading)
 		.frame(maxWidth: .infinity)
 	}
@@ -54,24 +55,24 @@ struct SettingsPage: View {
 
 enum Settings {
 	#if os(macOS)
-	static let side: CGFloat = 24, top: CGFloat = 8, gap: CGFloat = 24, hero: CGFloat = 56
+	static let side: CGFloat = 24, top: CGFloat = 16, face: CGFloat = 64
 	#else
-	static let side: CGFloat = 16, top: CGFloat = 8, gap: CGFloat = 24, hero: CGFloat = 52
+	static let side: CGFloat = 16, top: CGFloat = 16, face: CGFloat = 72
 	#endif
 }
 
-/// A titled card: the section's name at the one heading size, its things on a raised card, padded 16.
+/// A titled card that holds a picture rather than rows (the network): padded all round.
 struct Card<Content: View>: View {
 	@Environment(\.tones) private var tones
 	let title: String
 	@ViewBuilder var content: Content
 	var body: some View {
-		VStack(alignment: .leading, spacing: 8) {
+		VStack(alignment: .leading, spacing: Space.title) {
 			SectionTitle(title)
 			VStack(alignment: .leading, spacing: 0) { content }
-				.padding(16)
+				.padding(Space.side)
 				.frame(maxWidth: .infinity, alignment: .leading)
-				.glass(corner: Parts.corner)
+				.glass(corner: Radius.card)
 		}
 	}
 }
@@ -87,13 +88,14 @@ struct NotifyCard: View {
 	var body: some View {
 		Group {
 			if off || noRefresh {
-				Card(title: "Notifications") {
-					VStack(alignment: .leading, spacing: 12) {
+				ListCard(title: "Notifications") {
+					VStack(alignment: .leading, spacing: 0) {
 						if off { row("bell.slash", "Notifications are off", Notifier.settings) }
 						#if os(iOS)
 						if noRefresh { row("arrow.clockwise", "Background App Refresh is off", URL(string: UIApplication.openSettingsURLString)) }
 						#endif
 					}
+					.cardRow()
 				}
 			}
 		}
@@ -101,12 +103,13 @@ struct NotifyCard: View {
 		.onChange(of: phase) { _, p in if p == .active { Task { await check() } } }
 	}
 	private func row(_ symbol: String, _ text: String, _ url: URL?) -> some View {
-		HStack(spacing: 10) {
-			Image(systemName: symbol).foregroundStyle(tones.secondary).frame(width: 20)
-			Text(text).font(Theme.font)
+		HStack(spacing: Rows.gap) {
+			Image(systemName: symbol).font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
+			Text(text).font(Theme.font.weight(.medium))
 			Spacer(minLength: 8)
 			if let url { Link("Turn on", destination: url).buttonStyle(Quiet(strong: true)) }
 		}
+		.frame(minHeight: Rows.line)
 	}
 	private func check() async {
 		off = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .denied
@@ -128,9 +131,9 @@ struct MeCard: View {
 	@FocusState private var editing: Bool
 	var body: some View {
 		VStack(alignment: .leading, spacing: 16) {
-			HStack(spacing: 14) {
+			HStack(spacing: 16) {
 				ZStack(alignment: .bottomTrailing) {
-					Avatar(name: model.me.name, hash: model.me.avatar, size: 64)
+					Avatar(name: model.me.name, hash: model.me.avatar, size: Settings.face)
 					PhotoButton(picking: $picking, photo: $photo).offset(x: 4, y: 4)
 				}
 				// The name is the name until it is tapped; then it's a field (⏎ keeps it).
@@ -148,9 +151,9 @@ struct MeCard: View {
 			}
 			Swatches()
 		}
-		.padding(16)
+		.padding(Space.side)
 		.frame(maxWidth: .infinity, alignment: .leading)
-		.glass(corner: Parts.corner)
+		.glass(corner: Radius.card)
 		.onChange(of: editing) { _, e in if !e, renaming { if name != model.me.name, !name.isEmpty { model.setName(name) }; renaming = false } }
 		.onChange(of: photo) { _, item in Task { await model.setPhoto(item) } }
 		.fileImporter(isPresented: $picking, allowedContentTypes: [.image]) { r in if case .success(let url) = r { _ = url.startAccessingSecurityScopedResource(); model.attempt { try model.core.setAvatar(url) }; model.refreshAll() } }
@@ -182,13 +185,11 @@ struct Swatches: View {
 	/// itself, and state of its own would go nowhere.
 	@State private var picking = false
 	var body: some View {
-		ViewThatFits(in: .horizontal) {
-			HStack(spacing: 10) { dots }
-			VStack(alignment: .leading, spacing: 10) {
-				HStack(spacing: 10) { dots.prefix }
-				HStack(spacing: 10) { dots.suffix }
-			}
-		}
+		#if os(macOS)
+		HStack(spacing: 8) { dots }
+		#else
+		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 6), alignment: .leading, spacing: 8) { dots.prefix; dots.suffix }
+		#endif
 	}
 	private var dots: Dots { Dots(model: model, tones: tones, rendering: rendering, picking: $picking) }
 	struct Dots: View {
@@ -244,6 +245,7 @@ struct DevicesSection: View {
 	@Environment(\.tones) private var tones
 	@Environment(\.dismiss) private var dismiss
 	@State private var open: DeviceId?
+	@State private var removing: Device?
 	/// The Add screen in device mode. On the iPhone You is a sheet: it steps aside first.
 	private func addDevice() {
 		#if os(iOS)
@@ -253,40 +255,23 @@ struct DevicesSection: View {
 		#endif
 	}
 	var body: some View {
-		Card(title: "Devices") {
-			LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], alignment: .leading, spacing: 8) {
-				ForEach(model.me.devices) { d in
-					let this = d.id == model.me.thisDevice
-					Button { open = d.id } label: { DeviceTile(d: d, this: this) }
-						.buttonStyle(TileStyle(on: open == d.id, bare: true))
-						.modifier(ThingCard(shown: Binding(get: { open == d.id }, set: { if !$0 { open = nil } })) { DeviceCard(d: d, this: this) })
-				}
-				Button { addDevice() } label: {
-					VStack(spacing: 6) {
-						Image(systemName: "plus").font(.system(size: 16, weight: .semibold)).frame(width: Settings.hero, height: Settings.hero)
-							.overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(tones.hairline, style: StrokeStyle(lineWidth: 1, dash: [3, 3])))
-						Text("Add").font(Theme.smallFont.weight(.semibold))
-					}.padding(8).frame(maxWidth: .infinity)
-				}.buttonStyle(TileStyle(empty: true, bare: true)).accessibilityLabel("Add a device")
+		ListCard(title: "Devices") {
+			Button { addDevice() } label: { ActionRow(symbol: "plus", title: "Add a device") }.buttonStyle(RowStyle())
+			ForEach(model.me.devices) { d in
+				let this = d.id == model.me.thisDevice
+				Button { open = d.id } label: { DeviceRow(d: d, this: this) }
+					.buttonStyle(RowStyle())
+					.modifier(ThingCard(shown: Binding(get: { open == d.id }, set: { if !$0 { open = nil } })) { DeviceCard(d: d, this: this) })
+					.contextMenu {
+						Button { open = d.id } label: { Label("Show", systemImage: "info.circle") }
+						if !this { Divider(); Button(role: .destructive) { removing = d } label: { Label("Remove…", systemImage: "minus.circle") } }
+					}
 			}
 		}
-	}
-}
-
-/// One of my devices: its tile (with the house when it is reachable from outside), its name, the light and a word.
-struct DeviceTile: View {
-	@Environment(AppModel.self) private var model
-	@Environment(\.tones) private var tones
-	let d: Device
-	let this: Bool
-	var body: some View {
-		VStack(spacing: 6) {
-			DeviceGlyph(shape: DeviceShape(d), lit: this || d.online, size: Settings.hero)
-				.overlay(alignment: .topTrailing) { if model.stable(d.id) { MarkView(mark: .stable, size: 14, color: tones.strong).background(Circle().fill(tones.raised).padding(-1.5)) } }
-			Text(this ? Names.device(AppModel.deviceName) : Names.device(d.name)).font(Theme.smallFont.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.6)
-			StatusWord(on: this || d.online, word: this ? "This one" : d.word)
-		}
-		.padding(8).frame(maxWidth: .infinity)
+		.confirmationDialog("Remove \(removing?.name ?? "")?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible) {
+			Button("Remove", role: .destructive) { if let d = removing { model.attempt { try model.core.revoke(d.id) }; model.refreshAll() }; removing = nil }
+			Button("Cancel", role: .cancel) { removing = nil }
+		} message: { Text("It stops getting your chats and friends. You can add it again later.") }
 	}
 }
 
@@ -352,6 +337,7 @@ struct FriendsSection: View {
 	@Environment(\.tones) private var tones
 	@Environment(\.dismiss) private var dismiss
 	@State private var open: UserId?
+	@State private var removing: Contact?
 	private func addFriend() {
 		#if os(iOS)
 		model.afterYou = .friend; dismiss()
@@ -363,25 +349,23 @@ struct FriendsSection: View {
 		ListCard(title: "Friends") {
 			Button { addFriend() } label: { ActionRow(symbol: "plus", title: "Add a friend") }.buttonStyle(RowStyle())
 			ForEach(model.contacts) { k in
-				let row = HStack(spacing: 10) {
-					Avatar(name: k.name, hash: k.avatar, size: Rows.face, presence: Mark.presence(k.devices))
-					Text(k.name).font(Theme.font.weight(.medium)).lineLimit(1)
-					if k.verified { MarkView(mark: .verified, size: 14, color: tones.secondary) }
-					Spacer(minLength: 8)
-					StatusWord(on: k.online, word: presenceWord(k.devices).capitalizedFirst)
+				let row = PersonRow(name: k.name, hash: k.avatar, presence: Mark.presence(k.devices), detail: presenceWord(k.devices).capitalizedFirst, verified: k.verified) {
 					#if os(iOS)
-					Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(tones.tertiary)
+					Image(systemName: "chevron.right").font(Icon.font(Icon.inline)).foregroundStyle(tones.tertiary)
 					#endif
-				}.frame(minHeight: Rows.chat)
+				}
 				#if os(iOS)
 				NavigationLink(value: PersonLink(user: k.user)) { row }.buttonStyle(RowStyle())
+					.contextMenu { FriendMenu(friend: k, removing: $removing) }
 				#else
 				Button { open = k.user } label: { row }
 					.buttonStyle(RowStyle())
 					.popover(isPresented: Binding(get: { open == k.user }, set: { if !$0 { open = nil } }), arrowEdge: .trailing) { PersonPage(user: k.user).frame(width: 360, height: 560) }
+					.contextMenu { FriendMenu(friend: k, removing: $removing) }
 				#endif
 			}
 		}
+		.modifier(RemoveFriendQuestion(removing: $removing))
 	}
 }
 
@@ -403,52 +387,56 @@ struct AppCard: View {
 	#endif
 	var body: some View {
 		let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-		VStack(alignment: .leading, spacing: 14) {
-		HStack(spacing: 12) {
-			BaudTile()
-			VStack(alignment: .leading, spacing: 2) {
-				Text("baud \(v)").font(Theme.font.weight(.semibold))
+		ListCard(title: "App") {
+			HStack(spacing: Rows.gap) {
+				BaudTile(side: Rows.personFace).frame(width: Rows.personFace)
+				VStack(alignment: .leading, spacing: 2) {
+					Text("baud \(v)").font(Theme.font.weight(.medium))
+					#if os(macOS)
+					Text(updates.word).font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit()
+					#else
+					Text("TestFlight").font(Theme.smallFont).foregroundStyle(tones.secondary)
+					#endif
+				}
+				Spacer(minLength: 8)
 				#if os(macOS)
-				Text(updates.word).font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit()
-				#else
-				Text("TestFlight").font(Theme.smallFont).foregroundStyle(tones.secondary)
+				switch updates.state {
+				case .available: Button("Update") { updates.install() }.buttonStyle(Quiet(strong: true))
+				case .downloading: Button("Updating…") {}.buttonStyle(Quiet()).disabled(true)
+				case .ready: Button("Restart") { updates.restart() }.buttonStyle(Quiet(strong: true))
+				default: Button("Check") { updates.check(quiet: false) }.buttonStyle(Quiet()).disabled(updates.state == .checking)
+				}
 				#endif
 			}
-			Spacer(minLength: 8)
+			.frame(minHeight: Rows.person)
+			.cardRow()
 			#if os(macOS)
-			switch updates.state {
-			case .available: Button("Update") { updates.install() }.buttonStyle(Quiet(strong: true))
-			case .downloading: Button("Updating…") {}.buttonStyle(Quiet()).disabled(true)
-			case .ready: Button("Restart") { updates.restart() }.buttonStyle(Quiet(strong: true))
-			default: Button("Check") { updates.check(quiet: false) }.buttonStyle(Quiet()).disabled(updates.state == .checking)
+			// A Mac that's on carries messages for your phone and your friends: open at login.
+			HStack(spacing: Rows.gap) {
+				Image(systemName: "power").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
+				Text("Open at login").font(Theme.font.weight(.medium))
+				Spacer(minLength: 8)
+				Toggle("Open at login", isOn: $atLogin).toggleStyle(.switch).labelsHidden()
 			}
+			.frame(minHeight: Rows.line)
+			.cardRow()
+			.onChange(of: atLogin) { _, on in LoginItem.set(on); atLogin = SMAppService.mainApp.status == .enabled }
 			#endif
 		}
-		#if os(macOS)
-		// A Mac that's on carries messages for your phone and your friends: open at login.
-		HStack {
-			Text("Open at login").font(Theme.font)
-			Spacer(minLength: 8)
-			Toggle("Open at login", isOn: $atLogin).toggleStyle(.switch).labelsHidden()
-		}
-		.onChange(of: atLogin) { _, on in LoginItem.set(on); atLogin = SMAppService.mainApp.status == .enabled }
-		#endif
-		}
-		.padding(16)
-		.glass(corner: Parts.corner)
 	}
 }
 
 /// baud's icon, small: the family tile, or the whole tile in the chosen colour (as the app icon is).
 struct BaudTile: View {
 	@Environment(\.tones) private var tones
+	var side: CGFloat = 44
 	var body: some View {
 		let t = tones.iconTile
-		RoundedRectangle(cornerRadius: 10, style: .continuous)
+		RoundedRectangle(cornerRadius: side * 0.23, style: .continuous)
 			.fill(LinearGradient(colors: t.fill, startPoint: .top, endPoint: .bottom))
 			.overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.white.opacity(0.12)))
-			.overlay(MarkView(mark: .direct, size: 28, color: t.mark))
-			.frame(width: 44, height: 44)
+			.overlay(MarkView(mark: .direct, size: side * 0.64, color: t.mark))
+			.frame(width: side, height: side)
 			.accessibilityHidden(true)
 	}
 }
