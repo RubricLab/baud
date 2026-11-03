@@ -13,15 +13,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import sh.rubric.baud.ui.BaudTheme
+import sh.rubric.baud.ui.LaunchView
 import sh.rubric.baud.ui.Root
 import sh.rubric.baud.ui.Tones
 
@@ -34,13 +31,16 @@ class MainActivity : ComponentActivity() {
         handle(intent)
         askForNotifications()
         val app = application as BaudApp
+        // The colour chosen last time, read before the first frame, so the wait wears it too.
+        val saved = getSharedPreferences("app", Context.MODE_PRIVATE).getString("accent", null)
         setContent {
             val model by app.ready
             val dark = isSystemInDarkTheme()
             val m = model
-            val tones = remember(m?.accentHex, dark) { Tones.make(m?.accentHex, dark) }
+            val hex = if (m != null) m.accentHex else saved
+            val tones = remember(hex, dark) { Tones.make(hex, dark) }
             BaudTheme(tones) {
-                if (m == null) Box(Modifier.fillMaxSize().background(tones.surface)) else Root(m)
+                if (m == null) LaunchView() else Root(m)
             }
         }
     }

@@ -62,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -108,7 +109,9 @@ fun TimelineList(timeline: Timeline, onReply: (Event) -> Unit, modifier: Modifie
             if (last >= state.layoutInfo.totalItemsCount - 6) timeline.loadMore()
         }
     }
-    LazyColumn(modifier.fillMaxWidth(), state = state, reverseLayout = true) {
+    // Scrolling back through the chat takes the keyboard down with the finger, as Messages does.
+    val tuck = rememberKeyboardTuck(downOnly = true)
+    LazyColumn(modifier.fillMaxWidth().nestedScroll(tuck), state = state, reverseLayout = true) {
         item("bottom") { Gap(4.dp) }
         if (typing.isNotEmpty()) item("typing") { DeliveryRow("${list(typing)} ${if (typing.size == 1) "is" else "are"} typing", mine = false) }
         if (status != null) item("status") { DeliveryRow(status, timeline.statusMark) }
@@ -219,7 +222,7 @@ private fun MessageRow(e: Event, first: Boolean, last: Boolean, timeline: Timeli
             }
             Column(horizontalAlignment = if (e.mine) Alignment.End else Alignment.Start, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (first && !e.mine && !direct) Text(model.name(e.user), style = Type.small, fontWeight = FontWeight.SemiBold, color = t.secondary, modifier = Modifier.padding(horizontal = 13.dp))
-                Words(e, first, last, timeline)
+                Words(e, first, last, timeline) { menu = true }
                 for (a in e.attachments) AttachmentBlock(a)
                 if (e.reactions.isNotEmpty()) Reactions(e, ::react, { who = true }) { picking = true }
                 // How it travelled, and when, a tap away; whether my newest got there is the one line under the chat.
@@ -246,17 +249,20 @@ private fun MessageRow(e: Event, first: Boolean, last: Boolean, timeline: Timeli
         if (picking) EmojiSheet({ picking = false }) { react(it); picking = false }
         if (editing) EditSheet(e) { editing = false }
         if (who) WhoReacted(e) { who = false }
-        if (deleting) Confirm("Delete this message?", "It goes for everyone in this chat.", "Delete", { deleting = false }) {
+        if (deleting) Confirm("Delete this message?", "It goes for everyone in this chat.", "Delete for everyone", { deleting = false }) {
             model.attempt { model.core.redact(e.conv, e.id) }
         }
     }
 }
 
-/// The words in their bubble, a reply's quote riding at the top; a mention of me edged in ink.
+/// The words in their bubble, a reply's quote riding at the top; a mention of me edged in ink. A
+/// place sent once is drawn as one (a tap opens it in the phone's maps app).
 @Composable
-private fun Words(e: Event, first: Boolean, last: Boolean, timeline: Timeline) {
+private fun Words(e: Event, first: Boolean, last: Boolean, timeline: Timeline, longPress: () -> Unit) {
     val model = LocalModel.current
     val t = LocalTones.current
+    val context = LocalContext.current
+    val place = PlaceText.parse(e.text)
     val quoted = e.reply?.let { timeline.byId[it] }
     val text = e.text
     if (text == null && quoted == null) return
@@ -272,9 +278,14 @@ private fun Words(e: Event, first: Boolean, last: Boolean, timeline: Timeline) {
     ) {
         quoted?.let { q -> Quote(model.name(q.user), q.text ?: if (q.attachments.isEmpty()) "" else "attachment", onMine = e.mine) }
         val uri = LocalUriHandler.current
+        if (place != null) {
+            val name = if (e.mine) model.me.name else model.name(e.user)
+            val face = Face(name, if (e.mine) model.me.avatar else model.contacts.firstOrNull { it.user == e.user }?.avatar)
+            PlaceBubble(face, e.mine, open = { openInMaps(context, place.lat, place.lon, name) { model.error = it } }, longPress = longPress)
+        }
         // Every link whole, as it was sent, underlined in the words' own ink; a baud link opens
         // here, on Add, any other in the browser.
-        if (text != null) Text(buildAnnotatedString {
+        else if (text != null) Text(buildAnnotatedString {
             var at = 0
             for (r in links(text)) {
                 append(text.substring(at, r.first))

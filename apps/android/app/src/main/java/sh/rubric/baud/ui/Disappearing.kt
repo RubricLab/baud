@@ -1,6 +1,6 @@
-// Disappearing messages (apps/shared/Disappearing.swift): the choice lives in a chat's info, a row
-// that says how it's set ("Off", "1 day") and opens the choice: off, or how long a message stays
-// after it's read. While it's on, a small timer with how long ("1d") sits in the header and opens
+// Disappearing messages (apps/shared/Disappearing.swift): the choice lives in a chat's info, in a
+// card of its own, a row that says how it's set ("Off", "1 day") and opens the choice: off, or how
+// long a message stays after it's read. While it's on, a small timer with how long ("1d") sits in the header and opens
 // the info. Anyone in a chat changes it; in a channel only an admin, and the others see it as it
 // is. baud-core does the rest: the line in the timeline, each message going on its own time.
 package sh.rubric.baud.ui
@@ -8,8 +8,9 @@ package sh.rubric.baud.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -45,9 +46,10 @@ fun DisappearMark(c: Conversation, onClick: () -> Unit) {
     val t = LocalTones.current
     if (c.disappear <= 0) return
     Row(
-        Modifier.height(36.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 8.dp)
+        Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 8.dp)
             .semantics { contentDescription = "Messages disappear ${disappearAfter(c.disappear)} after they're read" },
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
     ) {
         Glyph(Glyphs.timer, 18.dp, t.secondary)
         WGap(3.dp)
@@ -55,23 +57,23 @@ fun DisappearMark(c: Conversation, onClick: () -> Unit) {
     }
 }
 
-/// The row in a chat's info: its name, how it's set, and a tap for the choice.
+/// The choice in a chat's info, in its card ("Disappearing messages"): the timer and how it's set,
+/// a tap for the choices; under it, while it's on, what that means, or that only an admin changes it.
 @Composable
 fun DisappearRow(c: Conversation) {
     val model = LocalModel.current
     val t = LocalTones.current
     var menu by remember { mutableStateOf(false) }
     val can = c.kind != ConvKind.Channel || model.me.user in c.admins
+    val words = disappearWord(c.disappear)
     Box {
-        RowSurface({ menu = true }, minHeight = Metrics.compactRow) {
-            Glyph(Glyphs.timer, 20.dp, t.secondary)
-            WGap(12.dp)
-            Text("Disappearing messages", style = Type.body, maxLines = 1, modifier = Modifier.weight(1f))
+        RowSurface({ menu = true }, Modifier.semantics { contentDescription = "Disappearing messages: $words" }, minHeight = Metrics.compactRow, enabled = can) {
+            Glyph(Glyphs.timer, 17.dp, t.secondary)
             WGap(8.dp)
-            Text(disappearWord(c.disappear), style = Type.body, color = t.secondary, maxLines = 1)
+            Text(words, style = Type.body, color = if (can) t.text else t.secondary, maxLines = 1, modifier = Modifier.weight(1f))
+            if (can) { WGap(8.dp); Glyph(Glyphs.chevronUpDown, 14.dp, t.secondary) }
         }
         DropdownMenu(menu, { menu = false }, containerColor = t.card) {
-            Text(if (can) "Disappearing messages" else "Only an admin can change this", style = Type.small, color = t.secondary, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             for (s in DisappearChoices) {
                 val picked = s == c.disappear
                 DropdownMenuItem(
@@ -83,4 +85,8 @@ fun DisappearRow(c: Conversation) {
             }
         }
     }
+    if (c.disappear > 0 || !can) Text(
+        if (!can) "Only an admin can change this." else "New messages go ${disappearAfter(c.disappear)} after they're read.",
+        style = Type.small, color = t.secondary, modifier = Modifier.padding(start = Metrics.inset + Metrics.pad, end = Metrics.inset + Metrics.pad, bottom = 8.dp),
+    )
 }

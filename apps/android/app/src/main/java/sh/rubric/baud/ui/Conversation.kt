@@ -1,7 +1,8 @@
-// A conversation (ConversationView.swift): the header with its honest status line, the timeline
-// (TimelineView.kt) and the composer (Composer.kt), all on one solid ground: no band behind the
-// header or the composer, just a hairline under the header. A tap on the name opens the chat's
-// info (ChatInfo.kt). Calls are not in this version.
+// A conversation (ConversationView.swift): the header with its honest status line, the live bar
+// while anyone shares where they are (Location.kt), the timeline (TimelineView.kt) and the composer
+// (Composer.kt), all on one solid ground: no band behind the header or the composer, just a
+// hairline under the header. A tap on the name opens the chat's info (ChatInfo.kt). Calls are not
+// in this version.
 package sh.rubric.baud.ui
 
 import androidx.compose.animation.AnimatedContent
@@ -53,6 +54,7 @@ fun ConversationScreen(conv: ConversationId, back: () -> Unit) {
     val timeline = remember(conv) { model.timeline(conv) }
     var reply by remember(conv) { mutableStateOf<Event?>(null) }
     var info by remember(conv) { mutableStateOf(false) }
+    var locating by remember(conv) { mutableStateOf(false) }
     DisposableEffect(conv) {
         model.onScreen = conv
         timeline.reload()
@@ -65,12 +67,14 @@ fun ConversationScreen(conv: ConversationId, back: () -> Unit) {
     Column(Modifier.fillMaxSize().background(t.surface).imePadding()) {
         if (c == null) { Box(Modifier.weight(1f)); return@Column }
         Header(c, back) { info = true }
-        PlacesCard(c.id)
+        LiveBar(c.id) { locating = true }
         TimelineList(timeline, { reply = it }, Modifier.weight(1f))
-        Composer(c, reply) { reply = null }
+        Composer(c, reply, clearReply = { reply = null }, locate = { locating = true })
     }
     // Leaving the group closes the info and the chat: back to Chats.
     if (info && c != null) BaudSheet(onDismiss = { info = false }, full = true) { ChatInfo(c.id, close = { info = false }, left = { info = false; back() }) }
+    // Location, from the composer's + (or the live list's Share yours).
+    if (locating && c != null) LocationSheet(c.id) { locating = false }
 }
 
 /// Name, topic, and the status sentence: the presence light when they're here, then "Online ·
@@ -85,8 +89,10 @@ private fun Header(c: Conversation, back: () -> Unit, info: () -> Unit) {
     val own = c.kind == ConvKind.Home
     val live = if (own) model.me.devices.any { it.online && it.id != model.me.thisDevice } else others.any { it.online }
     Column(Modifier.background(t.surface).statusBarsPadding()) {
-        Row(Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).padding(start = 6.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconAction(Glyphs.back, "Back", 21.dp, t.secondary, back)
+        Row(Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Back: a wide target from the screen's edge, and a gap before the name, which opens the details.
+            BackButton(back)
+            WGap(6.dp)
             Column(
                 Modifier.weight(1f).clip(RoundedCornerShape(9.dp)).clickable(onClickLabel = "Chat info", role = Role.Button, onClick = info)
                     .padding(vertical = 6.dp, horizontal = 4.dp),
@@ -112,8 +118,6 @@ private fun Header(c: Conversation, back: () -> Unit, info: () -> Unit) {
                 }
             }
             if (c.kind != ConvKind.Space) DisappearMark(c, info)
-            // Where I am, for this chat: not my chat with myself, where nobody else would see it.
-            if (!own) ShareSpot(c.id)
         }
         Hairline()
     }

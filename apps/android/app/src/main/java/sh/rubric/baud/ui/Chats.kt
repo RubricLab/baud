@@ -34,7 +34,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +57,9 @@ fun Chats(open: (ConversationId) -> Unit, you: () -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
     var deleting by remember { mutableStateOf<Conversation?>(null) }
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    LazyColumn(Modifier.fillMaxSize().background(t.surface).statusBarsPadding(), contentPadding = PaddingValues(bottom = bottom + 24.dp)) {
+    // A scroll through the chats puts the search's keyboard away.
+    val tuck = rememberKeyboardTuck()
+    LazyColumn(Modifier.fillMaxSize().background(t.surface).statusBarsPadding().nestedScroll(tuck), contentPadding = PaddingValues(bottom = bottom + 24.dp)) {
         item("top") {
             Box(Modifier.fillMaxWidth().padding(start = Metrics.inset + Metrics.pad, end = Metrics.inset, top = 4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -107,22 +111,22 @@ fun Chats(open: (ConversationId) -> Unit, you: () -> Unit) {
 
 /// The search field, drawn in the palette.
 @Composable
-fun SearchField(text: String, onChange: (String) -> Unit, modifier: Modifier = Modifier) {
+fun SearchField(text: String, onChange: (String) -> Unit, modifier: Modifier = Modifier, placeholder: String = "Search") {
     val t = LocalTones.current
     Row(modifier.fillMaxWidth().defaultMinSize(minHeight = 40.dp).clip(RoundedCornerShape(10.dp)).background(t.field).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Glyph(Glyphs.search, 17.dp, t.secondary)
         WGap(8.dp)
         BasicTextField(
-            text, onChange, Modifier.weight(1f).semantics { contentDescription = "Search" },
+            text, onChange, Modifier.weight(1f).semantics { contentDescription = placeholder },
             textStyle = Type.body.copy(color = t.text), singleLine = true, cursorBrush = SolidColor(t.strong),
-            decorationBox = { inner -> Box { if (text.isEmpty()) Text("Search", style = Type.body, color = t.secondary); inner() } },
+            decorationBox = { inner -> Box { if (text.isEmpty()) Text(placeholder, style = Type.body, color = t.secondary); inner() } },
         )
         if (text.isNotEmpty()) Box(Modifier.clip(CircleShape).clickable { onChange("") }.padding(4.dp).semantics { contentDescription = "Clear" }) { Glyph(Glyphs.clear, 17.dp, t.secondary) }
     }
 }
 
-/// A chat: their face and presence (or the group's initials), the name, when, my last message's
-/// delivery mark before the preview, unread.
+/// A chat: their face and presence (a group's people, gathered), the name, when, my last message's
+/// delivery mark before the preview, unread. The whole row is the one thing to tap.
 @Composable
 private fun ChatRow(c: Conversation, onClick: () -> Unit, onLongClick: () -> Unit) {
     val model = LocalModel.current
@@ -131,6 +135,7 @@ private fun ChatRow(c: Conversation, onClick: () -> Unit, onLongClick: () -> Uni
     val friend = other?.let { u -> model.contacts.firstOrNull { it.user == u } }
     RowSurface(onClick, onLongClick = onLongClick, minHeight = Metrics.chatRow) {
         if (c.kind == ConvKind.Home) Avatar(model.me.name, model.me.avatar, Metrics.face)
+        else if (c.kind == ConvKind.Chat && !c.isDirect) GroupFace(c, Metrics.face)
         else Avatar(model.title(c), friend?.avatar, Metrics.face, presence = other?.let { u -> Mark.presence(friend?.devices ?: model.core.members(c.id).firstOrNull { it.user == u }?.devices.orEmpty()) })
         WGap(10.dp)
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
@@ -153,9 +158,10 @@ private fun ChatRow(c: Conversation, onClick: () -> Unit, onLongClick: () -> Uni
     }
 }
 
-/// An empty second line still takes its line, so every row is two lines tall.
+/// An empty second line still takes its line, so every row is two lines tall; a place sent once
+/// says so in two words, not its link.
 private fun preview(model: AppModel, c: Conversation): String {
-    val text = c.lastText ?: return if (c.isDirect || c.kind == ConvKind.Home) model.status(c) else " "
+    val text = c.lastText?.let { if (PlaceText.parse(it) != null) "📍 Location" else it } ?: return if (c.isDirect || c.kind == ConvKind.Home) model.status(c) else " "
     if (c.kind == ConvKind.Home) return text
     val who = when {
         c.lastUser == model.me.user -> "You: "
@@ -180,10 +186,11 @@ private fun NewChatRow(friend: Contact, onClick: () -> Unit) {
     }
 }
 
-/// A delivery mark; its sentence is its description.
+/// A delivery mark; its sentence is its description. Only a mark: it takes no tap of its own, so a
+/// tap anywhere on a chat's row opens the chat.
 @Composable
 fun DeliveryMark(d: Delivery, size: androidx.compose.ui.unit.Dp = 14.dp) {
     val t = LocalTones.current
     val m = Mark.delivery(d)
-    Box(Modifier.semantics { contentDescription = d.sentence }) { MarkView(m, size, if (m == Mark.Sending) t.secondary else t.text) }
+    Box(Modifier.clearAndSetSemantics { contentDescription = d.sentence }) { MarkView(m, size, if (m == Mark.Sending) t.secondary else t.text) }
 }

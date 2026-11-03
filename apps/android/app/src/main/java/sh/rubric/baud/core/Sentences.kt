@@ -22,7 +22,7 @@ val Device.possessive: String
         DeviceKind.Mac -> "Mac"
         DeviceKind.Iphone -> "iPhone"
         DeviceKind.Android -> "phone"
-        DeviceKind.Node -> "node"
+        DeviceKind.Node -> "device"
     }
 
 /// "online, direct" · "last online 2 h ago" · "never online"

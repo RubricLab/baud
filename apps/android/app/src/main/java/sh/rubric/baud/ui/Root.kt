@@ -48,7 +48,8 @@ import sh.rubric.baud.AppModel
 
 @Composable
 fun Root(model: AppModel) {
-    CompositionLocalProvider(LocalModel provides model) {
+    val faces = remember(model) { { h: sh.rubric.baud.core.BlobHash, px: Int -> model.image(h, px) } }
+    CompositionLocalProvider(LocalModel provides model, LocalFaces provides faces) {
         val t = LocalTones.current
         Box(Modifier.fillMaxSize().background(t.surface)) {
             if (!model.named || (!model.onboarded && model.conversations.isEmpty())) Onboarding() else Home()

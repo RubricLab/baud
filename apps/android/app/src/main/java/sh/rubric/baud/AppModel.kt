@@ -31,6 +31,7 @@ import sh.rubric.baud.core.CoreSurface
 import sh.rubric.baud.core.Draft
 import sh.rubric.baud.core.FakeCore
 import sh.rubric.baud.core.Link
+import sh.rubric.baud.core.Member
 import sh.rubric.baud.core.NetState
 import sh.rubric.baud.core.Path
 import sh.rubric.baud.core.Peer
@@ -178,6 +179,14 @@ class AppModel(val context: Context, val core: CoreSurface) {
     val unread: Int get() = conversations.sumOf { it.unread }
 
     fun conversation(id: ConversationId?): Conversation? = id?.let { i -> conversations.firstOrNull { it.id == i } ?: notes?.takeIf { it.id == i } ?: core.conversation(i) }
+
+    fun isFriend(user: UserId): Boolean = contacts.any { it.user == user }
+    /// Someone in a group who isn't my friend: the friends in it I reach them through.
+    fun through(m: Member, conv: ConversationId): List<String> {
+        if (m.me || isFriend(m.user)) return emptyList()
+        val members = core.members(conv).map { it.user }.toSet()
+        return contacts.filter { it.user in members }.map { it.name }
+    }
 
     private val names = HashMap<UserId, String>()
     /// Contacts by petname; co-members by the name on their card, learned from a shared conversation.

@@ -194,7 +194,7 @@ fun Light(on: Boolean, size: Dp = 7.dp) {
 /// What a device is, for its glyph: the kind the core gives, sharpened by its name.
 enum class DeviceShape(val word: String) {
     Iphone("iPhone"), Ipad("iPad"), Macbook("Mac"), Imac("Mac"), MacMini("Mac mini"), MacStudio("Mac Studio"),
-    PcLaptop("computer"), PcTower("computer"), Phone("phone");
+    PcLaptop("computer"), PcTower("computer"), Phone("Android phone");
 
     companion object {
         fun of(d: Device): DeviceShape {

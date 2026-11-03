@@ -1,5 +1,5 @@
-// The composer (ComposerView.swift): multiline, a reply strip, photos (picked, shown before they
-// go), drafts per conversation. No band behind it: the field floats on the same ground as the
+// The composer (ComposerView.swift): multiline, a reply strip, + for photos (picked, shown before
+// they go) or Location (Location.kt), drafts per conversation. No band behind it: the field floats on the same ground as the
 // timeline, a solid step lifted off it, and the send button springs in, loud, once there is
 // something to send.
 package sh.rubric.baud.ui
@@ -31,6 +31,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,7 +66,7 @@ import sh.rubric.baud.core.Draft
 import sh.rubric.baud.core.Event
 
 @Composable
-fun Composer(c: Conversation, reply: Event?, clearReply: () -> Unit) {
+fun Composer(c: Conversation, reply: Event?, clearReply: () -> Unit, locate: () -> Unit) {
     val model = LocalModel.current
     val t = LocalTones.current
     val context = LocalContext.current
@@ -72,6 +74,7 @@ fun Composer(c: Conversation, reply: Event?, clearReply: () -> Unit) {
     var text by remember(c.id) { mutableStateOf(model.draft(c.id)) }
     val files = remember(c.id) { mutableStateListOf<String>() }
     var typingSent by remember { mutableLongStateOf(0L) }
+    var attaching by remember { mutableStateOf(false) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(20)) { uris ->
         scope.launch { for (u in uris) withContext(Dispatchers.IO) { Picked.copy(context, u) }?.let { files += it } }
     }
@@ -87,7 +90,7 @@ fun Composer(c: Conversation, reply: Event?, clearReply: () -> Unit) {
     Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
         if (reply != null) Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) { Quote(model.name(reply.user), reply.text ?: "attachment") }
-            IconAction(Glyphs.xmark, "Cancel reply", 13.dp, t.secondary, clearReply)
+            IconAction(Glyphs.xmark, "Cancel reply", 13.dp, t.secondary, onClick = clearReply)
         }
         if (files.isNotEmpty()) LazyRow(Modifier.padding(top = 8.dp), contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             items(files.toList(), key = { it }) { f -> Staged(f) { files.remove(f) } }
@@ -98,10 +101,25 @@ fun Composer(c: Conversation, reply: Event?, clearReply: () -> Unit) {
                 .padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            Box(
-                Modifier.size(30.dp).clip(CircleShape).clickable { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }.semantics { contentDescription = "Attach" },
-                contentAlignment = Alignment.Center,
-            ) { Glyph(Glyphs.plus, 20.dp, t.secondary) }
+            // +: photos, or where I am.
+            Box {
+                Box(
+                    Modifier.size(30.dp).clip(CircleShape).clickable { attaching = true }.semantics { contentDescription = "Attach" },
+                    contentAlignment = Alignment.Center,
+                ) { Glyph(Glyphs.plus, 20.dp, t.secondary) }
+                DropdownMenu(attaching, { attaching = false }, containerColor = t.card) {
+                    DropdownMenuItem(
+                        { Text("Photos", style = Type.body, color = t.text) },
+                        { attaching = false; pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                        leadingIcon = { Glyph(Glyphs.photo, 19.dp, t.text) },
+                    )
+                    DropdownMenuItem(
+                        { Text("Location", style = Type.body, color = t.text) },
+                        { attaching = false; locate() },
+                        leadingIcon = { Glyph(Glyphs.location, 19.dp, t.text) },
+                    )
+                }
+            }
             WGap(8.dp)
             BasicTextField(
                 text,

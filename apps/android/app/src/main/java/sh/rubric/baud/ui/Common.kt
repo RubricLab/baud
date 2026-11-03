@@ -18,6 +18,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -37,8 +39,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import kotlin.math.abs
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -80,6 +91,8 @@ import java.time.format.FormatStyle
 import kotlin.math.roundToInt
 
 val LocalModel = staticCompositionLocalOf<AppModel> { error("no model") }
+/// Where a face's photo comes from: the model's blobs in the app, nothing in a preview (initials).
+val LocalFaces = staticCompositionLocalOf<(BlobHash, Int) -> ImageBitmap?> { { _, _ -> null } }
 
 // MARK: glyphs, in the family's stroke on the 24 grid
 
@@ -111,6 +124,23 @@ object Glyphs {
     val issue = make("issue", listOf(), listOf("M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20zm-1.2 5h2.4l-0.3 7h-1.8zM12 15.4a1.4 1.4 0 1 1 0 2.8a1.4 1.4 0 1 1 0-2.8z"))
     val timer = make("timer", listOf("M12 5.5a7.5 7.5 0 1 0 0 15a7.5 7.5 0 1 0 0-15z", "M12 9.2V13l2.6 1.6", "M10 2.8h4"), width = 1.9f)
     val check = make("check", listOf("M5.5 12.5l4.2 4.2L18.5 7.8"), width = 2.2f)
+    val chevronRight = make("chevronRight", listOf("M9 5l7 7-7 7"), width = 2.2f)
+    val chevronUpDown = make("chevronUpDown", listOf("M8 9.5l4-4 4 4", "M8 14.5l4 4 4-4"), width = 2.1f)
+    val pencil = make("pencil", listOf("M4.5 19.5h3.8L19 8.8 15.2 5 4.5 15.7z", "M13 7.2l3.8 3.8"), width = 1.9f)
+    val bubble = make("bubble", listOf(), listOf("M12 3.8c4.8 0 8.7 3.3 8.7 7.4s-3.9 7.4-8.7 7.4c-1 0-2-0.1-2.9-0.4L4.6 20.2l1.3-3.9C4.3 14.9 3.3 13.1 3.3 11.2 3.3 7.1 7.2 3.8 12 3.8z"))
+    val shield = make("shield", listOf("M12 3l7.2 3v5.6c0 4.5-3 8.1-7.2 9.6-4.2-1.5-7.2-5.1-7.2-9.6V6z"), width = 1.9f)
+    val shieldCheck = make("shieldCheck", listOf("M12 3l7.2 3v5.6c0 4.5-3 8.1-7.2 9.6-4.2-1.5-7.2-5.1-7.2-9.6V6z", "M8.7 12.1l2.4 2.4 4.3-4.6"), width = 1.9f)
+    /// Where I am: the arrow, open (location), solid (location.fill), struck through (off).
+    val location = make("location", listOf("M20 4L3.8 10.9l7.1 2.2 2.2 7.1z"), width = 1.9f)
+    val locationFill = make("locationFill", listOf(), listOf("M20.4 3.6a0.6 0.6 0 0 1 0.1 0.6l-6.9 16.3a0.6 0.6 0 0 1-1.1 0l-2.2-6.8-6.8-2.2a0.6 0.6 0 0 1 0-1.1l16.3-6.9a0.6 0.6 0 0 1 0.6 0.1z"))
+    val locationOff = make("locationOff", listOf("M20 4L3.8 10.9l7.1 2.2 2.2 7.1z", "M3.5 3.5l17 17"), width = 1.9f)
+    val clock = make("clock", listOf("M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 1 0 0-17z", "M12 7.5V12l3 2"), width = 1.9f)
+    val moon = make("moon", listOf("M19.8 14.6A8 8 0 0 1 9.4 4.2a8 8 0 1 0 10.4 10.4z"), width = 1.9f)
+    val infinity = make("infinity", listOf("M12 12c-1.8-2.3-3.3-3.6-5.1-3.6a3.6 3.6 0 0 0 0 7.2c1.8 0 3.3-1.3 5.1-3.6zm0 0c1.8 2.3 3.3 3.6 5.1 3.6a3.6 3.6 0 0 0 0-7.2c-1.8 0-3.3 1.3-5.1 3.6z"), width = 1.9f)
+    val people = make("people", listOf("M9 4.5a3.3 3.3 0 1 0 0 6.6a3.3 3.3 0 1 0 0-6.6z", "M2.6 19.5c0.4-3.4 3-5.7 6.4-5.7s6 2.3 6.4 5.7", "M15.8 4.8a3 3 0 0 1 0 6", "M17.6 14c2.2 0.6 3.6 2.6 3.9 5.5"), width = 1.9f)
+    val personMinus = make("personMinus", listOf("M10 4a3.6 3.6 0 1 0 0 7.2a3.6 3.6 0 1 0 0-7.2z", "M3.4 20c0.4-3.7 3.1-6.2 6.6-6.2 1.5 0 2.9 0.5 4 1.3", "M16 18h6"), width = 1.9f)
+    val personX = make("personX", listOf("M10 4a3.6 3.6 0 1 0 0 7.2a3.6 3.6 0 1 0 0-7.2z", "M3.4 20c0.4-3.7 3.1-6.2 6.6-6.2 1.5 0 2.9 0.5 4 1.3", "M16.6 15.6l4.4 4.4", "M21 15.6l-4.4 4.4"), width = 1.9f)
+    val leave = make("leave", listOf("M13 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6", "M10.5 12H21", "M17.5 8.5L21 12l-3.5 3.5"), width = 1.9f)
 }
 
 @Composable
@@ -128,8 +158,8 @@ fun initials(name: String): String = name.split(" ").filter { it.isNotEmpty() }.
 @Composable
 fun Avatar(name: String, hash: BlobHash? = null, size: Dp = 24.dp, presence: Mark? = null, ring: Boolean = false, modifier: Modifier = Modifier) {
     val t = LocalTones.current
-    val model = LocalModel.current
-    val img = hash?.let { model.image(it, if (size > 60.dp) 1000 else 200) }
+    val faces = LocalFaces.current
+    val img = hash?.let { faces(it, if (size > 60.dp) 1000 else 200) }
     val lit = presence == Mark.Online || presence == Mark.OnlineRelayed
     val badge = maxOf(8f, (size.value * 0.36f).roundToInt().toFloat()).dp
     val gap = maxOf(3f, size.value / 10f).dp
@@ -249,17 +279,53 @@ fun DangerRow(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
     }
 }
 
-/// A small action in a heading or a header: a 36 dp target around a glyph, darkening pressed.
+/// A small action in a heading or a header: a 48 dp target around a glyph (under a finger, the
+/// misses stop), darkening pressed.
 @Composable
-fun IconAction(v: ImageVector, description: String, size: Dp = 18.dp, color: Color? = null, onClick: () -> Unit) {
+fun IconAction(v: ImageVector, description: String, size: Dp = 18.dp, color: Color? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val t = LocalTones.current
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     Box(
-        Modifier.size(40.dp).clip(CircleShape).background(if (pressed) t.pressed else Color.Transparent)
+        modifier.size(48.dp).clip(CircleShape).background(if (pressed) t.pressed else Color.Transparent)
             .clickable(source, null, role = Role.Button, onClick = onClick).semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) { Glyph(v, size, color ?: t.secondary) }
+}
+
+/// Back, at a screen's left edge: a wide target from the edge itself (a thumb that lands a little
+/// right still goes back), the chevron in ink, a little smaller and dimmer under the finger.
+@Composable
+fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val t = LocalTones.current
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    Box(
+        modifier.size(width = 58.dp, height = 48.dp)
+            .clickable(source, null, role = Role.Button, onClick = onClick).semantics { contentDescription = "Back" }
+            .padding(start = 14.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Glyph(Glyphs.back, 22.dp, t.text, modifier = Modifier.graphicsLayer { val s = if (pressed) 0.94f else 1f; scaleX = s; scaleY = s; alpha = if (pressed) 0.55f else 1f })
+    }
+}
+
+/// The top of a page in a sheet: Back at the left edge, or a title at the left; its name centred
+/// when it was pushed; Close at the right; a hairline under it.
+@Composable
+fun PageBar(title: String? = null, back: (() -> Unit)? = null, close: (() -> Unit)? = null) {
+    val t = LocalTones.current
+    Box(Modifier.fillMaxWidth().height(52.dp)) {
+        if (back != null) BackButton(back, Modifier.align(Alignment.CenterStart))
+        if (title != null) Text(
+            title, style = Type.heading, color = t.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            textAlign = if (back != null) TextAlign.Center else TextAlign.Start,
+            modifier = Modifier.align(if (back != null) Alignment.Center else Alignment.CenterStart)
+                .padding(horizontal = if (back != null) 64.dp else Parts.side).semantics { heading() },
+        )
+        if (close != null) IconAction(Glyphs.xmark, "Close", 15.dp, t.secondary, Modifier.align(Alignment.CenterEnd).padding(end = 4.dp), close)
+    }
+    Hairline()
 }
 
 /// A small capsule control: darkens pressed, the loud fill when on (its words flipped to read on it).
@@ -354,6 +420,155 @@ fun DashedSquare(side: Dp, corner: Dp = 10.dp, content: @Composable BoxScope.() 
             drawRoundRect(t.hairline, cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner.toPx()), style = Stroke(1.dp.toPx(), pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx()))))
         }
         content()
+    }
+}
+
+// MARK: the parts every page is made of (apps/shared/Parts.swift)
+
+/// A section is a heading over a card; a card holds rows; a row is a glyph, words and what it leads
+/// to; and anything that can't be undone is last, on its own, in red, and asks first.
+object Parts {
+    /// Between sections, around a page.
+    val gap = 20.dp
+    val side = 16.dp
+    /// A card's corner.
+    val corner = 16.dp
+}
+
+/// A section's name over its card: one size, one weight, one ink, everywhere. Quieter than the
+/// page's own title and the card's words, so the cards carry the page.
+@Composable
+fun SectionTitle(text: String) =
+    Text(text, style = Type.body, fontWeight = FontWeight.SemiBold, color = LocalTones.current.secondary, modifier = Modifier.padding(start = 4.dp).semantics { heading() })
+
+/// A heading over a card of rows, and a quiet sentence under it. The rows run edge to edge inside.
+@Composable
+fun ListCard(title: String? = null, footer: String? = null, content: @Composable ColumnScope.() -> Unit) {
+    val t = LocalTones.current
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (title != null) SectionTitle(title)
+        Column(Modifier.fillMaxWidth().glass(Parts.corner, t).padding(vertical = 6.dp), content = content)
+        if (footer != null) Text(footer, style = Type.small, color = t.secondary, modifier = Modifier.padding(horizontal = 4.dp))
+    }
+}
+
+/// One row of a card: a glyph in a disc the size of a face, its words, and on the right a value or
+/// where it leads. With `onClick` it's a row you can press; in red when it can't be undone.
+@Composable
+fun ActionRow(glyph: ImageVector, title: String, value: String? = null, danger: Boolean = false, enabled: Boolean = true, onClick: (() -> Unit)? = null) {
+    val body: @Composable RowScope.() -> Unit = {
+        val t = LocalTones.current
+        val ink = if (danger) t.danger else t.text
+        Box(Modifier.size(Metrics.face).clip(CircleShape).background(t.quiet), contentAlignment = Alignment.Center) { Glyph(glyph, 19.dp, ink) }
+        WGap(10.dp)
+        Text(title, style = Type.body, fontWeight = FontWeight.Medium, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).alpha(if (enabled) 1f else 0.5f))
+        Fill()
+        if (value != null) { WGap(6.dp); Text(value, style = Type.body, color = t.secondary, maxLines = 1) }
+    }
+    if (onClick != null) RowSurface(onClick, Modifier.semantics { role = Role.Button }, minHeight = Metrics.chatRow, enabled = enabled, content = body)
+    else Row(Modifier.fillMaxWidth().padding(horizontal = Metrics.inset + Metrics.pad).defaultMinSize(minHeight = Metrics.chatRow), verticalAlignment = Alignment.CenterVertically, content = body)
+}
+
+/// One of a few equal tiles side by side, a glyph over a word: what a page is for, a tap each.
+@Composable
+fun ActionTile(glyph: ImageVector, title: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val t = LocalTones.current
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    androidx.compose.foundation.layout.Column(
+        modifier.height(64.dp).graphicsLayer { val s = if (pressed) 0.96f else 1f; scaleX = s; scaleY = s; alpha = if (pressed) 0.8f else 1f }
+            .glass(Parts.corner, t).clip(RoundedCornerShape(Parts.corner))
+            .clickable(source, null, role = Role.Button, onClickLabel = title, onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+    ) {
+        Glyph(glyph, 21.dp, t.text)
+        Text(title, style = Type.small, fontWeight = FontWeight.SemiBold, color = t.text, maxLines = 1)
+    }
+}
+
+/// What can't be undone (leaving a group, removing someone): its own card, last on the page, in
+/// red; the press asks first, saying what will happen, and only the answer does it.
+@Composable
+fun DangerCard(glyph: ImageVector, title: String, question: String, detail: String, answer: String, action: () -> Unit) {
+    var asking by remember { mutableStateOf(false) }
+    ListCard { ActionRow(glyph, title, danger = true) { asking = true } }
+    if (asking) Confirm(question, detail, answer, { asking = false }, action)
+}
+
+/// A person as a group shows them: a name and maybe a photo.
+data class Face(val name: String, val hash: BlobHash? = null)
+
+/// Everyone but me, photos first, then by name; three at most.
+fun gather(faces: List<Face>): List<Face> = faces.sortedWith(compareBy<Face>({ it.hash == null }, { it.name })).take(3)
+
+/// A group's faces, read from the model.
+fun groupFaces(model: AppModel, c: sh.rubric.baud.core.Conversation): List<Face> =
+    gather(c.members.filter { it != model.me.user }.map { u -> Face(model.name(u), model.contacts.firstOrNull { it.user == u }?.avatar) })
+
+/// A group's face: the people in it, two or three of their faces gathered in one circle, each
+/// later one cut a ring out of the one under it (photos first), so a group never looks like a
+/// person and you can see who's in it at a glance.
+@Composable
+fun GroupFace(c: sh.rubric.baud.core.Conversation, size: Dp) {
+    val model = LocalModel.current
+    GroupFace(groupFaces(model, c), model.title(c), size)
+}
+
+@Composable
+fun GroupFace(faces: List<Face>, title: String, size: Dp, modifier: Modifier = Modifier) {
+    val gap = maxOf(1.5f, size.value / 24f).dp
+    // Where each face sits, from the middle, as a share of the whole.
+    val (d, spots) = when (faces.size) {
+        2 -> (size.value * 0.62f).roundToInt().dp.let { d -> d to ((size - d) / 2 / size).let { o -> listOf(-o to -o, o to o) } }
+        else -> (size.value * 0.56f).roundToInt().dp to listOf(-0.22f to 0.17f, 0.22f to 0.17f, 0f to -0.22f)
+    }
+    Box(
+        modifier.size(size).graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen).clearAndSetSemantics { contentDescription = title },
+        contentAlignment = Alignment.Center,
+    ) {
+        when (faces.size) {
+            0 -> Avatar(title, null, size)
+            1 -> Avatar(faces[0].name, faces[0].hash, size)
+            else -> faces.take(3).forEachIndexed { i, f ->
+                val (x, y) = spots[i]
+                if (i > 0) Canvas(Modifier.offset(size * x, size * y).size(d + gap * 2)) { drawCircle(Color.Black, blendMode = BlendMode.Clear) }
+                Avatar(f.name, f.hash, d, modifier = Modifier.offset(size * x, size * y))
+            }
+        }
+    }
+}
+
+/// Ticked or not, at the end of a row you pick: a ring, or a solid disc with the tick knocked out.
+@Composable
+fun TickCircle(on: Boolean, size: Dp = 22.dp) {
+    val t = LocalTones.current
+    Canvas(Modifier.size(size).graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)) {
+        val r = this.size.minDimension / 2
+        if (on) {
+            drawCircle(t.strong, r)
+            val s = this.size.minDimension / 24f
+            val tick = androidx.compose.ui.graphics.Path().apply { moveTo(7.2f * s, 12.4f * s); lineTo(10.4f * s, 15.6f * s); lineTo(16.9f * s, 8.8f * s) }
+            drawPath(tick, Color.Black, style = Stroke(2.2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round), blendMode = BlendMode.Clear)
+        } else drawCircle(t.tertiary, r - 0.8.dp.toPx(), style = Stroke(1.6.dp.toPx()))
+    }
+}
+
+/// A finger scrolling a list puts the keyboard away (`downOnly`: only a pull toward the bottom, as
+/// Messages does with a chat), and whatever had the cursor lets it go.
+@Composable
+fun rememberKeyboardTuck(downOnly: Boolean = false): NestedScrollConnection {
+    val keyboard = LocalSoftwareKeyboardController.current
+    val focus = LocalFocusManager.current
+    return remember(keyboard, focus, downOnly) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (source == NestedScrollSource.UserInput && (if (downOnly) available.y > 1f else abs(available.y) > 1f)) {
+                    focus.clearFocus(); keyboard?.hide()
+                }
+                return Offset.Zero
+            }
+        }
     }
 }
 

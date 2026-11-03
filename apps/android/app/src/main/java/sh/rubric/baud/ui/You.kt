@@ -8,7 +8,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -67,27 +76,43 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import sh.rubric.baud.AppModel
-import sh.rubric.baud.core.Contact
 import sh.rubric.baud.core.Device
 import sh.rubric.baud.core.FakeCore
 import sh.rubric.baud.core.Peer
 import sh.rubric.baud.core.RustCore
+import sh.rubric.baud.core.UserId
 import sh.rubric.baud.core.sentence
 
+/// You, and a friend pushed over it full height with the way back (PersonPage.kt).
 @Composable
 fun You(close: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 40.dp).navigationBarsPadding(),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-    ) {
-        MeCard()
-        NotifyCard()
-        DevicesSection(close)
-        FriendsSection(close)
-        NetworkSection()
-        StayCard()
-        AppCard()
-        StartOver(close)
+    var person by remember { mutableStateOf<UserId?>(null) }
+    // Kept out here, so coming back from a friend finds the list where it was.
+    val scroll = rememberScrollState()
+    BackHandler(person != null) { person = null }
+    AnimatedContent(
+        targetState = person,
+        transitionSpec = {
+            val push = targetState != null
+            (slideInHorizontally(tween(260)) { w -> if (push) w else -w / 4 } + fadeIn(tween(200))) togetherWith
+                (slideOutHorizontally(tween(260)) { w -> if (push) -w / 4 else w } + fadeOut(tween(200)))
+        },
+        label = "you",
+    ) { p ->
+        if (p != null) Box(Modifier.fillMaxSize()) { PersonPage(p, null, back = { person = null }, close = close) }
+        else Column(
+            Modifier.fillMaxWidth().verticalScroll(scroll).padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 40.dp).navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            MeCard()
+            NotifyCard()
+            DevicesSection(close)
+            FriendsSection(close) { person = it }
+            NetworkSection()
+            StayCard()
+            AppCard()
+            StartOver(close)
+        }
     }
 }
 
@@ -240,56 +265,30 @@ private fun DeviceCard(d: Device, done: () -> Unit) {
     }
 }
 
+/// My friends: Add a friend first, then each of them, their presence, and the way in to who they
+/// are (PersonPage.kt).
 @Composable
-private fun FriendsSection(close: () -> Unit) {
-    val model = LocalModel.current
-    var open by remember { mutableStateOf<Contact?>(null) }
-    Card("Friends", pad = 0.dp) {
-        Column(Modifier.padding(vertical = 6.dp)) {
-            for (k in model.contacts) {
-                RowSurface({ open = k }, minHeight = 44.dp) {
-                    Avatar(k.name, k.avatar, 32.dp)
-                    WGap(10.dp)
-                    Text(k.name, style = Type.body, fontWeight = FontWeight.Medium, maxLines = 1)
-                    if (k.verified) { WGap(6.dp); MarkView(Mark.Verified, 14.dp, LocalTones.current.secondary) }
-                    Fill()
-                    StatusWord(k.online, presenceWord(k.devices).capitalizedFirst)
-                }
-            }
-            RowSurface({ close(); model.offer = AppModel.Offer.Friend }, minHeight = 44.dp) {
-                Glyph(Glyphs.plus, 18.dp); WGap(8.dp)
-                Text("Add", style = Type.body, fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { contentDescription = "Add a friend" })
-            }
-        }
-    }
-    open?.let { k -> BaudSheet({ open = null }) { FriendCard(model.contacts.firstOrNull { it.user == k.user } ?: k, close) { open = null } } }
-}
-
-/// A friend, opened: face, name, their devices, Message, and under it, on its own, Remove friend
-/// (red, asked first).
-@Composable
-private fun FriendCard(k: Contact, closeYou: () -> Unit, done: () -> Unit) {
+private fun FriendsSection(close: () -> Unit, open: (UserId) -> Unit) {
     val model = LocalModel.current
     val t = LocalTones.current
-    var confirm by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().padding(24.dp).navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Avatar(k.name, k.avatar, 72.dp)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(k.name, style = Type.title)
-            WGap(6.dp)
-            MarkView(if (k.verified) Mark.Verified else if (k.vouched) Mark.Vouched else Mark.Unverified, 16.dp, if (k.verified) t.text else t.secondary)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            for (d in k.devices) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                DeviceGlyph(DeviceShape.of(d), 40.dp, lit = d.online)
-                StatusWord(d.online, d.word.capitalizedFirst)
+    Card("Friends", pad = 0.dp) {
+        Column(Modifier.padding(vertical = 6.dp)) {
+            ActionRow(Glyphs.plus, "Add a friend") { close(); model.offer = AppModel.Offer.Friend }
+            for (k in model.contacts) {
+                RowSurface({ open(k.user) }, minHeight = Metrics.chatRow) {
+                    Avatar(k.name, k.avatar, Metrics.face, presence = Mark.presence(k.devices))
+                    WGap(10.dp)
+                    Text(k.name, style = Type.body, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    if (k.verified) { WGap(6.dp); MarkView(Mark.Verified, 14.dp, t.secondary) }
+                    Fill()
+                    WGap(8.dp)
+                    StatusWord(k.online, presenceWord(k.devices).capitalizedFirst)
+                    WGap(8.dp)
+                    Glyph(Glyphs.chevronRight, 13.dp, t.tertiary)
+                }
             }
         }
-        Quiet("Message", { done(); closeYou(); model.message(k.user) }, strong = true)
-        Gap(10.dp)
-        DangerRow("Remove friend", { confirm = true }, centred = true)
     }
-    if (confirm) Confirm("Remove ${k.name}?", "You'll stop being friends, and your chat with ${k.name} leaves your list.", "Remove", { confirm = false }) { model.unfriend(k.user); done() }
 }
 
 /// The network, honestly: this phone's state in its words, and each device it reaches right now.
