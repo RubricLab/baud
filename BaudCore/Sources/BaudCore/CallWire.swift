@@ -456,6 +456,8 @@ public struct JitterBuffer: Sendable {
 	public init(target: Int = 3, low: Int = 2, high: Int = 12) { self.target = target; self.low = low; self.high = high }
 
 	public var depth: Int { frames.count }
+	/// The sequence number the next `pull` plays (or conceals), once playout has begun.
+	public var upcoming: UInt32? { next }
 
 	/// A packet, and when it came (seconds, any clock that only goes forward).
 	public mutating func put(_ p: AudioPacket, at t: Double) {

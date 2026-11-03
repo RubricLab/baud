@@ -109,6 +109,9 @@ final class CallMedia: @unchecked Sendable {
 	func add(_ link: CallRoute, onFrame: (@Sendable (CMSampleBuffer) -> Void)?) {
 		let decoder = video.map { _ in VideoDecoder() }
 		decoder?.onFrame = onFrame
+		// Their picture waits for their voice: lips and words together.
+		let device = link.device
+		decoder?.audioLag = { [weak self] in self?.audio.lag(device) }
 		let direct = link.relay == nil && link.via == nil
 		let start = direct ? 1_500_000 : 600_000
 		let lane = Pacer.Lane(link: link, control: nil, rate: Double(start))
@@ -218,7 +221,7 @@ final class CallMedia: @unchecked Sendable {
 
 	// MARK: in
 
-	private func datagram(_ d: Data, from peer: Peer) {
+	private func datagram(_ d: Data, from peer: Peer, sent: UInt32? = nil) {
 		guard let kind = d.first.flatMap(MediaKind.init) else { return }
 		switch kind {
 		case .relay:
@@ -239,11 +242,11 @@ final class CallMedia: @unchecked Sendable {
 				peer.arrivals.add(s, at: at)
 				if let o { peer.transit.append(Double(since(at, s.sent &- UInt32(truncatingIfNeeded: o))) / 1000); if peer.transit.count > 400 { peer.transit.removeFirst(200) } }
 			}
-			datagram(s.inner, from: peer)
+			datagram(s.inner, from: peer, sent: s.sent)
 		case .feedback:
 			if let f = Feedback(d) { feedback(f, from: peer) }
 		case .padding: break
-		case .audio: if let p = AudioPacket(d) { audio.receive(p, from: peer.link.device) }
+		case .audio: if let p = AudioPacket(d) { audio.receive(p, from: peer.link.device, sent: sent) }
 		case .video, .coded:
 			guard let f = VideoFragment(d) else { return }
 			let (frames, needKey, lostMore) = lock.withLock { () -> ([VideoReassembler.Frame], Bool, Bool) in
@@ -374,7 +377,7 @@ final class CallMedia: @unchecked Sendable {
 				let enc = video?.encodeLatency.sorted() ?? []
 				v2 = String(format: " · rate %d kbps (delivered %d) queue %.0f ms lost %.1f%%%@", Int(c.0 / 1000), Int(c.3 / 1000), c.1, c.2 * 100,
 					transitLine(peer) +
-					(b.map { String(format: " · from their capture: whole %.0f/%.0f, decoded %.0f/%.0f, shown %.0f/%.0f ms · my encode %.0f, paced %.0f ms", $0.whole.0, $0.whole.1, $0.decoded.0, $0.decoded.1, $0.shown.0, $0.shown.1, enc.isEmpty ? .nan : enc[enc.count / 2], pacer.stats.first { $0.device == d }?.wait ?? .nan) } ?? ""))
+					(b.map { String(format: " · from their capture: whole %.0f/%.0f, decoded %.0f/%.0f, shown %.0f/%.0f ms (waited %.0f for their voice) · my encode %.0f, paced %.0f ms", $0.whole.0, $0.whole.1, $0.decoded.0, $0.decoded.1, $0.shown.0, $0.shown.1, peer.decoder?.syncWait ?? 0, enc.isEmpty ? .nan : enc[enc.count / 2], pacer.stats.first { $0.device == d }?.wait ?? .nan) } ?? ""))
 			}
 			lines.append(String(format: "%@%@ rtt %@ · audio in %d/%d lost %.1f%% rescued %d concealed %d · video out %d fps fec 1/%d%@ · in %.0f fps lost %.1f%% rebuilt %d decoded %d%@",
 				String(d.prefix(8)), peer.link.via.map { " via \($0.prefix(8))" } ?? "", peer.link.rtt.map(String.init) ?? "-", a.received, a.expected, m.audioLoss * 100, a.rescued, a.concealed,

@@ -114,19 +114,34 @@ struct CallScreen: View {
 
 	// MARK: pieces
 
-	/// The top row: the call made small, and over a picture, who and how it's going.
+	/// The call's clock, unless the system already shows it: on the iPhone a CallKit call has its
+	/// own in the Dynamic Island (or the status bar), and a second one under it is noise.
+	private var clock: Bool {
+		#if os(iOS)
+		return !session.callKit
+		#else
+		return true
+		#endif
+	}
+
+	/// The top row: the call made small, and over a picture, who it is, in plain words on a soft
+	/// shade (no capsule: one island at the top of a phone is the system's), with how it's going
+	/// only when that's worth a word.
 	private var top: some View {
-		let ink = Tones.make(hex: model.accentHex, dark: true)
-		return ZStack(alignment: .top) {
+		ZStack(alignment: .top) {
 			if theirVideo || grid || mineFull && session.phase == .live {
+				LinearGradient(colors: [.black.opacity(0.55), .black.opacity(0.25), .clear], startPoint: .top, endPoint: .bottom)
+					.frame(height: 170).padding(.top, -80).allowsHitTesting(false)
 				VStack(spacing: 2) {
-					Text(session.name).font(.system(size: 16, weight: .bold)).lineLimit(1)
-					StatusLine(session: session).font(.system(size: 12, weight: .medium)).monospacedDigit().lineLimit(1)
+					Text(session.name).font(.system(size: 17, weight: .semibold)).lineLimit(1)
+					if clock || StatusLine.notable(session) {
+						StatusLine(session: session, clock: clock).font(.system(size: 13, weight: .medium)).monospacedDigit().lineLimit(1).opacity(0.8)
+					}
 				}
-				.foregroundStyle(ink.text)
-				.padding(.horizontal, 16).padding(.vertical, 8)
-				.background(Capsule().fill(ink.raised))
+				.foregroundStyle(.white)
+				.shadow(color: .black.opacity(0.3), radius: 6, y: 1)
 				.padding(.horizontal, 64)
+				.padding(.top, 6)
 			}
 			if !session.phase.over, session.phase != .incoming {
 				HStack {
@@ -544,6 +559,11 @@ private struct Tile: View {
 struct StatusLine: View {
 	let session: CallCenter.Session
 	var short = false
+	/// The call's running time (off where the system shows its own).
+	var clock = true
+	/// The path is worth a word on screen: through someone's device, the microphone off, a group's
+	/// count. A plain direct path isn't (that's how a call should be).
+	static func notable(_ s: CallCenter.Session) -> Bool { s.phase != .live || !(s.path.isEmpty || s.path.hasPrefix("Direct")) }
 	var body: some View {
 		SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { ctx in Text(words(at: ctx.date)) }
 	}
@@ -556,8 +576,9 @@ struct StatusLine: View {
 		case .ended(let why): return why
 		case .live:
 			let s = Int(now.timeIntervalSince(session.startedAt ?? now))
-			let clock = s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) : String(format: "%d:%02d", s / 60, s % 60)
-			return short || session.path.isEmpty ? clock : "\(clock) · \(session.path)"
+			let time = s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) : String(format: "%d:%02d", s / 60, s % 60)
+			let note = short || !Self.notable(session) ? nil : session.path
+			return [clock ? time : nil, note].compactMap { $0 }.joined(separator: " · ")
 		}
 	}
 }

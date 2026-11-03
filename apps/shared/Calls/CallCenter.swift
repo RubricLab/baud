@@ -735,9 +735,16 @@ final class CallCenter {
 		let me = model?.me.thisDevice ?? ""
 		let local = Renderer(s.local.sampleBufferRenderer)
 		let t0 = Date()
+		#if os(iOS)
+		// The engine starting again can drop the sound back on the earpiece: put it where it was.
+		let restarted: @Sendable () -> Void = { Task { @MainActor [weak self] in self?.routes.keep() } }
+		#else
+		let restarted: @Sendable () -> Void = {}
+		#endif
 		let made = await Task.detached(priority: .userInitiated) { () -> Result<CallMedia, Error> in
 			do {
 				let m = try CallMedia(video: video, test: test, me: me)
+				m.audio.onRestart = restarted
 				m.video?.onLocal = { local.r.enqueue($0) }
 				// Off before it starts, so a call answered without video never lights the camera.
 				if !camera { m.video?.setCamera(false) }

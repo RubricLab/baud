@@ -2,7 +2,10 @@
 /// wired headphones). With only the iPhone itself, the call's middle button is a speaker switch;
 /// with a headset around, it shows where the sound is now and opens a list to move it, the way
 /// Signal and FaceTime do. Off the speaker, the call goes back to wherever the system routes it
-/// (the headset if one is on, else the earpiece).
+/// (the headset if one is on, else the earpiece). Where the person put it stays put: the system
+/// moves the sound on its own now and then (the call's audio starting again can drop it back on
+/// the earpiece), and it's put back; a headset arriving or leaving, or the lock screen's own
+/// speaker button, is a new choice and is followed.
 #if os(iOS)
 import AVFoundation
 import Observation
@@ -39,13 +42,59 @@ final class AudioRoutes {
 	var onSpeaker: Bool { current?.kind == .speaker }
 	/// Told when the route moves, by the person or the system (the proximity sensor follows it).
 	@ObservationIgnored var onChange: (() -> Void)?
+	/// A video call: the speaker when there's nothing better (no headset), as FaceTime does.
+	@ObservationIgnored var preferSpeaker = false
 	@ObservationIgnored private var observer: NSObjectProtocol?
+	/// Where the person (or the call's start) put the sound, by route id, and when.
+	@ObservationIgnored private var chosen: String?
+	@ObservationIgnored private var chosenAt = Date.distantPast
+	@ObservationIgnored private var restored: [Date] = []
 
 	init() {
-		observer = NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] _ in
-			MainActor.assumeIsolated { self?.refresh() }
+		observer = NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] n in
+			let why = (n.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt).flatMap(AVAudioSession.RouteChangeReason.init)
+			MainActor.assumeIsolated { self?.moved(why) }
 		}
 		refresh()
+	}
+
+	/// A new call: nothing chosen yet.
+	func reset() { chosen = nil; restored = []; preferSpeaker = false }
+
+	private func moved(_ why: AVAudioSession.RouteChangeReason?) {
+		refresh()
+		switch why {
+		case .newDeviceAvailable?:
+			// AirPods in, a headset plugged in: the sound follows it.
+			chosen = nil
+		case .oldDeviceUnavailable?:
+			chosen = nil
+			if preferSpeaker, current?.kind == .phone { useSpeaker() }
+		case .override?:
+			// Mine land here too, a moment after; anyone else's (the lock screen's) is the choice now.
+			if Date().timeIntervalSince(chosenAt) > 1 { chosen = current?.id }
+		default:
+			keep()
+		}
+	}
+
+	/// Put the sound back where it was chosen, if the system moved it: three times in three seconds
+	/// at most, so a route that won't hold isn't fought forever.
+	func keep() {
+		refresh()
+		guard let want = chosen, let now = current, now.id != want, let r = available.first(where: { $0.id == want }) else { return }
+		let t = Date()
+		restored = restored.filter { t.timeIntervalSince($0) < 3 }
+		guard restored.count < 3 else { return }
+		restored.append(t)
+		callLog("audio: the sound moved on its own; back to \(r.kind == .bluetooth ? "the headset" : r.name)")
+		apply(r)
+	}
+
+	/// The speaker, as a choice (a video call starting on the iPhone alone).
+	func useSpeaker() {
+		refresh()
+		if let r = available.first(where: { $0.kind == .speaker }) { choose(r) }
 	}
 
 	/// The sound plays through the iPhone's earpiece right now: nothing else is plugged in or paired.
@@ -92,6 +141,11 @@ final class AudioRoutes {
 	/// Move the sound there. The speaker is an override; anything else is the microphone chosen,
 	/// which takes the sound with it.
 	func choose(_ r: Route) {
+		chosen = r.id; chosenAt = Date()
+		apply(r)
+	}
+
+	private func apply(_ r: Route) {
 		let session = AVAudioSession.sharedInstance()
 		do {
 			if r.kind == .speaker {

@@ -5,7 +5,10 @@
 /// so timing and loss stay honest. The system stops an audio engine, without a word, whenever
 /// the devices under it change (voice processing coming on, the speaker button, AirPods, another
 /// call): a watchdog sees it within a quarter second, by the engine or by the sound no longer
-/// moving, and builds it again at once. Every second of that is a second of a call nobody hears.
+/// moving, and starts the same engine again (its echo cancelling and its route kept), building a
+/// new one only when the microphone itself changed. Every second of that is a second of a call
+/// nobody hears; and a call without echo cancelling is one where the other side hears themselves,
+/// so on the iPhone it's never given up for restarts, only when it won't start at all.
 /// `test` swaps the microphone for a synthetic voice and the speaker for a meter: a call can be
 /// proven with neither, and without asking for either. With `BAUD_CALL_SPEAKER=silent` the real
 /// speaker stays, at zero volume: playout proven on real hardware, still with no microphone.
@@ -42,6 +45,14 @@ final class AudioPipe: @unchecked Sendable {
 	/// The iPhone's audio is someone else's for now (a phone call): no healing until it's back.
 	private var interrupted = false
 	private var heals: [Date] = []
+	/// The microphone's format the tap was made for: a restart in place needs the same one.
+	private var builtFor: (rate: Double, channels: AVAudioChannelCount)?
+	/// Seconds from the mix to the ear (the output's own latency), for lip sync.
+	private var outLatency = 0.0
+	/// Plain capture on the iPhone: tries to get voice processing back, the last one when.
+	private var plainTries = (count: 0, at: Date.distantPast)
+	/// Told after the engine starts again, in place or new (the route may need putting back).
+	var onRestart: (@Sendable () -> Void)?
 	private var seen = (renders: 0, captures: 0)
 	/// Quarter seconds in a row the speaker (or the microphone) didn't come by.
 	private var stalls = (renders: 0, captures: 0)
@@ -62,6 +73,13 @@ final class AudioPipe: @unchecked Sendable {
 		var last = [Float](repeating: 0, count: AudioPipe.samples)
 		var concealRun = 0
 		var level: Float = 0
+		/// Their send stamp for each frame waiting (by sequence), and how far behind their clock my
+		/// ear is (µs, raw: my clock less theirs, the offset included, so only a difference of two
+		/// such means anything). Video waits to match it.
+		var stamps: [UInt32: UInt32] = [:]
+		var lagBase: UInt32?
+		var lags: [Int32] = []
+		var lagAt = 0.0
 		/// When it joined, and whether a word of theirs has played yet (for the record: how soon a
 		/// call is heard).
 		let added = Date()
@@ -76,6 +94,9 @@ final class AudioPipe: @unchecked Sendable {
 	/// For the watchdog: the speaker's callbacks and the microphone's buffers, ever. For the stats:
 	/// how loud each was since the last `health`, and how the engine stood when last looked at.
 	private var renders = 0, captures = 0
+	/// The most the speaker has asked for at once (the queue keeps twice that ahead), and the times
+	/// it asked mid-word and the queue came up short: a click or a gap in their voice.
+	private var biggestAsk = 0, gaps = 0, wasPlaying = false
 	private var outSq = 0.0, outN = 0, micSq = 0.0, micN = 0
 	private var shown = (mode: Mode.voice, running: true)
 	private var lastHealth = (renders: 0, captures: 0, at: Date())
@@ -169,6 +190,8 @@ final class AudioPipe: @unchecked Sendable {
 				}
 				let e = made!
 				engine = e; mode = m; startedAt = Date()
+				if m != .playout { let f = e.inputNode.outputFormat(forBus: 0); builtFor = (f.sampleRate, f.channelCount) } else { builtFor = nil }
+				outLatency = e.outputNode.presentationLatency
 				lock.withLockUnchecked { shown = (m, true) }
 				let id = ObjectIdentifier(e)
 				changes = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: e, queue: nil) { [weak self] _ in
@@ -202,6 +225,9 @@ final class AudioPipe: @unchecked Sendable {
 			let input = e.inputNode
 			if m == .voice {
 				try input.setVoiceProcessingEnabled(true)
+				// Its gain control on, so a voice at arm's length reaches them as loud as one at the ear.
+				input.isVoiceProcessingAGCEnabled = true
+				input.isVoiceProcessingBypassed = false
 				// Music or a video playing alongside the call is lowered as little as possible.
 				input.voiceProcessingOtherAudioDuckingConfiguration = .init(enableAdvancedDucking: true, duckingLevel: .min)
 			}
@@ -253,8 +279,15 @@ final class AudioPipe: @unchecked Sendable {
 		if !running { heal("the engine stopped"); return }
 		// A new engine takes a moment to get going.
 		guard Date().timeIntervalSince(startedAt) > 0.8 else { return }
-		if stalls.renders >= 2 { heal("the speaker stopped asking for sound") }
-		else if mode != .playout, stalls.captures >= 2 { heal("the microphone stopped") }
+		if stalls.renders >= 3 { heal("the speaker stopped asking for sound", rebuild: true); return }
+		if mode != .playout, stalls.captures >= 3 { heal("the microphone stopped", rebuild: true); return }
+		#if os(iOS)
+		// Echo cancelling is worth a hiccup: plain capture tries for it again at 3, 10 and 30 seconds.
+		if mode == .plain, plainTries.count < 3, Date().timeIntervalSince(plainTries.at) > [3.0, 10, 30][plainTries.count] {
+			plainTries = (plainTries.count + 1, Date())
+			heal("trying for echo cancelling again", modes: [.voice, .plain])
+		}
+		#endif
 	}
 
 	/// The devices under the engine changed. The system stops it when their formats did; when it
@@ -264,19 +297,44 @@ final class AudioPipe: @unchecked Sendable {
 		else { heal("the devices changed") }
 	}
 
-	/// A new engine, the same way as before (voice processing may still give way to plain capture);
-	/// no more often than twice a second, and a way that broke five times in a minute gives way
-	/// to the next.
-	private func heal(_ why: String, modes: [Mode]? = nil, now force: Bool = false) {
+	/// The engine going again: the same one when it only stopped and the microphone is as it was
+	/// (cheap, and the system's echo cancelling and route stay put), else a new one the same way as
+	/// before. No more often than twice a second. On the Mac, voice processing that broke five
+	/// times in a minute gives way to plain capture (some device pairs never settle); on the iPhone
+	/// it never does, since without it the other side hears themselves and my voice goes quiet.
+	private func heal(_ why: String, modes: [Mode]? = nil, now force: Bool = false, rebuild: Bool = false) {
 		guard wanted else { return }
 		let now = Date()
 		if !force, let last = heals.last, now.timeIntervalSince(last) < 0.5 { return }
 		stalls = (0, 0)
 		heals = heals.filter { now.timeIntervalSince($0) < 60 } + [now]
+		if modes == nil, !rebuild, let e = engine, again(e) {
+			callLog("audio: \(why); going again in place · \(describe(e, mode))")
+			onRestart?()
+			return
+		}
+		#if os(macOS)
 		var ways = modes ?? (mode == .voice ? [.voice, .plain] : [mode])
 		if modes == nil, heals.count >= 5, mode == .voice { ways = [.plain]; heals = [] }
+		#else
+		let ways = modes ?? (mode == .playout ? [.playout] : [.voice, .plain])
+		#endif
 		callLog("audio: \(why); starting again")
 		do { try open(ways) } catch { callLog("audio: couldn't start again: \(error)") }
+		onRestart?()
+	}
+
+	/// The stopped engine started as it is, when the microphone hasn't changed under its tap.
+	private func again(_ e: AVAudioEngine) -> Bool {
+		guard !e.isRunning else { return false }
+		if mode != .playout {
+			let f = e.inputNode.outputFormat(forBus: 0)
+			guard let b = builtFor, f.sampleRate == b.rate, f.channelCount == b.channels, f.channelCount > 0 else { return false }
+		}
+		e.prepare()
+		do { try e.start() } catch { return false }
+		startedAt = Date()
+		return true
 	}
 
 	#if os(iOS)
@@ -356,15 +414,15 @@ final class AudioPipe: @unchecked Sendable {
 	/// microphone and the speaker came by, and how loud each was.
 	func health() -> String {
 		if test && !Self.silentSpeaker { return "synthetic audio" }
-		let (r, c, out, mic, s) = lock.withLockUnchecked { () -> (Int, Int, Double, Double, (mode: Mode, running: Bool)) in
-			defer { outSq = 0; outN = 0; micSq = 0; micN = 0 }
-			return (renders, captures, outN == 0 ? 0 : outSq / Double(outN), micN == 0 ? 0 : micSq / Double(micN), shown)
+		let (r, c, out, mic, s, g) = lock.withLockUnchecked { () -> (Int, Int, Double, Double, (mode: Mode, running: Bool), Int) in
+			defer { outSq = 0; outN = 0; micSq = 0; micN = 0; gaps = 0 }
+			return (renders, captures, outN == 0 ? 0 : outSq / Double(outN), micN == 0 ? 0 : micSq / Double(micN), shown, gaps)
 		}
 		let dt = max(0.001, Date().timeIntervalSince(lastHealth.at))
 		defer { lastHealth = (r, c, Date()) }
 		func db(_ meanSquare: Double) -> String { meanSquare < 1e-10 ? "silent" : "\(Int((10 * log10(meanSquare)).rounded())) dB" }
 		let listening = s.mode == .playout ? "no microphone" : String(format: "mic %.0f/s %@", Double(c - lastHealth.captures) / dt, db(mic))
-		return String(format: "%@ · %@ · speaker %.0f/s %@%@", s.mode.rawValue, listening, Double(r - lastHealth.renders) / dt, db(out), s.running ? "" : " · stopped")
+		return String(format: "%@ · %@ · speaker %.0f/s %@%@%@", s.mode.rawValue, listening, Double(r - lastHealth.renders) / dt, db(out), g > 0 ? " · \(g) gaps" : "", s.running ? "" : " · stopped")
 	}
 
 	// MARK: out
@@ -418,14 +476,33 @@ final class AudioPipe: @unchecked Sendable {
 
 	// MARK: in
 
-	func receive(_ p: AudioPacket, from id: String) {
+	/// A packet from one of them; `sent` is their stamp on it as it left (media 2), for lip sync.
+	func receive(_ p: AudioPacket, from id: String, sent: UInt32? = nil) {
 		let at = seconds()
-		lock.withLockUnchecked { remotes[id]?.jitter.put(p, at: at) }
+		lock.withLockUnchecked {
+			guard let r = remotes[id] else { return }
+			r.jitter.put(p, at: at)
+			if let sent {
+				r.stamps[p.seq] = sent
+				if r.stamps.count > 300 { r.stamps = r.stamps.filter { p.seq &- $0.key < 150 } }
+			}
+		}
 	}
 
-	/// Keep 30 ms mixed ahead of the speaker.
+	/// How far behind their clock my ear is for this one (raw µs, see `Remote.lags`): the median
+	/// of the last second or so, while they're being heard.
+	func lag(_ id: String) -> UInt32? {
+		lock.withLockUnchecked {
+			guard let r = remotes[id], let base = r.lagBase, !r.lags.isEmpty, seconds() - r.lagAt < 1 else { return nil }
+			let sorted = r.lags.sorted()
+			return base &+ UInt32(bitPattern: sorted[sorted.count / 2])
+		}
+	}
+
+	/// Keep 30 ms mixed ahead of the speaker, or twice its biggest ask if that's more (some routes
+	/// ask for 20 ms at a time, and a timer a few ms late would leave it short).
 	private func refill() {
-		while lock.withLockUnchecked({ fifo.count }) < Self.samples * 3 / 2 {
+		while lock.withLockUnchecked({ fifo.count < max(Self.samples * 3 / 2, biggestAsk * 2) }) {
 			guard let frame = mix() else { break }
 			if test { meter(frame) }
 			lock.withLockUnchecked { fifo += frame }
@@ -453,7 +530,22 @@ final class AudioPipe: @unchecked Sendable {
 
 	/// One remote's next 20 ms: decoded, concealed (the last frame, fading), or nothing yet.
 	private func next(_ r: Remote) -> [Float]? {
-		let pull = lock.withLockUnchecked { r.jitter.pull() }
+		let (pull, seq, ahead) = lock.withLockUnchecked { () -> (JitterBuffer.Pull, UInt32?, Int) in
+			let seq = r.jitter.upcoming
+			return (r.jitter.pull(), seq, fifo.count)
+		}
+		if case .frame = pull, let seq {
+			// When this frame reaches the ear: what's queued ahead of it, then the output's latency.
+			let ear = micros() &+ UInt32(Double(ahead) / 48 * 1000 + outLatency * 1e6)
+			lock.withLockUnchecked {
+				guard let sent = r.stamps.removeValue(forKey: seq) else { return }
+				let raw = ear &- sent
+				if r.lagBase == nil { r.lagBase = raw }
+				r.lags.append(Int32(bitPattern: raw &- r.lagBase!))
+				if r.lags.count > 50 { r.lags.removeFirst(r.lags.count - 50) }
+				r.lagAt = seconds()
+			}
+		}
 		switch pull {
 		case .idle:
 			r.level *= 0.8
@@ -492,7 +584,10 @@ final class AudioPipe: @unchecked Sendable {
 		guard let out = list.first?.mData?.assumingMemoryBound(to: Float.self) else { return noErr }
 		lock.withLockUnchecked {
 			renders += 1
+			if frames > biggestAsk { biggestAsk = frames }
 			let n = min(frames, fifo.count)
+			if n < frames, wasPlaying { gaps += 1 }
+			wasPlaying = n == frames
 			if n > 0 {
 				fifo.withUnsafeBufferPointer { out.update(from: $0.baseAddress!, count: n) }
 				fifo.removeFirst(n)

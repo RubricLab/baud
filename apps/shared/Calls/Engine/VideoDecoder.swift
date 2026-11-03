@@ -3,7 +3,9 @@
 /// delay from there to decoded wobbles with the path, so each picture waits until the capture time
 /// plus the 80th percentile of the last two seconds' delays, but never more than 15 ms past when it
 /// was ready: the camera's cadence back, for the small wobble; a big one shows late rather than
-/// holding every frame for it. From the
+/// holding every frame for it. Then lips and words: their voice reaches my ear later than their
+/// picture reaches the screen (its jitter buffer, the mix, the speaker), so a picture also waits,
+/// up to 400 ms, until the sound captured with it plays. From the
 /// same stamps, and the offset between the two clocks (the rate control's), the latency from
 /// capture to shown. For media 2 it keeps where decoding stands for the feedback: the newest frame
 /// decoded, where its unbroken run began, and whether it needs a refresh (a frame was lost) or a
@@ -21,6 +23,14 @@ final class VideoDecoder: @unchecked Sendable {
 	var onNeedKey: (@Sendable () -> Void)?
 	/// Media 2: what it wants changed (say so now, not at the next feedback).
 	var onWant: (@Sendable () -> Void)?
+	/// How far behind their clock my ear is for their voice (raw µs, AudioPipe.lag), for lip sync.
+	var audioLag: (@Sendable () -> UInt32?)?
+	/// How long pictures waited for their sound (ms), the last few seconds.
+	var syncWait: Double { lock.withLock { waits.isEmpty ? 0 : waits.sorted()[waits.count / 2] } }
+	private var waits: [Double] = []
+	/// Their voice leaves this long after it was heard (the microphone's buffer, a 20 ms frame,
+	/// encoding); their picture's stamp is the moment of capture.
+	static let voiceHead: Int32 = 30_000
 	/// Their clock minus mine (µs), when known.
 	var offset: Int64? { get { lock.withLock { _offset } } set { lock.withLock { _offset = newValue } } }
 
@@ -127,6 +137,12 @@ final class VideoDecoder: @unchecked Sendable {
 		let now = seconds()
 		guard let capture else { display(image, capture: nil); return }
 		let raw = since(micros(), capture)
+		// The wait that puts this picture on screen as its sound reaches the ear.
+		var sync = 0.0
+		if let ear = audioLag?() {
+			let ahead = Int32(bitPattern: ear &- (micros() &- capture)) &+ Self.voiceHead
+			sync = min(0.4, max(0, Double(ahead) / 1e6))
+		}
 		let wait: Double = lock.withLock {
 			if origin == nil { origin = raw }
 			let d = raw - origin!
@@ -135,8 +151,9 @@ final class VideoDecoder: @unchecked Sendable {
 			let sorted = delays.map(\.d).sorted()
 			let p80 = sorted[min(sorted.count - 1, sorted.count * 80 / 100)]
 			// In order, and never more than 15 ms on top of when it was ready.
-			let at = max(now + min(0.015, max(0, Double(p80 - d) / 1e6)), lastShow + 0.0001)
+			let at = max(now + max(sync, min(0.015, max(0, Double(p80 - d) / 1e6))), lastShow + 0.0001)
 			lastShow = at
+			waits.append(sync * 1000); if waits.count > 90 { waits.removeFirst(waits.count - 90) }
 			return at - now
 		}
 		if wait < 0.001 { display(image, capture: capture) }

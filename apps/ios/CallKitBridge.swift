@@ -52,8 +52,10 @@ final class CallKitBridge: NSObject, CXProviderDelegate {
 	/// The call's first route: a video call on the speaker, unless a headset is on (AirPods stay
 	/// AirPods); a voice call wherever the system put it (the earpiece, or the headset).
 	private func startRoute(_ s: CallCenter.Session) {
-		if s.video, AudioRoutes.onReceiver { try? AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker) }
-		center?.routes.refresh()
+		guard let routes = center?.routes else { return }
+		routes.reset()
+		routes.preferSpeaker = s.video
+		if s.video, AudioRoutes.onReceiver { routes.useSpeaker() } else { routes.refresh() }
 	}
 
 	func incoming(_ s: CallCenter.Session) {
