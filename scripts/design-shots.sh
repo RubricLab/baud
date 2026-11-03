@@ -21,6 +21,15 @@ SIM_NAME=${SIM_NAME:-baud design}
 ID=sh.rubric.baud.mac.design
 TMP=$ROOT/build/design-audit/tmp; mkdir -p "$TMP"
 
+# A simctl call that sometimes hangs (privacy), given `t` seconds and then left behind.
+timed() {
+  local t=$1; shift
+  "$@" >/dev/null 2>&1 & local p=$!
+  ( sleep "$t"; kill "$p" 2>/dev/null ) & local w=$!
+  wait "$p" 2>/dev/null; kill "$w" 2>/dev/null
+  return 0
+}
+
 mac_copy() {
   APP=$ROOT/build/design-audit/app/baud.app
   rm -rf "$APP"; mkdir -p "$(dirname "$APP")"
@@ -61,9 +70,9 @@ if [[ " $WHAT " == *" ios "* ]]; then
   xcrun simctl status_bar "$SIM" override --time 9:41 --batteryLevel 100 --batteryState charged --wifiBars 3 2>/dev/null
   xcrun simctl uninstall "$SIM" sh.rubric.baud.ios 2>/dev/null; xcrun simctl install "$SIM" "$IOS_BUILD"
   # No permission prompts over the pictures; a park for "here".
-  xcrun simctl privacy "$SIM" grant location sh.rubric.baud.ios 2>/dev/null
-  xcrun simctl privacy "$SIM" grant location-always sh.rubric.baud.ios 2>/dev/null
-  xcrun simctl location "$SIM" set 40.7812,-73.9665 2>/dev/null
+  timed 20 xcrun simctl privacy "$SIM" grant location sh.rubric.baud.ios
+  timed 20 xcrun simctl privacy "$SIM" grant location-always sh.rubric.baud.ios
+  timed 20 xcrun simctl location "$SIM" set 40.7812,-73.9665
   # One store for the whole run, made once (the demo takes a while the first time); live places
   # get a store of their own, since a share left on asks for the location at every launch.
   D=$(mktemp -d "$TMP/ios.XXXX"); P=$(mktemp -d "$TMP/places.XXXX")

@@ -437,21 +437,34 @@ On the iPhone, You gets a `SheetHeader` that says "You" with a Done button (**P1
 - **The shade behind the name over video stays.** It's the one gradient, on someone's picture,
   not on our ground (**C3**).
 
-## Words that change
+## Words and behaviour that change
 
-Android mirrors these words (`apps/android`), so each one is listed for the Android pass.
+Android mirrors these (`apps/android`), so each one is listed for the Android pass. This is
+the list as built.
 
 | Where | Was | Becomes | Android |
 | --- | --- | --- | --- |
-| The Mac's ring panel | Answer / Answer without video | Accept / Audio only | (its own call screen already says Accept) |
-| New group sheet | New group chat | New group | check `ui/` for the same sheet |
-| Mac palette | Add | New friend, plus Friends | Mac only |
-| A direct chat's details | People card with you and them | The person's sections (Call, Video, Safety number, Devices, Groups with) | `ChatInfo.kt`: the same change |
-| Member rows in a direct chat | admin | (nothing) | `ChatInfo.kt` |
-| You (iPhone) | (no title) | "You" and Done | `You.kt` has its own top bar: compare |
-| Chat list | (no leading swipe) | Read | `Chats.kt` |
-| Empty Mac pane | New friend / New group tiles | No chat open, then four actions with keys | Mac only |
-| New chat | Open chat (button) | (a click on the person opens it) | check |
+| A one-person chat's details | Hero, Disappearing messages, then People (you and them) | The person's page: Call and Video tiles (no Message: you're in the chat), Disappearing messages, Safety number, Devices, Groups with, Remove friend | `ui/ChatInfo.kt`: the same order, from `ui/PersonPage.kt`'s parts |
+| Member rows | "friend · online", "through Ana", "admin" in every chat | "Friend · online", "Through Ana" (capitalised, as everywhere); "admin" only in groups and channels; no device drawings | `ui/ChatInfo.kt` |
+| My chat with myself, details | Hero only | Hero, then a Devices card | `ui/ChatInfo.kt` |
+| Device rows (person page, You) | name … "··· ● Direct, 11 ms" | name over "Direct, 11 ms" (one phrase, no mark, no light) | `ui/PersonPage.kt`, `ui/You.kt` |
+| You, Devices | Tiles, and an Add tile | Rows: "Add a device", then each device; long press: Show, Remove… | `ui/You.kt` |
+| You, Friends | Rows with "● Online" and a light on the face | "Online" said once (the light on the face, the word under the name); long press: Message, Call, Video call, Remove friend… | `ui/You.kt` |
+| You, App | A card of its own | An "App" section: "baud 0.2.21" over its status, then Open at login (Mac) | `ui/You.kt` |
+| You (iPhone) | No title, a grabber | Header "You" with ✕ (✕, not Done: every sheet closes the same way) | `ui/You.kt`'s top bar |
+| Every sheet's top | Each its own | Title on the left, ✕ on the right, a hairline under | all sheets |
+| New chat | A list, pick one, "Open chat" | A list of friends; one tap opens the chat | the new-chat picker |
+| New group | "New group chat"; a boxed name field; a system list | "New group"; "Group name"; friends with ticks; "Create" at the foot | the new-group sheet |
+| Compose menu (iPhone) | New group, New friend | New chat, New group, New friend | `ui/Chats.kt`'s compose |
+| Chat list (iPhone) | Trailing swipe: Delete | Leading swipe on an unread chat: Read; trailing: Delete, as before | `ui/Chats.kt` |
+| Chats top row (iPhone) | Face, "··· Online", "Chats", compose | Face, "Chats" with "··· Online" under it, compose | `ui/Chats.kt` |
+| Conversation header (iPhone) | Back chevron, name, status | Back (a 44 pt circle), a gap, the face, name over status | `ui/Conversation.kt` |
+| Reactions (iPhone) | An add-a-reaction smiley after them | (none: double tap and long press do it) | `ui/TimelineView.kt` |
+| Location sheet | Map with a floating ✕; a spinner while it waits | Header "Location" with ✕; "Finding you…" (or "Couldn't find you") where the map will be | `ui/Location.kt` |
+| The Mac's ring panel | Answer / Answer without video | Accept / Audio only | (already the call screen's words) |
+| Mac palette | Add | New friend, and a separate Friends | Mac only |
+| Empty Mac pane | New friend / New group tiles | "No chat open" and four actions with their keys | Mac only |
+| Mac sidebar | Face, "Chats", compose; status at the foot | Compose by the traffic lights; you and your status at the foot | Mac only |
 
 ## The order of the work
 
