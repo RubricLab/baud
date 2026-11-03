@@ -45,16 +45,19 @@ class BaudApp : Application() {
         super.onCreate()
         app = this
         Notifier.channels(this)
+        // An update downloaded by a process that's gone: nothing is waiting on it now.
+        Updates.clean(this)
         scope.launch {
             val core = open()
             val m = AppModel(this@BaudApp, core)
             ready.value = m
             synchronized(waiting) { waiting.toList().also { waiting.clear() } }.forEach { it(m) }
             m.scene(ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
-            Updates.check(this@BaudApp)
         }
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
-            override fun onStart(owner: LifecycleOwner) { model?.scene(true) }
+            // In front (at launch, and back from elsewhere): updates are looked for here, never
+            // when only the background service is running.
+            override fun onStart(owner: LifecycleOwner) { model?.scene(true); Updates.foreground(this@BaudApp) }
             override fun onStop(owner: LifecycleOwner) { model?.scene(false) }
         })
         if (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) debugHooks()

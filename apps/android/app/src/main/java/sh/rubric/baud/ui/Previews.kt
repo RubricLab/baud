@@ -136,3 +136,15 @@ private fun GroupFacesPreview() = Shown {
         GroupFace(listOf(Face("Ana"), Face("Jo"), Face("Lee")), "hike", 72.dp)
     }
 }
+
+/// The update bar at the top of Chats: offered, coming down, ready.
+@Preview(name = "Update bar", widthDp = 390, heightDp = 260)
+@Composable
+private fun UpdateBarPreview() = Shown {
+    val r = sh.rubric.baud.Updates.Release("0.2.22", "https://example.invalid/baud.apk", "")
+    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        UpdateBarBody(r.version, sh.rubric.baud.Updates.State.Available(r)) {}
+        UpdateBarBody(r.version, sh.rubric.baud.Updates.State.Downloading(r, 0.4f)) {}
+        UpdateBarBody(r.version, sh.rubric.baud.Updates.State.Ready(r)) {}
+    }
+}

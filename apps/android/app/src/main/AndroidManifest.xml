@@ -15,6 +15,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- baud installs its own updates (Updates.kt): only after the press, only an APK whose hash the
+         signed release record names and that is signed with baud's release certificate. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
@@ -72,6 +75,11 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <!-- Android's answer to an update's install session. -->
+        <receiver
+            android:name=".Updates$Installed"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

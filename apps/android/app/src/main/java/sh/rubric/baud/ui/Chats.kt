@@ -74,6 +74,8 @@ fun Chats(open: (ConversationId) -> Unit, you: () -> Unit) {
                 Text("Chats", style = Type.heading, color = t.heading, modifier = Modifier.align(Alignment.Center))
             }
         }
+        // A newer baud, at the top, while one is waiting.
+        if (sh.rubric.baud.Updates.waiting != null) item("update") { UpdateBar(Modifier.padding(horizontal = Metrics.inset + 4.dp).padding(top = 8.dp)) }
         item("search") { SearchField(query, { query = it }, Modifier.padding(horizontal = Metrics.inset + Metrics.pad, vertical = 8.dp)) }
         if (query.trim().length >= 2) {
             items(model.core.search(query), key = { "hit-" + it.event.id }) { h ->

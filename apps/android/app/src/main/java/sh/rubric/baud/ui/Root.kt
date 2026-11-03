@@ -64,6 +64,8 @@ fun Root(model: AppModel) {
         }
         val ask = model.linkAsk
         if (ask != null && !model.adding) BaudSheet(onDismiss = { model.linkAsk = null }) { AskBody(ask) }
+        // The first update: Android's OK to install, asked for in one sentence.
+        AllowUpdates()
         model.error?.let { e ->
             AlertDialog(
                 onDismissRequest = { model.error = null },

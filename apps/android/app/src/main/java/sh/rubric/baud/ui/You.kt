@@ -76,6 +76,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import sh.rubric.baud.AppModel
+import sh.rubric.baud.Updates
 import sh.rubric.baud.core.Device
 import sh.rubric.baud.core.FakeCore
 import sh.rubric.baud.core.Peer
@@ -367,30 +368,34 @@ private fun StayCard() {
     }
 }
 
-/// baud itself: its version, whether a newer one is out (the feed is read when You opens), and
-/// Download when it is. The core underneath, in a quiet line.
+/// baud itself: its version, whether a newer one is out (the record is read again when You opens,
+/// unless it was just read), and the one button: Update, Updating…, Install, or Check. What went
+/// wrong, in a sentence. The core underneath, in a quiet line.
 @Composable
 private fun AppCard() {
     val model = LocalModel.current
     val t = LocalTones.current
     val context = LocalContext.current
-    val v = remember { sh.rubric.baud.Updates.current(context) }
+    val v = remember { Updates.current(context) }
     val core = remember { if (model.core is FakeCore) "Preview core" else runCatching { RustCore.version() }.getOrDefault("baud-core") }
-    LaunchedEffect(Unit) { sh.rubric.baud.Updates.check(context) }
-    val state = sh.rubric.baud.Updates.state
+    LaunchedEffect(Unit) { Updates.check(context, quiet = true) }
+    val state = Updates.state
     Card(null) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BaudTile()
             WGap(12.dp)
             Column(Modifier.weight(1f)) {
                 Text("baud $v", style = Type.body, fontWeight = FontWeight.SemiBold)
-                val word = sh.rubric.baud.Updates.word(::clock)
-                if (word.isNotEmpty()) Text(word, style = Type.small, color = t.secondary, maxLines = 1)
+                val words = Updates.sentence(::clock)
+                if (words.isNotEmpty()) Text(words, style = Type.small, color = t.secondary, maxLines = if (state is Updates.State.Failed) 4 else 1, overflow = TextOverflow.Ellipsis)
                 Text(core, style = Type.small, color = t.secondary, maxLines = 1)
             }
-            if (state is sh.rubric.baud.Updates.State.Available) {
-                WGap(8.dp)
-                Quiet("Download", { sh.rubric.baud.Updates.download(context, state.release) }, strong = true)
+            WGap(8.dp)
+            when (state) {
+                is Updates.State.Available -> Quiet("Update", { Updates.update(context) }, strong = true)
+                is Updates.State.Downloading, is Updates.State.Installing -> Quiet("Updating…", {}, enabled = false)
+                is Updates.State.Ready -> Quiet("Install", { Updates.update(context) }, strong = true)
+                else -> Quiet("Check", { Updates.check(context) }, enabled = state != Updates.State.Checking)
             }
         }
     }
