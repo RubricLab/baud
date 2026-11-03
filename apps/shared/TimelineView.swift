@@ -64,10 +64,15 @@ struct TimelineView: View {
 							}
 						}
 					}
+					// Said here, on the row itself: inside a message's own modifiers (its hold, its
+					// sheets) the List stopped seeing them, and drew a line and its own padding round
+					// every bubble.
+					.listRowSeparator(.hidden)
+					.listRowInsets(Theme.rowInsets)
 					.listRowBackground(Color.clear)
 				}
 				if !timeline.typing.isEmpty {
-					TypingRow(names: timeline.typing).listRowBackground(Color.clear)
+					TypingRow(names: timeline.typing).listRowSeparator(.hidden).listRowBackground(Color.clear)
 				}
 				Color.clear.frame(height: 4).id("bottom").listRowSeparator(.hidden).listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
 			}
@@ -436,9 +441,10 @@ struct MessageRow: View {
 					// conversation (Timeline.status).
 					let linked = t.runs.contains { $0.link != nil }
 					(Text(t).font(Theme.messageFont) + Text(event.edited ? "  edited" : "").font(Theme.smallFont).foregroundColor(event.mine ? tones.onMineSecondary : tones.secondary) + stamp)
-						// Every line, always: a row a point short of the words never cuts them to "…".
-						.fixedSize(horizontal: false, vertical: true)
 						#if os(macOS)
+						// Every line, always: a table row a point short of the words never cuts them
+						// to "…". (The iPhone's list sizes its rows to them.)
+						.fixedSize(horizontal: false, vertical: true)
 						.textSelection(.enabled)
 						#endif
 						.help(sentence ?? event.via.map { pathSentence($0) } ?? "")

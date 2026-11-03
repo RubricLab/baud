@@ -126,10 +126,15 @@ struct HueMap: View {
 	var interactive = true
 	/// A tap on a face picks that person (their card); nil: the faces are only pictures.
 	var picked: Binding<String?>? = nil
-	/// One person: their neighbourhood, about two kilometres across. Several: all of them.
+	/// One person: their neighbourhood, about two kilometres across. Several: all of them, with room
+	/// round the edge so no face sits on the map's corner or its legal line.
 	private var start: MapCameraPosition {
-		guard pins.count == 1, let p = pins.first else { return .automatic }
-		return .camera(MapCamera(centerCoordinate: p.coordinate, distance: 2200))
+		guard let p = pins.first else { return .automatic }
+		guard pins.count > 1 else { return .camera(MapCamera(centerCoordinate: p.coordinate, distance: 2200)) }
+		let lats = pins.map(\.lat), lons = pins.map(\.lon)
+		let center = CLLocationCoordinate2D(latitude: (lats.min()! + lats.max()!) / 2, longitude: (lons.min()! + lons.max()!) / 2)
+		let span = MKCoordinateSpan(latitudeDelta: max((lats.max()! - lats.min()!) * 2.2, 0.012), longitudeDelta: max((lons.max()! - lons.min()!) * 2.2, 0.012))
+		return .region(MKCoordinateRegion(center: center, span: span))
 	}
 	var body: some View {
 		Map(initialPosition: start, interactionModes: interactive ? .all : []) {

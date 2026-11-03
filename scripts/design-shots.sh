@@ -104,8 +104,15 @@ if [[ " $WHAT " == *" ios "* ]]; then
       STORE=$P launch warmup SIMCTL_CHILD_BAUD_DEMO_PLACES=1; STORE=$P WAIT=20 launch warmup SIMCTL_CHILD_BAUD_DEMO_PLACES=1
       rm -f "$OUT/ios/$accent/warmup"*; first=0
     fi
-    for s in ${SCREENS:-chats Sam:chats weekend:chats hike:chats info:Sam info:weekend person:weekend add:weekend you status door locate:Sam onboarding places:Ana}; do
+    for s in ${SCREENS:-chats Sam:chats weekend:chats hike:chats info:Sam info:weekend person:weekend add:weekend you section:devices section:updates section:data colour friends friends-map status hold:Sam picker:Sam msginfo:Sam thread:weekend door locate:Sam onboarding places:Ana}; do
       case $s in
+        section:*) WAIT=6 launch "you-${s#section:}" SIMCTL_CHILD_BAUD_TAB=you SIMCTL_CHILD_BAUD_SECTION=${s#section:} ;;
+        friends-map) STORE=$P WAIT=6 launch friends-map SIMCTL_CHILD_BAUD_TAB=friends SIMCTL_CHILD_BAUD_DEMO_PLACES=1 ;;
+        colour) WAIT=6 launch colour SIMCTL_CHILD_BAUD_TAB=you SIMCTL_CHILD_BAUD_SECTION=you SIMCTL_CHILD_BAUD_COLOUR_OPEN=1 ;;
+        hold:*) WAIT=6 launch "hold-${s#hold:}" SIMCTL_CHILD_BAUD_OPEN=${s#hold:} SIMCTL_CHILD_BAUD_HOLD=1 ;;
+        picker:*) WAIT=6 launch "picker-${s#picker:}" SIMCTL_CHILD_BAUD_OPEN=${s#picker:} SIMCTL_CHILD_BAUD_PICKER=1 ;;
+        msginfo:*) WAIT=6 launch "msginfo-${s#msginfo:}" SIMCTL_CHILD_BAUD_OPEN=${s#msginfo:} SIMCTL_CHILD_BAUD_MSGINFO=1 ;;
+        thread:*) WAIT=6 launch "thread-${s#thread:}" SIMCTL_CHILD_BAUD_OPEN=${s#thread:} SIMCTL_CHILD_BAUD_DEMO_THREAD=1 ;;
         info:*) launch "info-${s#info:}" SIMCTL_CHILD_BAUD_OPEN=${s#info:} SIMCTL_CHILD_BAUD_INFO=1 ;;
         person:*) WAIT=6 launch "person-${s#person:}" SIMCTL_CHILD_BAUD_OPEN=${s#person:} SIMCTL_CHILD_BAUD_INFO=person:Ana ;;
         add:*) WAIT=6 launch "add-${s#add:}" SIMCTL_CHILD_BAUD_OPEN=${s#add:} SIMCTL_CHILD_BAUD_INFO=add ;;
