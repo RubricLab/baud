@@ -501,7 +501,8 @@ struct DeleteChatQuestion: ViewModifier {
 	}
 }
 
-/// A chat's menu in the list, on a right click or a long press: the same on both platforms.
+/// A chat's menu in the list, on a right click or a long press, the same on both platforms (and in
+/// ⌘K): calling it, read or unread, muting it, and last, asked first, deleting or leaving it.
 struct ChatMenu: View {
 	@Environment(AppModel.self) private var model
 	let c: Conversation
@@ -510,10 +511,169 @@ struct ChatMenu: View {
 			Button { model.calls.start(c.id, video: false) } label: { Label("Call", systemImage: "phone") }
 			Button { model.calls.start(c.id, video: true) } label: { Label("Video call", systemImage: "video") }
 		}
-		if c.unread > 0 { Button { model.markRead(c) } label: { Label("Mark as read", systemImage: "checkmark.message") } }
+		Button { model.toggleUnread(c) } label: {
+			model.isUnread(c) ? Label("Mark as read", systemImage: "checkmark.message") : Label("Mark as unread", systemImage: "message.badge")
+		}
+		MuteMenu(id: c.id)
 		Divider()
 		Button(role: .destructive) { model.deleting = c } label: {
 			Label(c.kind == .home ? "Clear…" : c.isDirect ? "Delete…" : "Leave and delete…", systemImage: c.kind == .chat && !c.isDirect ? "rectangle.portrait.and.arrow.right" : "trash")
+		}
+	}
+}
+
+/// Mute ▸ For 1 hour, For 8 hours, For a week, Always; or Unmute while it is.
+struct MuteMenu: View {
+	@Environment(AppModel.self) private var model
+	let id: ConversationId
+	static let choices: [(String, TimeInterval?)] = [("For 1 hour", 3600), ("For 8 hours", 8 * 3600), ("For a week", 7 * 86_400), ("Always", nil)]
+	var body: some View {
+		if model.muted(id) != nil {
+			Button { model.unmute(id) } label: { Label("Unmute", systemImage: "bell") }
+		} else {
+			Menu {
+				ForEach(Self.choices, id: \.0) { t, s in Button(t) { model.mute(id, for: s) } }
+			} label: { Label("Mute", systemImage: "bell.slash") }
+		}
+	}
+}
+
+/// Reacting: my six recent reactions (the ones I give most lately, seeded until there are six of my
+/// own), mine on this message lit and a tap away from taken back, and + for every emoji.
+struct ReactionStrip: View {
+	@Environment(\.tones) private var tones
+	@Environment(AppModel.self) private var model
+	let event: Event
+	var done: () -> Void = {}
+	var more: () -> Void
+	#if os(macOS)
+	static let cell: CGFloat = 32, glyph: CGFloat = 20
+	#else
+	static let cell: CGFloat = 44, glyph: CGFloat = 28
+	#endif
+	var body: some View {
+		HStack(spacing: 2) {
+			ForEach(EmojiPicker.strip, id: \.self) { k in
+				let mine = event.reactions.first { $0.key == k }?.mine ?? false
+				Button { model.toggleReaction(event, k); done() } label: {
+					Text(k).font(.system(size: Self.glyph)).frame(width: Self.cell, height: Self.cell)
+						.background(Circle().fill(mine ? tones.loud : .clear))
+				}
+				.buttonStyle(EmojiPicker.Cell())
+				.accessibilityLabel(mine ? "Take back \(k)" : "React \(k)")
+			}
+			Button(action: more) {
+				Image(systemName: "plus").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Self.cell, height: Self.cell)
+					.background(Circle().fill(tones.quiet))
+			}
+			.buttonStyle(EmojiPicker.Cell())
+			.accessibilityLabel("More reactions")
+		}
+		.padding(4)
+	}
+}
+
+/// A place, out to a maps app for the way there: Apple Maps, or Google Maps (the app when it's
+/// here, else the web). The only time a place leaves baud.
+struct MapsButtons: View {
+	@Environment(\.openURL) private var openURL
+	let lat: Double, lon: Double
+	let name: String
+	var body: some View {
+		HStack(spacing: 8) {
+			Button { apple() } label: { Label("Apple Maps", systemImage: "map").frame(maxWidth: .infinity) }.buttonStyle(Quiet())
+			Button { google() } label: { Label("Google Maps", systemImage: "globe").frame(maxWidth: .infinity) }.buttonStyle(Quiet())
+		}
+	}
+	private func apple() {
+		let q = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+		if let u = URL(string: String(format: "https://maps.apple.com/?ll=%.5f,%.5f&q=%@", lat, lon, q)) { openURL(u) }
+	}
+	private func google() {
+		let web = URL(string: String(format: "https://www.google.com/maps/search/?api=1&query=%.5f,%.5f", lat, lon))!
+		#if os(iOS)
+		// The app when it's installed (a failed open says so), else the web.
+		if let app = URL(string: String(format: "comgooglemaps://?q=%.5f,%.5f&center=%.5f,%.5f", lat, lon, lat, lon)) {
+			UIApplication.shared.open(app) { ok in if !ok { UIApplication.shared.open(web) } }
+			return
+		}
+		#endif
+		openURL(web)
+	}
+}
+
+/// Forwarding a message: my chats, the latest first, a search once there are many; a tap sends a
+/// copy there (its words, and its files that are on this device) and closes.
+struct ForwardSheet: View {
+	@Environment(\.tones) private var tones
+	@Environment(AppModel.self) private var model
+	@Environment(\.dismiss) private var dismiss
+	let event: Event
+	@State private var query = ""
+	@State private var sending = false
+	var body: some View {
+		let q = query.trimmingCharacters(in: .whitespaces)
+		let chats = model.chats.sorted { $0.lastAt > $1.lastAt }.filter { q.isEmpty || model.title($0).localizedCaseInsensitiveContains(q) }
+		VStack(spacing: 0) {
+			SheetHeader(title: "Forward")
+			ScrollView {
+				VStack(alignment: .leading, spacing: Space.title) {
+					SearchBox(text: $query, prompt: "Search chats") { if let c = chats.first { send(to: c) } }
+						.padding(.horizontal, Rows.inset).padding(.bottom, 4)
+					VStack(spacing: 0) {
+						ForEach(chats) { c in
+							Button { send(to: c) } label: {
+								HStack(spacing: Rows.gap) {
+									face(c)
+									Text(model.title(c)).font(Theme.font.weight(.medium)).lineLimit(1)
+									Spacer(minLength: 8)
+								}
+								.frame(minHeight: Rows.person).contentShape(Rectangle())
+							}
+							.buttonStyle(RowStyle()).disabled(sending)
+						}
+						if chats.isEmpty { EmptyLine(text: "No chat called “\(q)”.").padding(.top, 8) }
+					}
+				}
+				.padding(.vertical, Space.title)
+			}
+		}
+		.background(tones.surface.ignoresSafeArea())
+		#if os(macOS)
+		.frame(width: 420, height: 520)
+		#else
+		.presentationDetents([.large]).presentationDragIndicator(.visible)
+		#endif
+	}
+	@ViewBuilder private func face(_ c: Conversation) -> some View {
+		if c.kind == .home { Avatar(name: model.me.name, hash: model.me.avatar, size: Rows.personFace) }
+		else if !c.isDirect { GroupFace(conversation: c, size: Rows.personFace) }
+		else {
+			let other = c.members.first { $0 != model.me.user }
+			Avatar(name: model.title(c), hash: other.flatMap { u in model.contacts.first { $0.user == u }?.avatar }, size: Rows.personFace)
+		}
+	}
+	/// A copy: the same words, and the files this device has. One that isn't here yet stays behind,
+	/// and the words go alone. A place sent once goes as that place (it's its words); a live share
+	/// isn't a message and never goes.
+	private func send(to c: Conversation) {
+		sending = true
+		Task {
+			var files: [URL] = []
+			var missing: Attachment?
+			for a in event.attachments {
+				if let u = try? await model.core.blob(a.hash, key: a.key) { files.append(viewable(u, name: a.name ?? (a.isImage ? "Photo" : "File"))) }
+				else { missing = a }
+			}
+			let text = event.text ?? ""
+			if let missing {
+				let what = missing.isImage ? "The photo" : "The file"
+				if text.isEmpty { model.error = "\(what) isn't on this device yet."; sending = false; return }
+				model.error = "\(what) isn't on this device yet, so only the words were forwarded."
+				files = []
+			}
+			model.send(c.id, Draft(text: text, attachments: files))
+			dismiss()
 		}
 	}
 }

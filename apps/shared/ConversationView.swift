@@ -10,6 +10,9 @@ struct ConversationView: View {
 	@Binding var showMembers: Bool
 	@State private var reply: Event?
 	@State private var thread: Event?
+	/// The message held on the iPhone: lifted, with its reactions and actions around it.
+	@State private var holding: Holding?
+	@Environment(\.accessibilityReduceMotion) private var still
 
 	var body: some View {
 		let timeline = model.timeline(conv)
@@ -34,19 +37,24 @@ struct ConversationView: View {
 				}
 				.overlay { if model.dropOver == conv { DropHint(to: model.title(c)) } }
 				#if os(macOS)
-				if let t = thread {
+				// A thread's pane: channels only; a chat shows its replies in the conversation.
+				if let t = thread, c.kind == .channel {
 					Rectangle().fill(tones.hairline).frame(width: 1)
 					ThreadView(conv: conv, root: t, close: { thread = nil }).frame(width: 340)
 				}
 				#endif
 			}
 			#if os(iOS)
-			.navigationDestination(item: $thread) { t in ThreadView(conv: conv, root: t, close: { thread = nil }) }
+			.navigationDestination(item: Binding(get: { c.kind == .channel ? thread : nil }, set: { thread = $0 })) { t in ThreadView(conv: conv, root: t, close: { thread = nil }) }
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar(.hidden, for: .navigationBar)
+			.environment(\.hold) { h in holding = h }
+			.overlay { if let h = holding { HoldMenu(holding: h, onReply: { reply = $0 }, close: { holding = nil }) } }
+			.onAppear { model.opened(conv) }
 			#endif
-			.onChange(of: conv) { _, _ in reply = nil; thread = nil }
-			.onChange(of: model.openThread) { _, id in if let id, let e = timeline.byId[id] { thread = e; model.openThread = nil } }
+			.onChange(of: conv) { _, _ in reply = nil; thread = nil; holding = nil }
+			// A search hit in a thread: the thread in a channel; in a chat the reply is in the conversation.
+			.onChange(of: model.openThread) { _, id in if let id, let e = timeline.byId[id] { if c.kind == .channel { thread = e }; model.openThread = nil } }
 		} else {
 			ContentUnavailableView("Pick a conversation", systemImage: "bubble.left.and.bubble.right")
 		}

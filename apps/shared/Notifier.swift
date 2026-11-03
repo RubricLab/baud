@@ -67,6 +67,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 			let was = seen[c.id]
 			if c.unread == 0, (was?.unread ?? 0) > 0 { read.append(c.id); continue }
 			guard c.unread > (was?.unread ?? 0), c.lastEvent != was?.last, let from = c.lastUser, from != model.me.user, !onScreen(c.id) else { continue }
+			// Muted: its messages come in quietly.
+			if model.muted(c.id) != nil { continue }
 			post(c, from: from)
 		}
 		if !read.isEmpty { clear(read) }

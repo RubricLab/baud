@@ -124,8 +124,9 @@ struct EmptyLine: View {
 	}
 }
 
-/// A chat in Home: their face and presence (or the group's initials), the name, when, my last
-/// message's delivery mark before the preview, unread.
+/// A chat in the list: their face and presence (or the group's faces), the name, when, and the
+/// last line. Unread is the bold name and the count (a dot when I marked it unread); muted, a small
+/// bell-slash and a quiet count. Whether my message got there is inside the chat, not here.
 struct ChatRow: View {
 	@Environment(\.tones) private var tones
 	@Environment(AppModel.self) private var model
@@ -135,22 +136,29 @@ struct ChatRow: View {
 	var body: some View {
 		let other = c.isDirect ? c.members.first { $0 != model.me.user } : nil
 		let friend = other.flatMap { u in model.contacts.first { $0.user == u } }
+		let unread = model.isUnread(c)
+		let muted = model.muted(c.id) != nil
 		HStack(spacing: 10) {
 			if c.kind == .home { Avatar(name: model.me.name, hash: model.me.avatar, size: Rows.face) }
 			else if c.kind == .chat && !c.isDirect { GroupFace(conversation: c, size: Rows.face) }
 			else { Avatar(name: model.title(c), hash: friend?.avatar, size: Rows.face, presence: other.map { u in Mark.presence(friend?.devices ?? model.core.members(c.id).first { $0.user == u }?.devices ?? []) }) }
 			VStack(alignment: .leading, spacing: 2) {
-				HStack(alignment: .firstTextBaseline, spacing: 6) {
-					Text(model.title(c)).font(Theme.font.weight(c.unread > 0 || selected ? .semibold : .regular)).lineLimit(1)
+				HStack(alignment: .firstTextBaseline, spacing: 4) {
+					Text(model.title(c)).font(Theme.font.weight(unread || selected ? .semibold : .regular)).lineLimit(1)
+					if muted { Image(systemName: "bell.slash.fill").font(Icon.font(Icon.inline)).foregroundStyle(tones.tertiary).accessibilityLabel("Muted") }
 					Spacer(minLength: 4)
+					// My last message's mark, small, beside its time; its words are inside the chat.
+					if c.lastUser == model.me.user, let e = c.lastEvent, c.kind != .home {
+						let d = model.core.delivery(c.id, e)
+						if !d.devices.isEmpty { DeliveryMark(delivery: d, size: Theme.small, interactive: false) }
+					}
 					if c.kind != .home || c.lastText != nil { Text(whenShort(c.lastAt)).font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit() }
 				}
 				HStack(spacing: 4) {
-					// Only a mark here: a tap anywhere on the row opens the chat (the sentence is inside).
-					if c.lastUser == model.me.user, let e = c.lastEvent { DeliveryMark(delivery: model.core.delivery(c.id, e), size: Theme.small + 1, interactive: false) }
-					Text(preview).font(Theme.smallFont).foregroundStyle(c.unread > 0 ? tones.text : tones.secondary).lineLimit(1)
+					Text(preview).font(Theme.smallFont).foregroundStyle(unread && !muted ? tones.text : tones.secondary).lineLimit(1)
 					Spacer(minLength: 4)
-					if c.unread > 0 { UnreadBadge(count: c.unread) }
+					if c.unread > 0 { UnreadBadge(count: c.unread, quiet: muted) }
+					else if unread { Circle().fill(muted ? tones.tertiary : tones.strong).frame(width: 10, height: 10).accessibilityLabel("Marked unread") }
 				}
 			}
 		}
@@ -187,16 +195,17 @@ struct NewChatRow: View {
 	}
 }
 
-/// Unread: a count on a pill in the strongest step.
+/// Unread: a count on a pill in the strongest step; a muted chat's in a quiet one.
 struct UnreadBadge: View {
 	@Environment(\.tones) private var tones
 	let count: Int
 	var mention = false
+	var quiet = false
 	var body: some View {
 		Text(count > 99 ? "99+" : "\(count)").font(.system(size: Theme.small - 1, weight: .heavy, design: .rounded)).monospacedDigit()
-			.foregroundStyle(tones.onMine)
+			.foregroundStyle(quiet ? tones.text : tones.onMine)
 			.padding(.horizontal, 5).frame(minWidth: 18, minHeight: 18)
-			.background(Capsule().fill(tones.loud))
+			.background(Capsule().fill(quiet ? tones.quiet : tones.loud))
 	}
 }
 

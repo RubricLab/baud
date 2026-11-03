@@ -21,7 +21,7 @@ struct BaudApp: App {
 			Group {
 				if model.waiting { LaunchView(locked: true) } else { IOSRoot() }
 			}
-				.modifier(Tinted(hex: model.accentHex)).environment(model)
+				.modifier(Tinted(hex: model.shownHex)).environment(model)
 				.environment(\.restart, { model = AppModel() })
 				// Unlocked at last: everything can be read now, so baud opens for real.
 				.onReceive(NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)) { _ in

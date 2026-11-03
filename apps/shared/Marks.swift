@@ -365,8 +365,7 @@ func agoShort(_ d: Date) -> String {
 /// A person's devices in one short phrase: "online", "relayed", "away 2 h", "never seen".
 func presenceWord(_ devices: [Device]) -> String {
 	switch Mark.presence(devices) {
-	case .online: return devices.filter(\.online).count > 1 ? "online on \(devices.filter(\.online).count)" : "online"
-	case .onlineRelayed: return "online, relayed"
+	case .online, .onlineRelayed: return "online"
 	case .away: return devices.compactMap(\.lastOnline).max().map { "away " + agoShort($0) } ?? "away"
 	default: return "never seen"
 	}

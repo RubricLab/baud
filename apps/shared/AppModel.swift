@@ -157,6 +157,11 @@ final class AppModel {
 		}
 	}
 	@ObservationIgnored private var syncingAccent = false
+	/// A colour being dragged out in the picker: the app wears it while the finger moves; it's kept
+	/// (and goes to my other devices, and to the icon) only when the drag ends.
+	var previewHex: String?
+	/// The colour to draw: the one being picked, else the one kept.
+	var shownHex: String? { previewHex ?? accentHex }
 	/// A colour picked on the iPhone whose icon hasn't been set yet.
 	@ObservationIgnored var iconPending = false
 	/// The iPhone: the Add screen asked for from inside You, opened once You has closed (two
@@ -268,8 +273,72 @@ final class AppModel {
 		guard let id = chat(with: user)?.id ?? startChat(with: user) else { return }
 		calls.start(id, video: video)
 	}
-	/// Open anything: a chat, a channel, a space.
-	func open(_ id: ConversationId?) { selectedConversation = id }
+	/// Open anything: a chat, a channel, a space. A chat marked unread is read once it's opened.
+	func open(_ id: ConversationId?) {
+		selectedConversation = id
+		if let id { pane = nil; opened(id) }
+	}
+	/// A chat on screen: the mark I put on it (unread) goes, here and on my other devices.
+	func opened(_ id: ConversationId) { if markedUnread.contains(id) { setUnread(id, false) } }
+	/// The Mac's main pane, when it isn't a conversation: Settings (me at the sidebar's foot, ⌘,)
+	/// or Friends (the sidebar's people button, ⇧⌘1, ⌘K). A chat clicked, or ⎋, goes back.
+	enum Pane { case settings, friends }
+	var pane: Pane?
+	func showFriends() { mode = .home; selectedConversation = nil; pane = .friends }
+	func showSettings(_ section: String? = nil) { selectedConversation = nil; pane = .settings; if let section { settingsSection = section } }
+
+	// MARK: a chat's marks: unread, muted
+
+	/// Chats I marked unread (a dot and a bold name until opened), kept in my profile so the mark
+	/// follows me to my other devices.
+	private(set) var markedUnread: Set<ConversationId> = []
+	/// Chats muted, until when (`.distantFuture`: always): no notifications for their messages.
+	private(set) var mutes: [ConversationId: Date] = [:]
+	func isUnread(_ c: Conversation) -> Bool { c.unread > 0 || markedUnread.contains(c.id) }
+	func muted(_ id: ConversationId) -> Date? { mutes[id].flatMap { $0 > Date() ? $0 : nil } }
+	/// Read or unread, the chat menu's and ⇧⌘U's one toggle.
+	func toggleUnread(_ c: Conversation) {
+		if isUnread(c) { markRead(c); setUnread(c.id, false) } else { setUnread(c.id, true) }
+	}
+	func setUnread(_ id: ConversationId, _ on: Bool) {
+		if on { markedUnread.insert(id) } else { markedUnread.remove(id) }
+		local.setProfile("unread." + id, on ? "1" : "0")
+	}
+	/// Muted for a while, always (nil), or unmuted (`until` in the past).
+	func mute(_ id: ConversationId, for seconds: TimeInterval?) {
+		let until = seconds.map { Date().addingTimeInterval($0) } ?? .distantFuture
+		mutes[id] = until
+		local.setProfile("mute." + id, seconds == nil ? "always" : String(Int(until.timeIntervalSince1970)))
+	}
+	func unmute(_ id: ConversationId) { mutes[id] = nil; local.setProfile("mute." + id, "0") }
+	/// The marks as my profile has them now (another device of mine may have changed them).
+	private func readMarks() {
+		var unread = Set<ConversationId>(), muted: [ConversationId: Date] = [:]
+		for c in conversations where c.kind == .chat || c.kind == .home {
+			if local.profile("unread." + c.id) == "1" { unread.insert(c.id) }
+			if let m = local.profile("mute." + c.id) {
+				if m == "always" { muted[c.id] = .distantFuture } else if let t = Double(m), t > Date().timeIntervalSince1970 { muted[c.id] = Date(timeIntervalSince1970: t) }
+			}
+		}
+		if unread != markedUnread { markedUnread = unread }
+		if muted != mutes { mutes = muted }
+	}
+	/// My reaction on a message, given or taken back, and the reaction remembered as a recent one.
+	func toggleReaction(_ e: Event, _ key: String) {
+		let on = !(e.reactions.first { $0.key == key }?.mine ?? false)
+		if on { EmojiPicker.used(key) }
+		attempt { try core.react(e.conv, e.id, key, on: on) }
+	}
+	/// A message's actions asked for from outside its row (the iPhone's hold menu): the row opens
+	/// its own editor, info or delete question.
+	enum MessageAsk: Equatable { case edit, info, delete, forward, react }
+	var messageAsk: (event: EventId, ask: MessageAsk)?
+	/// Everyone sharing where they are with me, from any chat: the newest place of each.
+	var livePlaces: [Place] {
+		_ = placesTick
+		let all = conversations.flatMap { local.places($0.id) }.filter { $0.user != me.user }
+		return Dictionary(grouping: all, by: \.user).compactMap { $0.value.max { $0.date < $1.date } }.sorted { $0.date > $1.date }
+	}
 	/// Out of the space, back to the list of spaces.
 	func leaveSpace() { route { mode = .spaces; selectedSpace = nil; selectedConversation = nil } }
 	/// Home, or Spaces where I left it.
@@ -532,6 +601,19 @@ final class AppModel {
 				attempt { try who.setDisappear(chat.id, s); _ = try who.send(chat.id, Draft(text: line)) }
 			}
 		}
+		#if DEBUG
+		// `BAUD_DEMO_THREAD=1`: Ana and Jo answer "who's in for saturday?" in a thread in weekend, as
+		// older versions could, to show thread replies inline. Once per store.
+		if ProcessInfo.processInfo.environment["BAUD_DEMO_THREAD"] == "1", let d = demo,
+			let weekend = d.ana.conversations(.chat).first(where: { $0.name == "weekend" }),
+			let root = d.ana.events(weekend.id, before: nil, limit: 50).last(where: { $0.type == .message && $0.text != nil }),
+			d.ana.thread(weekend.id, root.id, before: nil, limit: 5).count < 2 {
+			attempt {
+				_ = try d.ana.send(weekend.id, Draft(text: "count me in", thread: root.id))
+				_ = try d.jo.send(weekend.id, Draft(text: "same, if it isn't raining", thread: root.id))
+			}
+		}
+		#endif
 		refreshAll()
 	}
 
@@ -574,29 +656,24 @@ final class AppModel {
 		return c.kind == .channel ? "#\(c.name ?? "channel")" : (c.name ?? "Chat")
 	}
 
-	/// The header's status, in at most two words: "Online", "Away 2 h", "3 online".
+	/// The header's status: what a person needs to know, "Online", "Last seen 2 h ago", "3 people ·
+	/// 2 online". How they're reached (the path, how fast) is a tap away: the person page's devices
+	/// and the Connection sheet.
 	func status(_ c: Conversation) -> String {
 		if c.kind == .home { return "Your devices" }
-		let others = core.members(c.id).filter { !$0.me }
+		let members = core.members(c.id)
+		let others = members.filter { !$0.me }
 		if others.isEmpty { return "Just you" }
 		if c.isDirect, let o = others.first {
-			// How I reach them, in two or three words: the way, and how quick it is when it's direct.
-			let on = o.devices.filter(\.online)
-			if !on.isEmpty {
-				let paths = on.map(\.path)
-				if let ms = paths.compactMap({ if case .direct(let ms) = $0 { return ms ?? -1 }; return nil }).max(by: { a, b in (a < 0 ? Int.max : a) > (b < 0 ? Int.max : b) }) { return ms >= 0 ? "Online · direct, \(ms) ms" : "Online · direct" }
-				if paths.contains(.nearby) { return "Online · nearby" }
-				if let name = paths.compactMap({ if case .relay(_, let n) = $0 { return n }; return nil }).first { return "Online · through \(name)" }
-				return "Online"
-			}
+			if o.devices.contains(where: \.online) { return "Online" }
 			if let last = o.devices.compactMap(\.lastOnline).max() {
 				let ago = agoShort(last)
-				return ago == "now" ? "Online moments ago" : "Last online \(ago) ago"
+				return ago == "now" ? "Last seen just now" : "Last seen \(ago) ago"
 			}
 			return "Never online"
 		}
 		let online = others.filter(\.online).count
-		return online == 0 ? "Nobody online" : online == others.count ? "All online" : "\(online) online"
+		return "\(members.count) people" + (online > 0 ? " · \(online) online" : "")
 	}
 
 	func timeline(_ conv: ConversationId) -> Timeline {
@@ -793,7 +870,7 @@ final class AppModel {
 		case .conversations: conversations = core.conversations(nil); contacts = core.contacts()
 		case .peers: peers = core.peers(); contacts = core.contacts(); conversations = core.conversations(nil); timelines.values.forEach { $0.refreshDelivery() }
 		case .carrying: carrying = core.carrying(); peers = core.peers()
-		case .conversation(let id): timelines[id]?.reload(); conversations = core.conversations(nil); if id == local.notesID { syncAccent() }
+		case .conversation(let id): timelines[id]?.reload(); conversations = core.conversations(nil); if id == local.notesID { syncAccent(); readMarks() }
 		case .delivery(let id): timelines[id]?.refreshDelivery()
 		case .typing(let id): timelines[id]?.refreshTyping()
 		case .places: placesChanged()
@@ -834,7 +911,7 @@ final class AppModel {
 		syncAccent()
 		me = core.me()
 		contacts = core.contacts()
-		conversations = core.conversations(nil)
+		conversations = core.conversations(nil); readMarks()
 		peers = core.peers()
 		carrying = core.carrying()
 		timelines.values.forEach { $0.reload() }

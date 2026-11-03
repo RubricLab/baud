@@ -23,7 +23,7 @@ struct BaudMacApp: App {
 			let _ = Measure.log("window content")
 			// The hue is applied above the root, so the root's own reads of the palette are the hue's.
 			Root(palette: $palette, sheet: $sheet)
-				.modifier(Tinted(hex: model.accentHex))
+				.modifier(Tinted(hex: model.shownHex))
 				.environment(model).environment(updates)
 				.environment(\.restart, { model = AppModel() })
 				.onOpenURL { model.open(url: $0) }
@@ -81,7 +81,7 @@ struct BaudMacApp: App {
 				Button(c.map { $0.kind == .home ? "Clear Chat…" : $0.isDirect ? "Delete Chat…" : "Leave and Delete…" } ?? "Delete Chat…") { model.deleting = c }.keyboardShortcut(.delete, modifiers: .command).disabled(c == nil)
 			}
 		}
-		Window("Settings", id: "settings") { SettingsView().toolbarBackground(.hidden, for: .windowToolbar).modifier(NotRestored()).modifier(Tinted(hex: model.accentHex)).environment(model).environment(updates).environment(\.restart, { model = AppModel() }).frame(minWidth: 520, minHeight: 520) }
+		Window("Settings", id: "settings") { SettingsView().toolbarBackground(.hidden, for: .windowToolbar).modifier(NotRestored()).modifier(Tinted(hex: model.shownHex)).environment(model).environment(updates).environment(\.restart, { model = AppModel() }).frame(minWidth: 520, minHeight: 520) }
 			.defaultSize(width: 640, height: 800)
 			.commands { CommandGroup(replacing: .appSettings) { Button("Settings…") { openWindow(id: "settings") }.keyboardShortcut(",") } }
 		// Linking lives in windows of its own, so it survives whatever the main window does
@@ -89,7 +89,7 @@ struct BaudMacApp: App {
 		// Never restored at launch: a linking window left open at quit must not come back empty
 		// in place of the main window (it did: SwiftUI restored it and opened nothing else).
 		// One Add window for a friend, my own device, and any link I'm given.
-		Window("Add", id: "add") { AddView().toolbarBackground(.hidden, for: .windowToolbar).modifier(NotRestored()).modifier(Tinted(hex: model.accentHex)).environment(model) }
+		Window("Add", id: "add") { AddView().toolbarBackground(.hidden, for: .windowToolbar).modifier(NotRestored()).modifier(Tinted(hex: model.shownHex)).environment(model) }
 			.windowResizability(.contentSize)
 	}
 }
@@ -176,9 +176,9 @@ struct Root: View {
 				case "palette": palette.toggle()
 				case let w where w.hasPrefix("sheet:"): sheet = NewSheet.What(rawValue: String(w.dropFirst(6)))
 				case let w where w.hasPrefix("marks:"):
-					Shots.render(MarksSheet().modifier(Tinted(hex: model.accentHex)).environment(model).font(Theme.font), width: 760, background: tones.surface, to: String(w.dropFirst(6)))
+					Shots.render(MarksSheet().modifier(Tinted(hex: model.shownHex)).environment(model).font(Theme.font), width: 760, background: tones.surface, to: String(w.dropFirst(6)))
 				case let w where w.hasPrefix("page:"):
-					Shots.render(SettingsPage().modifier(Tinted(hex: model.accentHex)).environment(model).environment(updates).font(Theme.font), width: 640, background: tones.surface, to: String(w.dropFirst(5)))
+					Shots.render(SettingsPage().modifier(Tinted(hex: model.shownHex)).environment(model).environment(updates).font(Theme.font), width: 640, background: tones.surface, to: String(w.dropFirst(5)))
 				default: openWindow(id: what)
 				}
 			}

@@ -32,31 +32,55 @@ final class Timeline {
 
 	init(conv: ConversationId, model: AppModel) {
 		self.conv = conv; self.model = model
+		threadsInline = model.conversation(conv).map { $0.kind != .channel } ?? true
 		reload()
 	}
 
+	/// Chats have no threads: replies made in one (by older versions, or a channel's habit) show in
+	/// the conversation, in time order, each quoting the message it answers. Channels keep theirs.
+	let threadsInline: Bool
+
 	func reload() {
 		let want = max(page, events.count)
-		events = model.core.events(conv, before: nil, limit: want)
-		exhausted = events.count < want
+		let main = model.core.events(conv, before: nil, limit: want)
+		exhausted = main.count < want
+		events = withReplies(main)
 		build()
 		refreshDelivery()
 	}
 
 	func loadMore() {
-		guard !exhausted, let first = events.first else { return }
+		guard !exhausted, let first = events.first(where: { $0.thread == nil }) else { return }
 		let older = model.core.events(conv, before: first.id, limit: page)
 		exhausted = older.count < page
 		guard !older.isEmpty else { return }
-		events = older + events
+		events = withReplies(older + events.filter { $0.thread == nil })
 		build()
 	}
 
 	/// Everything, for the scroll measurement.
 	func loadAll() {
-		events = model.core.events(conv, before: nil, limit: 100_000)
+		events = withReplies(model.core.events(conv, before: nil, limit: 100_000))
 		exhausted = true
 		build()
+	}
+
+	/// The main list with the replies to its threads woven in by time, in a chat; as it is in a channel.
+	private func withReplies(_ main: [Event]) -> [Event] {
+		guard threadsInline else { return main }
+		let replies = main.filter { $0.replies > 0 && $0.thread == nil }.flatMap { root in
+			model.core.thread(conv, root.id, before: nil, limit: 500).filter { $0.id != root.id }
+		}
+		guard !replies.isEmpty else { return main }
+		var seen = Set<EventId>()
+		return (main + replies).filter { seen.insert($0.id).inserted }.sorted { ($0.lamport, $0.id) < ($1.lamport, $1.id) }
+	}
+
+	/// What a message answers, shown over it: its reply, or in a chat the thread it was written in.
+	func quoted(_ e: Event) -> Event? {
+		if let r = e.reply { return byId[r] }
+		if threadsInline, let t = e.thread, t != e.id { return byId[t] }
+		return nil
 	}
 
 	func refreshDelivery() {

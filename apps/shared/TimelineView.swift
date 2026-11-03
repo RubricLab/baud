@@ -66,7 +66,6 @@ struct TimelineView: View {
 					}
 					.listRowBackground(Color.clear)
 				}
-				if let s = timeline.status { DeliveryRow(text: s, mark: timeline.statusMark).listRowBackground(Color.clear) }
 				if !timeline.typing.isEmpty {
 					TypingRow(names: timeline.typing).listRowBackground(Color.clear)
 				}
@@ -185,25 +184,39 @@ struct DeliveryRow: View {
 }
 
 /// One message. The first of a run carries the avatar and the name line; the rest hang under it.
+/// What can be done with it is one list everywhere, in one order: Reply, React, Forward, Copy text,
+/// Info, Edit, and last, asked first, Delete. On the Mac it's the right click (and the hover's ⋯);
+/// on the iPhone a hold lifts the message, the reactions above it and the rest below (`HoldMenu`).
 struct MessageRow: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.accent) private var accent
 	@Environment(\.tones) private var tones
 	@Environment(\.reveal) private var reveal
+	@Environment(\.hold) private var hold
+	@Environment(\.accessibilityReduceMotion) private var still
 	let event: Event
 	let first: Bool
 	let last: Bool
 	var onReply: (Event) -> Void
 	var onThread: (Event) -> Void
+	/// Drawn again, lifted, in the hold menu: no gestures of its own there.
+	var lifted = false
 	@State private var hover = false
 	@State private var editing = false
 	@State private var showPath = false
-	/// Every emoji, for a reaction: from the menu, the hover button, or the + after the reactions.
+	/// Every emoji, for a reaction (the strip's +, the menu's More…).
 	@State private var picking = false
+	/// The Mac's hover React: the strip, in a popover.
+	@State private var reacting = false
 	/// Who reacted with what; how my message got to each person; deleting it, asked first.
 	@State private var showReactions = false
 	@State private var showInfo = false
 	@State private var deleting = false
+	@State private var forwarding = false
+	/// The reaction a double tap just gave, popping over the bubble.
+	@State private var popped: String?
+	/// Where the row is on screen, for the hold menu to lift it in place.
+	@State private var frame: CGRect = .zero
 	static func mark(_ v: Event.Via) -> Mark { switch v { case .direct: return .direct; case .relay: return .relayed; case .carried: return .held; case .waiting: return .waiting } }
 	/// How this message travelled, in a few words.
 	private func pathSentence(_ v: Event.Via) -> String {
@@ -221,6 +234,7 @@ struct MessageRow: View {
 	/// Two people, or my chat with myself: no faces, no names, just the two sides.
 	private var direct: Bool { model.conversation(event.conv).map { $0.isDirect || $0.kind == .home } ?? true }
 	private var mentionsMe: Bool { event.mentions.contains(model.me.user) && !event.mine }
+	private var timeline: Timeline { model.timeline(event.conv) }
 	/// A run of one person's messages reads as one: its inner corners tighten.
 	private var bubble: UnevenRoundedRectangle {
 		let big = Radius.bubble, small = Self.inner
@@ -231,7 +245,7 @@ struct MessageRow: View {
 
 	var body: some View {
 		HStack(alignment: .bottom, spacing: 8) {
-			if event.mine { Spacer(minLength: Self.gutter) }
+			if event.mine { gutter }
 			else if !direct {
 				if last { Avatar(name: model.name(of: event.user), hash: model.contacts.first { $0.user == event.user }?.avatar, size: 28) }
 				else { Color.clear.frame(width: 28, height: 1) }
@@ -242,53 +256,20 @@ struct MessageRow: View {
 				}
 				words
 				ForEach(event.attachments, id: \.hash) { AttachmentBlock(attachment: $0) }
-				if !event.reactions.isEmpty {
-					HStack(spacing: 4) {
-						ForEach(event.reactions, id: \.key) { r in
-							// A tap gives mine or takes it back; resting on it says who (the Mac), and a
-							// long press (a right click) lists them, and everyone else's.
-							Button { model.attempt { try model.core.react(event.conv, event.id, r.key, on: !r.mine) } } label: {
-								Text("\(r.key) \(r.users.count)").font(Theme.smallFont)
-									.padding(.horizontal, 7).padding(.vertical, 3)
-									.background { if r.mine { Capsule().fill(tones.mine) } }
-									.foregroundStyle(r.mine ? tones.onMine : tones.text)
-									.glass(Capsule(), lifted: false)
-							}
-							.buttonStyle(.plain)
-							.help(reactors(r, model))
-							.accessibilityLabel(reactors(r, model))
-							.contextMenu {
-								Text(reactors(r, model))
-								Button { showReactions = true } label: { Label("Who reacted", systemImage: "person.2") }
-								Button { react(r.key) } label: { Label(r.mine ? "Take mine back" : "React \(r.key) too", systemImage: r.mine ? "minus.circle" : "plus.circle") }
-							}
-						}
-						#if os(macOS)
-						Button { picking = true } label: {
-							Image(systemName: "face.smiling").font(Theme.smallFont)
-								.padding(.horizontal, 7).padding(.vertical, 3).frame(minHeight: Theme.small + 8)
-								.glass(Capsule(), lifted: false)
-						}.buttonStyle(.plain).foregroundStyle(tones.secondary).help("React").accessibilityLabel("React")
-						.opacity(hover || picking ? 1 : 0).allowsHitTesting(hover || picking)
-						#endif
-					}
-				}
-				if event.replies > 0 {
+				if !event.reactions.isEmpty { reactions }
+				// A thread's replies, in a channel; a chat shows them in the conversation instead.
+				if event.replies > 0, !timeline.threadsInline {
 					Button { onThread(event) } label: {
 						Text("\(event.replies) \(event.replies == 1 ? "reply" : "replies") · \(list(event.lastRepliers.map(model.name(of:))))")
 							.font(Theme.smallFont).foregroundStyle(tones.secondary)
 					}.buttonStyle(.plain).padding(.horizontal, 13)
 				}
 			}
-			.overlay(alignment: event.mine ? .leading : .trailing) {
-				beside.alignmentGuide(event.mine ? .leading : .trailing) { d in event.mine ? d[.trailing] + 12 : d[.leading] - 12 }
-			}
-			if !event.mine { Spacer(minLength: Self.gutter) }
+			.overlay(alignment: event.mine ? .topLeading : .topTrailing) { pop }
+			if !event.mine { gutter }
 		}
 		// Dragged aside (iPhone): every message slides left, its way and time in the space it leaves.
 		.offset(x: -min(reveal, Self.asideWidth))
-		// Dragged aside (iPhone): the words stay; the way and time slide in from the edge, over a
-		// fade of the surface where a long line runs under them.
 		.overlay(alignment: .trailing) {
 			if reveal > 0 {
 				aside.offset(x: Self.asideWidth - min(reveal, Self.asideWidth))
@@ -299,29 +280,138 @@ struct MessageRow: View {
 		.listRowSeparator(.hidden)
 		.listRowInsets(Theme.rowInsets)
 		.onHover { hover = $0 }
-		.contextMenu { menu }
+		.modifier(HoldOrMenu(lifted: lifted, hold: hold.map { h in { h(Holding(event: event, first: first, last: last, frame: frame)) } }, frame: $frame) { menu })
 		.swipeActions(edge: .leading, allowsFullSwipe: true) { Button("Reply") { onReply(event) } }
+		// VoiceOver: the same actions, in the same order, on the message itself.
+		.accessibilityAction(named: "Reply") { onReply(event) }
+		.accessibilityAction(named: "React") { picking = true }
+		.accessibilityAction(named: "Forward") { forwarding = true }
+		.accessibilityAction(named: "Copy text") { if let t = event.text { copy(t) } }
+		.accessibilityAction(named: "Delete") { if event.mine { deleting = true } }
+		// The hold menu asks for what only this row can open: its editor, its info, its question.
+		.onChange(of: model.messageAsk?.event) { _, id in
+			guard id == event.id, let ask = model.messageAsk?.ask else { return }
+			model.messageAsk = nil
+			switch ask {
+			case .edit: editText = event.text ?? ""; editing = true
+			case .info: showInfo = true
+			case .delete: deleting = true
+			case .forward: forwarding = true
+			case .react: picking = true
+			}
+		}
 		#if os(iOS)
-		.onTapGesture(count: 2) { react("👍") }
-		.sheet(isPresented: $picking) { EmojiPicker(pick: react).presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
+		.sheet(isPresented: $picking) { EmojiPicker { model.toggleReaction(event, $0) }.environment(\.tones, tones).presentationDetents([.large]).presentationDragIndicator(.visible) }
 		.sheet(isPresented: $showReactions) { ScrollView { ReactionsList(reactions: event.reactions) }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible).presentationBackground(tones.surface) }
 		.sheet(isPresented: $showInfo) { ScrollView { MessageInfo(event: event) }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible).presentationBackground(tones.surface) }
+		.sheet(isPresented: $forwarding) { ForwardSheet(event: event).environment(model).environment(\.tones, tones) }
 		#else
-		.popover(isPresented: $picking, arrowEdge: .trailing) { EmojiPicker(pick: react) }
+		.popover(isPresented: $picking, arrowEdge: .trailing) { EmojiPicker { model.toggleReaction(event, $0) } }
 		.popover(isPresented: $showReactions, arrowEdge: event.mine ? .leading : .trailing) { ReactionsList(reactions: event.reactions).frame(width: 280).background(tones.surface) }
 		.popover(isPresented: $showInfo, arrowEdge: event.mine ? .leading : .trailing) { MessageInfo(event: event).frame(width: 300).background(tones.surface) }
+		.sheet(isPresented: $forwarding) { ForwardSheet(event: event).environment(model).environment(\.tones, tones) }
 		#endif
 		.confirmationDialog("Delete this message?", isPresented: $deleting, titleVisibility: .visible) {
 			Button("Delete for everyone", role: .destructive) { model.attempt { try model.core.redact(event.conv, event.id) } }
 			Button("Cancel", role: .cancel) {}
 		} message: { Text("It goes for everyone in this chat.") }
+		#if DEBUG
+		// `BAUD_HOLD=1`: the newest message from someone else held, for pictures of the hold menu.
+		.task {
+			guard ProcessInfo.processInfo.environment["BAUD_HOLD"] == "1", !lifted, let h = hold,
+				timeline.events.last(where: { !$0.mine && $0.type == .message && $0.text != nil })?.id == event.id else { return }
+			try? await Task.sleep(for: .milliseconds(1500))
+			h(Holding(event: event, first: first, last: last, frame: frame))
+		}
+		#endif
+	}
+
+	/// The empty side of a message. On the Mac it holds the hover's time and actions, inside the
+	/// column whatever the window's width (an overlay past the bubble ran off a narrow window).
+	@ViewBuilder private var gutter: some View {
+		#if os(macOS)
+		Color.clear.frame(minWidth: Self.gutter, maxWidth: .infinity, minHeight: 1)
+			.overlay(alignment: event.mine ? .trailing : .leading) { beside.padding(event.mine ? .trailing : .leading, 8) }
+		#else
+		Spacer(minLength: Self.gutter)
+		#endif
+	}
+
+	/// The reactions under it: a tap gives mine or takes it back; resting on one says who (the
+	/// Mac), and a right click or a hold lists them. On the Mac, + while the pointer is on it.
+	private var reactions: some View {
+		HStack(spacing: 4) {
+			ForEach(event.reactions, id: \.key) { r in
+				Button { model.toggleReaction(event, r.key) } label: {
+					Text("\(r.key) \(r.users.count)").font(Theme.smallFont)
+						.padding(.horizontal, 7).padding(.vertical, 3)
+						.background { if r.mine { Capsule().fill(tones.mine) } }
+						.foregroundStyle(r.mine ? tones.onMine : tones.text)
+						.glass(Capsule(), lifted: false)
+						.scaleEffect(popped == r.key && !still ? 1.15 : 1)
+				}
+				.buttonStyle(.plain)
+				.help(reactors(r, model))
+				.accessibilityLabel(reactors(r, model))
+				.contextMenu {
+					Text(reactors(r, model))
+					Button { showReactions = true } label: { Label("Who reacted", systemImage: "person.2") }
+					Button { model.toggleReaction(event, r.key) } label: { Label(r.mine ? "Take mine back" : "React \(r.key) too", systemImage: r.mine ? "minus.circle" : "plus.circle") }
+				}
+			}
+			#if os(macOS)
+			Button { reacting = true } label: {
+				Image(systemName: "face.smiling").font(Theme.smallFont)
+					.padding(.horizontal, 7).padding(.vertical, 3).frame(minHeight: Theme.small + 8)
+					.glass(Capsule(), lifted: false)
+			}.buttonStyle(.plain).foregroundStyle(tones.secondary).help("React").accessibilityLabel("React")
+			.opacity(hover || reacting ? 1 : 0).allowsHitTesting(hover || reacting)
+			#endif
+		}
+	}
+
+	/// A double tap's reaction, popping up off the bubble's corner and away.
+	@ViewBuilder private var pop: some View {
+		if let k = popped, !still {
+			Text(k).font(.system(size: 34)).offset(x: event.mine ? -10 : 10, y: -18)
+				.transition(.asymmetric(insertion: .scale(scale: 0.3).combined(with: .opacity), removal: .scale(scale: 1.4).combined(with: .opacity)))
+				.allowsHitTesting(false)
+		}
+	}
+
+	/// Where my message is: on the last bubble of a run of mine, its time and one mark, in the
+	/// bubble's quiet ink: ○ on its way, ✓ held by a device for them, ✓✓ on their device, ● read.
+	private var delivery: Delivery? {
+		guard event.mine, last, !lifted || true else { return nil }
+		let d = model.core.delivery(event.conv, event.id)
+		return d.devices.isEmpty ? nil : d
+	}
+	private var stamp: Text {
+		guard event.mine, last else { return Text("") }
+		let ink = tones.onMineSecondary
+		let time = Text("  " + clock(event.at)).font(Theme.smallFont).foregroundColor(ink)
+		guard let d = delivery else { return time }
+		return time + Text(" ") + Text(MarkImage.image(Mark.delivery(d), size: Theme.small + 1, color: ink)).baselineOffset(-1.5)
+	}
+	/// The mark's words, for a pointer resting on it and for VoiceOver: "Waiting for Ana", "Read".
+	private var sentence: String? { delivery.map { $0.sentence.prefix(1).uppercased() + $0.sentence.dropFirst() } }
+
+	/// A double tap: my most recent reaction, given, or taken back if it's there.
+	private func doubleTap() {
+		let k = EmojiPicker.strip.first ?? "❤️"
+		Haptic.tap()
+		model.toggleReaction(event, k)
+		guard !still else { return }
+		withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) { popped = k }
+		Task { try? await Task.sleep(for: .milliseconds(650)); withAnimation(Motion.standard) { popped = nil } }
 	}
 
 	/// The words, in a bubble: mine the strongest tint, theirs glass; a mention of me edged in the
-	/// strong step. A reply's quote rides at the top.
+	/// strong step. What it answers rides at the top: a reply's quote, or in a chat the message a
+	/// thread was started on.
 	@ViewBuilder private var words: some View {
-		let quoted = event.reply.flatMap { model.timeline(event.conv).byId[$0] }
-		let text = model.timeline(event.conv).text(for: event)
+		let quoted = timeline.quoted(event)
+		let text = timeline.text(for: event)
 		if editing || text != nil || quoted != nil {
 			VStack(alignment: .leading, spacing: 5) {
 				if let quoted { Quote(name: model.name(of: quoted.user), text: PlaceText.words(quoted.text) ?? (quoted.attachments.isEmpty ? "" : "attachment"), onMine: event.mine) }
@@ -335,9 +425,12 @@ struct MessageRow: View {
 					// (iPhone), the sentence a tap away; whether my newest got there is one line under the
 					// conversation (Timeline.status).
 					let linked = t.runs.contains { $0.link != nil }
-					(Text(t).font(Theme.messageFont) + Text(event.edited ? "  edited" : "").font(Theme.smallFont).foregroundColor(event.mine ? tones.onMineSecondary : tones.secondary))
+					(Text(t).font(Theme.messageFont) + Text(event.edited ? "  edited" : "").font(Theme.smallFont).foregroundColor(event.mine ? tones.onMineSecondary : tones.secondary) + stamp)
+						#if os(macOS)
 						.textSelection(.enabled)
-						.help(event.via.map { pathSentence($0) } ?? "")
+						#endif
+						.help(sentence ?? event.via.map { pathSentence($0) } ?? "")
+						.accessibilityValue(sentence ?? "")
 						// A link in the words' own ink, underlined: the accent would vanish on my bubble.
 						.tint(event.mine ? tones.onMine : tones.text)
 						// A baud link opens here, on Add; any other the system opens.
@@ -347,14 +440,16 @@ struct MessageRow: View {
 							return .handled
 						})
 						#if os(iOS)
-						// A tap on the words shows how they travelled, unless there's a link to tap.
-						.simultaneousGesture(TapGesture().onEnded { if !linked { showPath.toggle() } })
+						// Two taps react; one (once two is ruled out) shows how it travelled, unless
+						// there's a link to tap.
+						.simultaneousGesture(TapGesture(count: 2).onEnded { if !lifted { doubleTap() } }
+							.exclusively(before: TapGesture().onEnded { if !linked, !lifted { showPath.toggle() } }))
 						#endif
 				}
 			}
 			.padding(.horizontal, Self.padH).padding(.vertical, Self.padV)
 			.foregroundStyle(event.mine ? tones.onMine : tones.text)
-			.background { bubble.fill(event.mine ? tones.loud : tones.card).lifted(tones) }
+			.background { bubble.fill(event.mine ? tones.loud : tones.card).lifted(tones, by: lifted ? 2 : 1) }
 			.overlay { if mentionsMe { bubble.strokeBorder(tones.text, lineWidth: 2) } }
 			if showPath, let path = event.via.map({ pathSentence($0) }) { Text(path).font(Theme.smallFont).foregroundStyle(tones.secondary).padding(.horizontal, 13) }
 		}
@@ -378,27 +473,29 @@ struct MessageRow: View {
 	static let gutter: CGFloat = 56
 	static let padH: CGFloat = 14, padV: CGFloat = 9, inner: CGFloat = 6
 	#endif
-	/// On a hover (Mac): its way and time, then React, Reply and More (the right click's menu), in
-	/// the empty space beside the bubble, never on it.
+	/// On a hover (Mac): its way and time, then React (the strip), Reply and ⋯ (the right click's
+	/// menu), in the empty space beside the bubble, never on it.
 	@ViewBuilder private var beside: some View {
 		#if os(macOS)
-		let shown = hover || picking || Self.asides
+		let shown = hover || picking || reacting || Self.asides
 		let actions = HStack(spacing: 0) {
-			IconButton(symbol: "face.smiling", help: "React", size: Icon.row) { picking = true }
+			IconButton(symbol: "face.smiling", help: "React", size: Icon.row) { reacting = true }
+				.popover(isPresented: $reacting, arrowEdge: .top) { ReactPopover(event: event) }
 			IconButton(symbol: "arrowshape.turn.up.left", help: "Reply", size: Icon.row) { onReply(event) }
 			Menu { menu } label: { Image(systemName: "ellipsis").font(Icon.font(Icon.row)).frame(width: 24, height: 24).contentShape(Rectangle()) }
 				.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().foregroundStyle(tones.secondary)
 				.help("More").accessibilityLabel("More")
 		}
-		HStack(spacing: 6) {
+		HStack(spacing: 4) {
 			if event.mine { actions; aside } else { aside; actions }
 		}
+		.fixedSize()
 		.opacity(shown ? 1 : 0)
 		.allowsHitTesting(shown)
 		.animation(Motion.quick, value: hover)
 		#endif
 	}
-	/// Its way, as a mark, and its time: beside it on a hover or a drag.
+	/// Its way, as a mark, and its time: beside it on a hover or a drag, never at rest.
 	private var aside: some View {
 		HStack(spacing: 5) {
 			if let v = event.via { MarkView(mark: Self.mark(v), size: Theme.small + 1, color: tones.secondary) }
@@ -408,35 +505,178 @@ struct MessageRow: View {
 		.accessibilityHidden(true)
 	}
 
-	/// Mine on, or off again when it already is.
-	private func react(_ k: String) {
-		let on = !(event.reactions.first { $0.key == k }?.mine ?? false)
-		EmojiPicker.used(k)
-		model.attempt { try model.core.react(event.conv, event.id, k, on: on) }
-	}
-
-	/// The same menu on a right click and a long press, in the same order everywhere: answering it,
-	/// copying it, what's known about it, changing it; deleting last, and asked first.
+	/// The one list of what can be done with it, in Signal's order: Reply, React ▸, Forward, Copy
+	/// text, Info, Edit; then, alone and asked first, Delete.
 	@ViewBuilder private var menu: some View {
-		if event.mine, let d = model.timeline(event.conv).delivery, d.event == event.id { Text(d.sentence.prefix(1).uppercased() + d.sentence.dropFirst()) }
-		Menu {
-			ForEach(Array(EmojiPicker.recent.prefix(6)), id: \.self) { k in Button(k) { react(k) } }
-			Divider()
-			Button("All Emoji…") { picking = true }
-		} label: { Label("React", systemImage: "face.smiling") }
 		Button { onReply(event) } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
-		Button { onThread(event) } label: { Label("Reply in thread", systemImage: "bubble.left.and.bubble.right") }
-		if let t = event.text, !t.isEmpty { Button { copy(t) } label: { Label("Copy", systemImage: "doc.on.doc") } }
-		Divider()
-		if !event.reactions.isEmpty { Button { showReactions = true } label: { Label("Who reacted", systemImage: "person.2") } }
+		Menu {
+			ForEach(EmojiPicker.strip, id: \.self) { k in Button(k) { model.toggleReaction(event, k) } }
+			Button("More…") { picking = true }
+		} label: { Label("React", systemImage: "face.smiling") }
+		// A channel keeps its threads.
+		if !timeline.threadsInline { Button { onThread(event) } label: { Label("Reply in thread", systemImage: "bubble.left.and.bubble.right") } }
+		Button { forwarding = true } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
+		if let t = event.text, !t.isEmpty, PlaceText.parse(t) == nil { Button { copy(t) } label: { Label("Copy text", systemImage: "doc.on.doc") } }
 		if event.mine {
 			Button { showInfo = true } label: { Label("Info", systemImage: "info.circle") }
-			if event.text != nil { Button { editText = event.text ?? ""; editing = true } label: { Label("Edit", systemImage: "pencil") } }
+			if event.text != nil, PlaceText.parse(event.text) == nil { Button { editText = event.text ?? ""; editing = true } label: { Label("Edit", systemImage: "pencil") } }
 			Divider()
-			Button(role: .destructive) { deleting = true } label: { Label("Delete", systemImage: "trash") }
+			Button(role: .destructive) { deleting = true } label: { Label("Delete…", systemImage: "trash") }
 		}
 	}
 }
+
+/// The Mac's React: the strip, and + turning it into every emoji, in one popover.
+struct ReactPopover: View {
+	@Environment(\.tones) private var tones
+	@Environment(\.dismiss) private var dismiss
+	@Environment(AppModel.self) private var model
+	let event: Event
+	@State private var more = false
+	var body: some View {
+		Group {
+			if more { EmojiPicker { model.toggleReaction(event, $0) } }
+			else { ReactionStrip(event: event, done: { dismiss() }, more: { more = true }) }
+		}
+		.background(tones.surface)
+	}
+}
+
+/// A message held on the iPhone: which, how it sat in its run, and where it is on screen.
+struct Holding: Equatable {
+	let event: Event
+	let first: Bool, last: Bool
+	let frame: CGRect
+	static func == (a: Holding, b: Holding) -> Bool { a.event.id == b.event.id && a.frame == b.frame }
+}
+extension EnvironmentValues { @Entry var hold: ((Holding) -> Void)? = nil }
+
+/// A hold where there's a hold menu (the iPhone's conversation); the system's menu elsewhere (the
+/// Mac, a thread). Either way the row knows where it is.
+private struct HoldOrMenu<M: View>: ViewModifier {
+	let lifted: Bool
+	let hold: (() -> Void)?
+	@Binding var frame: CGRect
+	@ViewBuilder var menu: () -> M
+	func body(content: Content) -> some View {
+		#if os(iOS)
+		if lifted { content }
+		else if let hold {
+			content
+				.onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
+				.onLongPressGesture(minimumDuration: 0.35) { Haptic.tap(); hold() }
+		} else { content.contextMenu { menu() } }
+		#else
+		content.contextMenu { menu() }
+		#endif
+	}
+}
+
+#if os(iOS)
+/// The message held: lifted where it was, everything else dimmed in a tone of the colour, my recent
+/// reactions above it and what can be done with it below. Near the top of the screen the reactions
+/// go under it; near the bottom the actions go over it. A tap anywhere else closes it.
+struct HoldMenu: View {
+	@Environment(AppModel.self) private var model
+	@Environment(\.tones) private var tones
+	@Environment(\.accessibilityReduceMotion) private var still
+	let holding: Holding
+	let onReply: (Event) -> Void
+	let close: () -> Void
+	@State private var shown = false
+	private var e: Event { holding.event }
+	private var actions: [(title: String, symbol: String, danger: Bool, run: () -> Void)] {
+		var out: [(String, String, Bool, () -> Void)] = [("Reply", "arrowshape.turn.up.left", false, { onReply(e) })]
+		out.append(("Forward", "arrowshape.turn.up.right", false, { ask(.forward) }))
+		if let t = e.text, !t.isEmpty, PlaceText.parse(t) == nil { out.append(("Copy text", "doc.on.doc", false, { copy(t) })) }
+		if e.mine {
+			out.append(("Info", "info.circle", false, { ask(.info) }))
+			if e.text != nil, PlaceText.parse(e.text) == nil { out.append(("Edit", "pencil", false, { ask(.edit) })) }
+			out.append(("Delete…", "trash", true, { ask(.delete) }))
+		}
+		return out.map { (title: $0.0, symbol: $0.1, danger: $0.2, run: $0.3) }
+	}
+	private func ask(_ a: AppModel.MessageAsk) { model.messageAsk = (e.id, a) }
+
+	var body: some View {
+		GeometryReader { geo in
+			let here = geo.frame(in: .global)
+			let row = holding.frame.offsetBy(dx: -here.minX, dy: -here.minY)
+			let top = geo.safeAreaInsets.top + 8, bottom = geo.size.height - geo.safeAreaInsets.bottom - 8
+			let strip: CGFloat = ReactionStrip.cell + 8, gap: CGFloat = 8
+			let cardH = CGFloat(actions.count) * 46 + 8 + (e.mine ? 1 : 0)
+			let place = layout(row: row, top: top, bottom: bottom, strip: strip, card: cardH, gap: gap)
+			let side: Alignment = e.mine ? .trailing : .leading
+			ZStack(alignment: .topLeading) {
+				// Everything else, quieter: the ground's own colour over it, not grey.
+				tones.surface.opacity(0.88).ignoresSafeArea()
+					.contentShape(Rectangle()).onTapGesture { finish() }
+				MessageRow(event: e, first: holding.first, last: holding.last, onReply: { _ in }, onThread: { _ in }, lifted: true)
+					.environment(\.hold, nil)
+					.frame(width: row.width, height: row.height)
+					.allowsHitTesting(false)
+					.scaleEffect(shown && !still ? 1.02 : 1)
+					.offset(x: row.minX, y: place.row)
+				ReactionStrip(event: e, done: { finish() }, more: { ask(.react); finish() })
+					.background(Capsule().fill(tones.card).lifted(tones, by: 2))
+					.frame(width: row.width, alignment: side)
+					.offset(x: row.minX, y: place.strip)
+				card
+					.frame(width: row.width, alignment: side)
+					.offset(x: row.minX, y: place.card)
+			}
+			.opacity(shown ? 1 : 0)
+		}
+		.ignoresSafeArea()
+		.onAppear { withAnimation(Motion.or(Motion.quick, still: still)) { shown = true } }
+		.accessibilityAddTraits(.isModal)
+	}
+
+	private var card: some View {
+		VStack(spacing: 0) {
+			ForEach(Array(actions.enumerated()), id: \.offset) { i, a in
+				if a.danger { Hairline() }
+				Button { a.run(); finish() } label: {
+					HStack {
+						Text(a.title).font(Theme.font)
+						Spacer(minLength: 16)
+						Image(systemName: a.symbol).font(Icon.font(Icon.row))
+					}
+					.foregroundStyle(a.danger ? tones.danger : tones.text)
+					.frame(minHeight: 46).contentShape(Rectangle())
+				}
+				.buttonStyle(RowStyle())
+			}
+		}
+		.padding(.vertical, 4)
+		.frame(width: 250)
+		.background(RoundedRectangle(cornerRadius: Radius.card, style: .continuous).fill(tones.card).lifted(tones, by: 2))
+	}
+
+	/// Where the strip, the row and the card go: the strip over the row and the card under it, unless
+	/// the screen's edge is too near; then they move to the other side, and the row with them.
+	private func layout(row: CGRect, top: CGFloat, bottom: CGFloat, strip: CGFloat, card: CGFloat, gap: CGFloat) -> (strip: CGFloat, row: CGFloat, card: CGFloat) {
+		let h = row.height
+		var y = row.minY
+		if y - strip - gap >= top, y + h + gap + card <= bottom { return (y - gap - strip, y, y + h + gap) }
+		if y - strip - gap < top {
+			// Near the top: the row, then the strip, then the card, all as high as fits.
+			y = max(top, min(y, bottom - h - gap - strip - gap - card))
+			return (y + h + gap, y, y + h + gap + strip + gap)
+		}
+		// Near the bottom: the card, then the strip, then the row, all as low as fits.
+		y = min(y, bottom - h)
+		let s = y - gap - strip
+		let c = max(top, s - gap - card)
+		return (s, y, c)
+	}
+
+	private func finish() {
+		withAnimation(Motion.or(Motion.quick, still: still)) { shown = false }
+		Task { try? await Task.sleep(for: .milliseconds(120)); close() }
+	}
+}
+#endif
 
 struct Quote: View {
 	@Environment(\.tones) private var tones

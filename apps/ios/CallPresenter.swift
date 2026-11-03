@@ -61,7 +61,7 @@ final class CallOverlay: NSObject {
 		let w = CallWindow(windowScene: scene)
 		w.windowLevel = .normal + 1
 		w.backgroundColor = .clear
-		let h = CallHost(rootView: AnyView(CallStage().environment(model).modifier(Tinted(hex: model.accentHex))))
+		let h = CallHost(rootView: AnyView(CallStage().environment(model).modifier(Tinted(hex: model.shownHex))))
 		h.view.backgroundColor = .clear
 		w.rootViewController = h
 		w.frame = scene.coordinateSpace.bounds

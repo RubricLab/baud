@@ -218,6 +218,12 @@ enum Haptic {
 		UIImpactFeedbackGenerator(style: .light).impactOccurred()
 		#endif
 	}
+	/// A hold that opened its menu, a double tap that reacted.
+	static func tap() {
+		#if os(iOS)
+		UIImpactFeedbackGenerator(style: .light).impactOccurred()
+		#endif
+	}
 }
 
 /// A file waiting in the composer: a photo as a small picture, anything else as its name; × takes it back.

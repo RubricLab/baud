@@ -49,7 +49,7 @@ final class CallWindows: NSObject, NSWindowDelegate {
 		} else if mini != nil, let w = window {
 			// Big again: a fresh screen takes the pictures back from the small one.
 			closeMini()
-			w.contentView = NSHostingView(rootView: CallScreen(session: s).environment(model).modifier(Tinted(hex: model.accentHex)))
+			w.contentView = NSHostingView(rootView: CallScreen(session: s).environment(model).modifier(Tinted(hex: model.shownHex)))
 			w.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
 		}
 	}
@@ -66,7 +66,7 @@ final class CallWindows: NSObject, NSWindowDelegate {
 		p.backgroundColor = .clear
 		p.isOpaque = false
 		p.hasShadow = true
-		p.contentView = NSHostingView(rootView: CallMini(session: s, move: { [weak self] d in self?.drag(d) }).environment(model).modifier(Tinted(hex: model.accentHex)))
+		p.contentView = NSHostingView(rootView: CallMini(session: s, move: { [weak self] d in self?.drag(d) }).environment(model).modifier(Tinted(hex: model.shownHex)))
 		if let screen = (window?.screen ?? NSScreen.main)?.visibleFrame { p.setFrameOrigin(NSPoint(x: screen.maxX - size.width - 16, y: screen.maxY - size.height - 16)) }
 		p.alphaValue = 0
 		p.orderFrontRegardless()
@@ -111,7 +111,7 @@ final class CallWindows: NSObject, NSWindowDelegate {
 		p.isOpaque = false
 		p.hasShadow = true
 		p.isMovableByWindowBackground = true
-		let host = NSHostingView(rootView: IncomingCall(session: s).environment(model).modifier(Tinted(hex: model.accentHex)))
+		let host = NSHostingView(rootView: IncomingCall(session: s).environment(model).modifier(Tinted(hex: model.shownHex)))
 		host.frame = NSRect(origin: .zero, size: size)
 		p.contentView = host
 		if let screen = NSScreen.main?.visibleFrame { p.setFrameOrigin(NSPoint(x: screen.maxX - size.width - 16, y: screen.maxY - size.height - 16)) }
@@ -145,7 +145,7 @@ final class CallWindows: NSObject, NSWindowDelegate {
 		w.minSize = s.video ? NSSize(width: 480, height: 320) : NSSize(width: 340, height: 440)
 		w.isReleasedWhenClosed = false
 		w.delegate = self
-		w.contentView = NSHostingView(rootView: CallScreen(session: s).environment(model).modifier(Tinted(hex: model.accentHex)))
+		w.contentView = NSHostingView(rootView: CallScreen(session: s).environment(model).modifier(Tinted(hex: model.shownHex)))
 		w.center()
 		// A test call never takes the screen from whoever is using it.
 		if CallCenter.test { w.orderFrontRegardless() } else { w.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }

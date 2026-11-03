@@ -1,5 +1,6 @@
-/// Every emoji, for a reaction: the ones I used last on top, then Unicode's groups, and a search
-/// over their names. A popover on the Mac, a sheet on the iPhone.
+/// Every emoji, for a reaction or the composer: the search first (the keyboard up at once), then
+/// the ones I used last, then Unicode's groups, in a grid made for a finger. One tap and it's done.
+/// A popover on the Mac, a sheet on the iPhone.
 import SwiftUI
 
 struct EmojiPicker: View {
@@ -16,17 +17,21 @@ struct EmojiPicker: View {
 			return Item(emoji: String(l[..<sp]), name: String(l[l.index(after: sp)...]))
 		})
 	}
-	/// The last reactions I picked here, newest first; a per-device convenience.
+	/// The last ones I gave here, newest first; this device's own, for now.
 	static var recent: [String] {
-		get { UserDefaults.standard.stringArray(forKey: "recentEmoji") ?? ["👍", "❤️", "😂", "🔥", "👀", "✅", "🙏", "🎉"] }
-		set { UserDefaults.standard.set(Array(newValue.prefix(16)), forKey: "recentEmoji") }
+		get { UserDefaults.standard.stringArray(forKey: "recentReactions") ?? [] }
+		set { UserDefaults.standard.set(Array(newValue.prefix(24)), forKey: "recentReactions") }
 	}
+	/// Until there are six of my own.
+	static let seeds = ["❤️", "👍", "😂", "😮", "😢", "🙏"]
+	/// The reaction strip's six: mine, most recent first, then the seeds.
+	static var strip: [String] { Array((recent + seeds.filter { !recent.contains($0) }).prefix(6)) }
 	static func used(_ e: String) { recent = [e] + recent.filter { $0 != e } }
 
 	#if os(macOS)
-	private let cell: CGFloat = 32, glyph: CGFloat = 22
+	private let cell: CGFloat = 36, glyph: CGFloat = 24
 	#else
-	private let cell: CGFloat = 44, glyph: CGFloat = 30
+	private let cell: CGFloat = 50, glyph: CGFloat = 34
 	#endif
 
 	var body: some View {
@@ -40,14 +45,19 @@ struct EmojiPicker: View {
 						.buttonStyle(.plain).foregroundStyle(tones.secondary).accessibilityLabel("Clear")
 				}
 			}
-			.padding(.horizontal, 8).frame(height: 30)
-			.background(RoundedRectangle(cornerRadius: 7).fill(tones.field))
+			.padding(.horizontal, 8)
+			#if os(macOS)
+			.frame(height: 30)
+			#else
+			.frame(minHeight: 40)
+			#endif
+			.background(RoundedRectangle(cornerRadius: Radius.row, style: .continuous).fill(tones.field))
 			.padding(12)
 			Hairline()
 			ScrollView {
 				LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
 					if query.trimmingCharacters(in: .whitespaces).isEmpty {
-						section("Recent", Self.recent.map { Item(emoji: $0, name: $0) })
+						section("Recent", (Self.recent.isEmpty ? Self.seeds : Self.recent).map { Item(emoji: $0, name: $0) })
 						ForEach(Self.groups, id: \.name) { g in section(g.name, g.items) }
 					} else if matches.isEmpty {
 						Text("No emoji for “\(query)”").font(Theme.smallFont).foregroundStyle(tones.secondary).padding(16)
@@ -57,12 +67,17 @@ struct EmojiPicker: View {
 				}
 				.padding(.horizontal, 8).padding(.bottom, 8)
 			}
+			.scrollIndicators(.hidden)
+			#if os(iOS)
+			.scrollDismissesKeyboard(.immediately)
+			#endif
 		}
 		.background(tones.surface)
 		#if os(macOS)
-		.frame(width: cell * 9 + 16, height: 360)
-		.onAppear { searching = true }
+		.frame(width: cell * 9 + 16, height: 400)
 		#endif
+		// The search takes the keyboard at once: most picks start by typing.
+		.onAppear { searching = true }
 	}
 
 	private var matches: [Item] {
@@ -109,7 +124,7 @@ struct EmojiPicker: View {
 			let configuration: Configuration
 			var body: some View {
 				configuration.label
-					.background(RoundedRectangle(cornerRadius: 7).fill(configuration.isPressed ? tones.pressed : hover ? tones.hover : .clear))
+					.background(RoundedRectangle(cornerRadius: Radius.row, style: .continuous).fill(configuration.isPressed ? tones.pressed : hover ? tones.hover : .clear))
 					.contentShape(Rectangle())
 					.onHover { hover = $0 }
 			}

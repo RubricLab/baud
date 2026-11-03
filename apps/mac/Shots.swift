@@ -84,7 +84,7 @@ enum Shots {
 				// The reaction picker, in a panel of its own (a popover can't be opened from here).
 				let panel = NSPanel(contentRect: NSRect(x: 240, y: 240, width: 304, height: 376), styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
 				panel.titlebarAppearsTransparent = true
-				panel.contentView = NSHostingView(rootView: EmojiPicker(pick: { _ in }).modifier(Tinted(hex: model.accentHex)).environment(model))
+				panel.contentView = NSHostingView(rootView: EmojiPicker(pick: { _ in }).modifier(Tinted(hex: model.shownHex)).environment(model))
 				if env["BAUD_HIDDEN"] == "1" { panel.alphaValue = 0; panel.ignoresMouseEvents = true }
 				panel.orderFront(nil)
 				await snap(step)

@@ -75,7 +75,6 @@ struct MacTimeline: NSViewRepresentable {
 		let c = context.coordinator
 		c.onReply = onReply; c.onThread = onThread
 		var rows: [Row] = timeline.rows.map { .row($0) }
-		if let s = timeline.status { rows.append(.line("delivery-\(s)", s, timeline.statusMark)) }
 		if !timeline.typing.isEmpty { rows.append(.typing(timeline.typing)) }
 		c.apply(rows, timeline: timeline)
 	}
@@ -244,7 +243,7 @@ struct RowHost: View {
 		}
 		.frame(maxWidth: .infinity, alignment: .leading)
 		.environment(\.reveal, TimelineView.held ?? swipe?.x ?? 0)
-		.environment(model).modifier(Tinted(hex: model.accentHex))
+		.environment(model).modifier(Tinted(hex: model.shownHex))
 	}
 }
 
@@ -341,12 +340,13 @@ struct Heights {
 		let todo = rows.filter { cache[$0.id] == nil }
 		guard todo.count > 64 else { return }
 		let texts = todo.map { r -> AttributedString? in if case .row(.event(let e, _, _)) = r, e.type == .message { return timeline?.text(for: e) ?? e.text.map(AttributedString.init) }; return nil }
-		let quoted = todo.map { r -> Bool in if case .row(.event(let e, _, _)) = r, let q = e.reply { return timeline?.byId[q] != nil }; return false }
+		let quoted = todo.map { r -> Bool in if case .row(.event(let e, _, _)) = r { return timeline?.quoted(e) != nil }; return false }
+		let replies = timeline.map { !$0.threadsInline } ?? false
 		let direct = timeline.flatMap { model.conversation($0.conv) }.map { $0.isDirect || $0.kind == .home } ?? true
 		var out = [CGFloat](repeating: 0, count: todo.count)
 		out.withUnsafeMutableBufferPointer { buf in
 			let p = buf.baseAddress!
-			DispatchQueue.concurrentPerform(iterations: todo.count) { i in p[i] = Self.compute(todo[i], text: texts[i], quoted: quoted[i], direct: direct, width: width, m: m) }
+			DispatchQueue.concurrentPerform(iterations: todo.count) { i in p[i] = Self.compute(todo[i], text: texts[i], quoted: quoted[i], direct: direct, replies: replies, width: width, m: m) }
 		}
 		for (i, r) in todo.enumerated() { cache[r.id] = out[i] }
 	}
@@ -355,14 +355,14 @@ struct Heights {
 		if let h = cache[row.id] { return h }
 		let m = Self.metrics ?? Self.measure(model: model)
 		var text: AttributedString?, quoted = false
-		if case .row(.event(let e, _, _)) = row { text = timeline?.text(for: e) ?? e.text.map(AttributedString.init); if let q = e.reply { quoted = timeline?.byId[q] != nil } }
+		if case .row(.event(let e, _, _)) = row { text = timeline?.text(for: e) ?? e.text.map(AttributedString.init); quoted = timeline?.quoted(e) != nil }
 		let direct = timeline.flatMap { model.conversation($0.conv) }.map { $0.isDirect || $0.kind == .home } ?? true
-		let h = Self.compute(row, text: text, quoted: quoted, direct: direct, width: width, m: m)
+		let h = Self.compute(row, text: text, quoted: quoted, direct: direct, replies: timeline.map { !$0.threadsInline } ?? false, width: width, m: m)
 		cache[row.id] = h
 		return h
 	}
 
-	nonisolated static func compute(_ row: MacTimeline.Row, text: AttributedString?, quoted: Bool, direct: Bool, width: CGFloat, m: Metrics) -> CGFloat {
+	nonisolated static func compute(_ row: MacTimeline.Row, text: AttributedString?, quoted: Bool, direct: Bool, replies: Bool, width: CGFloat, m: Metrics) -> CGFloat {
 		let h: CGFloat
 		switch row {
 		case .row(.day): h = m.day
@@ -381,6 +381,8 @@ struct Heights {
 				let ns = NSMutableAttributedString(t)
 				ns.addAttribute(.font, value: m.font, range: NSRange(location: 0, length: ns.length))
 				if e.edited { ns.append(NSAttributedString(string: "  edited", attributes: [.font: NSFont.systemFont(ofSize: Theme.small)])) }
+				// My last bubble in a run ends in its time and mark.
+				if e.mine, last { ns.append(NSAttributedString(string: "  12:59 PM ✓✓", attributes: [.font: NSFont.systemFont(ofSize: Theme.small)])) }
 				let r = ns.boundingRect(with: NSSize(width: max(40, textWidth), height: .greatestFiniteMagnitude), options: [.usesLineFragmentOrigin, .usesFontLeading])
 				sum += max(1, (r.height / m.textLine).rounded()) * m.textLine
 			}
@@ -393,7 +395,8 @@ struct Heights {
 				} else { sum += m.file }
 			}
 			if !e.reactions.isEmpty { sum += m.reactions }
-			if e.replies > 0 { sum += m.replies }
+			// A thread's "N replies" line, in a channel; a chat shows its replies in the conversation.
+			if e.replies > 0, replies { sum += m.replies }
 			h = sum.rounded(.up)
 		}
 		return h
@@ -402,7 +405,7 @@ struct Heights {
 	static func measure(model: AppModel) -> Metrics {
 		let w: CGFloat = 600
 		func h<V: View>(_ v: V) -> CGFloat {
-			let host = NSHostingView(rootView: AnyView(v.frame(maxWidth: .infinity, alignment: .leading).environment(model).modifier(Tinted(hex: model.accentHex))))
+			let host = NSHostingView(rootView: AnyView(v.frame(maxWidth: .infinity, alignment: .leading).environment(model).modifier(Tinted(hex: model.shownHex))))
 			host.frame = NSRect(x: 0, y: 0, width: w, height: 10)
 			return host.fittingSize.height
 		}
