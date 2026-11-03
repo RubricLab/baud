@@ -20,6 +20,7 @@ enum Shots {
 		let suffix = mode == "system" ? "-system" : (mode == "dark" ? "-dark" : "")
 		let hold = Double(env["BAUD_HOLD"] ?? "") ?? 0
 		let steps = env["BAUD_SHOTS_STEPS"].map { $0.split(separator: ",").map(String.init) } ?? all
+
 		try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
 		// `BAUD_SHOTS_AT=secs`: start later, after a real friend has arrived and talked.
 		if let at = env["BAUD_SHOTS_AT"].flatMap(Double.init) { try? await Task.sleep(for: .seconds(at)) }
@@ -120,12 +121,17 @@ enum Shots {
 				// app's own pictures, so the page is drawn by itself at the window's width.
 				show("page:" + dir + "/mac-settings-page\(suffix).png")
 				try? await Task.sleep(for: .seconds(1))
-			case "settings", "friends", "network":
-				model.settingsSection = step == "settings" ? nil : step
-				show("settings"); try? await Task.sleep(for: .seconds(0.8))
-				for w in NSApp.windows where w.isVisible { w.makeFirstResponder(nil) }
-				await snap(step)
-				if step == "network" { close("Settings") }
+			case let s where s == "settings" || s.hasPrefix("settings-"):
+				// Settings, in the main window: a section by name (`settings-updates`), then back.
+				show(s == "settings" ? "settings" : "settings:" + String(s.dropFirst(9)))
+				try? await Task.sleep(for: .seconds(0.6))
+				await snap(s)
+				show("back")
+			case "friends":
+				show("friends"); await snap(step); show("back")
+			case "connection":
+				show("connection:" + dir + "/mac-connection\(suffix).png")
+				try? await Task.sleep(for: .seconds(1))
 			default: break
 			}
 		}

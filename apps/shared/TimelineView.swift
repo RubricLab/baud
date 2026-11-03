@@ -317,12 +317,18 @@ struct MessageRow: View {
 			Button("Cancel", role: .cancel) {}
 		} message: { Text("It goes for everyone in this chat.") }
 		#if DEBUG
-		// `BAUD_HOLD=1`: the newest message from someone else held, for pictures of the hold menu.
+		// For pictures: `BAUD_HOLD=1` holds the newest message from someone else (the hold menu),
+		// `BAUD_PICKER=1` opens every emoji for it, `BAUD_MSGINFO=1` my newest one's Info.
 		.task {
-			guard ProcessInfo.processInfo.environment["BAUD_HOLD"] == "1", !lifted, let h = hold,
-				timeline.events.last(where: { !$0.mine && $0.type == .message && $0.text != nil })?.id == event.id else { return }
+			guard !lifted else { return }
+			let env = ProcessInfo.processInfo.environment
+			let theirs = timeline.events.last(where: { !$0.mine && $0.type == .message && $0.text != nil })?.id == event.id
+			let mine = timeline.events.last(where: { $0.mine && $0.type == .message && $0.text != nil })?.id == event.id
+			guard (theirs && (env["BAUD_HOLD"] == "1" || env["BAUD_PICKER"] == "1")) || (mine && env["BAUD_MSGINFO"] == "1") else { return }
 			try? await Task.sleep(for: .milliseconds(1500))
-			h(Holding(event: event, first: first, last: last, frame: frame))
+			if theirs, env["BAUD_HOLD"] == "1", let h = hold { h(Holding(event: event, first: first, last: last, frame: frame)) }
+			if theirs, env["BAUD_PICKER"] == "1" { picking = true }
+			if mine, env["BAUD_MSGINFO"] == "1" { showInfo = true }
 		}
 		#endif
 	}
@@ -331,8 +337,10 @@ struct MessageRow: View {
 	/// column whatever the window's width (an overlay past the bubble ran off a narrow window).
 	@ViewBuilder private var gutter: some View {
 		#if os(macOS)
+		// The words take the room they need first; the gutter takes what's left (at least its own).
 		Color.clear.frame(minWidth: Self.gutter, maxWidth: .infinity, minHeight: 1)
 			.overlay(alignment: event.mine ? .trailing : .leading) { beside.padding(event.mine ? .trailing : .leading, 8) }
+			.layoutPriority(-1)
 		#else
 		Spacer(minLength: Self.gutter)
 		#endif
@@ -392,7 +400,8 @@ struct MessageRow: View {
 		let ink = tones.onMineSecondary
 		let time = Text("  " + clock(event.at)).font(Theme.smallFont).foregroundColor(ink)
 		guard let d = delivery else { return time }
-		return time + Text(" ") + Text(MarkImage.image(Mark.delivery(d), size: Theme.small + 1, color: ink)).baselineOffset(-1.5)
+		// A no-break space: the time and its mark wrap as one, never the mark alone on a line.
+		return time + Text("\u{00A0}") + Text(MarkImage.image(Mark.delivery(d), size: Theme.small + 1, color: ink)).baselineOffset(-1.5)
 	}
 	/// The mark's words, for a pointer resting on it and for VoiceOver: "Waiting for Ana", "Read".
 	private var sentence: String? { delivery.map { $0.sentence.prefix(1).uppercased() + $0.sentence.dropFirst() } }
@@ -427,6 +436,8 @@ struct MessageRow: View {
 					// conversation (Timeline.status).
 					let linked = t.runs.contains { $0.link != nil }
 					(Text(t).font(Theme.messageFont) + Text(event.edited ? "  edited" : "").font(Theme.smallFont).foregroundColor(event.mine ? tones.onMineSecondary : tones.secondary) + stamp)
+						// Every line, always: a row a point short of the words never cuts them to "…".
+						.fixedSize(horizontal: false, vertical: true)
 						#if os(macOS)
 						.textSelection(.enabled)
 						#endif
@@ -500,7 +511,8 @@ struct MessageRow: View {
 	private var aside: some View {
 		HStack(spacing: 5) {
 			if let v = event.via { MarkView(mark: Self.mark(v), size: Theme.small + 1, color: tones.secondary) }
-			Text(clock(event.at)).font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit()
+			// Not twice: my last bubble of a run carries its own time.
+			if !(event.mine && last && event.text != nil) { Text(clock(event.at)).font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit() }
 		}
 		.fixedSize()
 		.accessibilityHidden(true)

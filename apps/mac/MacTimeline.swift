@@ -55,6 +55,7 @@ struct MacTimeline: NSViewRepresentable {
 		NotificationCenter.default.addObserver(c, selector: #selector(Coordinator.scrolled), name: NSView.boundsDidChangeNotification, object: scroll.contentView)
 		NotificationCenter.default.addObserver(c, selector: #selector(Coordinator.resized), name: NSView.frameDidChangeNotification, object: scroll.contentView)
 		c.table = table; c.scroll = scroll
+		scroll.onResize = { [weak c] in c?.resized() }
 		c.onReply = onReply; c.onThread = onThread
 		Bench.scrollTo = { [weak c] id, anchor in c?.scroll(to: id, top: anchor == .top) }
 		Bench.glide = { [weak c] seconds in await c?.glide(seconds: seconds) ?? 0 }
@@ -257,6 +258,10 @@ final class Swipe { var x: CGFloat = 0 }
 /// else scrolls as ever. A mouse wheel has no phases and only ever scrolls.
 final class SwipeScroll: NSScrollView {
 	var onSwipe: ((CGFloat, Bool) -> Void)?
+	/// Every new width, however it came (a window resized, details opened beside it): the clip
+	/// view's own frame notice doesn't always come when SwiftUI sizes the scroll view.
+	var onResize: (() -> Void)?
+	override func tile() { super.tile(); onResize?() }
 	/// Files dragged over the messages: said, and taken, here too (the table under SwiftUI's own
 	/// drop area would otherwise swallow them).
 	var onDragOver: ((Bool) -> Void)?
@@ -373,16 +378,16 @@ struct Heights {
 			var sum = (first ? m.firstTop : m.top) + (last ? m.lastBottom : m.bottom)
 			if first, !e.mine, !direct { sum += m.name }
 			if text != nil || quoted { sum += m.bubblePad }
-			// The column (the row's insets, or its widest), the far side's spacer, the bubble's own
-			// padding, and a face in a group.
-			let textWidth = min(width - 32, MessageRow.column) - MessageRow.gutter - MessageRow.padH * 2 - (direct || e.mine ? 0 : 36)
+			// The column (the row's insets, or its widest), the far side's gutter and the 8 before it,
+			// the bubble's own padding, and a face in a group; a point spare against rounding.
+			let textWidth = min(width - 32, MessageRow.column) - MessageRow.gutter - 8 - MessageRow.padH * 2 - (direct || e.mine ? 0 : 36) - 1
 			if quoted { sum += m.quote > 0 ? m.quote : 33 }
 			if let t = text {
 				let ns = NSMutableAttributedString(t)
 				ns.addAttribute(.font, value: m.font, range: NSRange(location: 0, length: ns.length))
 				if e.edited { ns.append(NSAttributedString(string: "  edited", attributes: [.font: NSFont.systemFont(ofSize: Theme.small)])) }
 				// My last bubble in a run ends in its time and mark.
-				if e.mine, last { ns.append(NSAttributedString(string: "  12:59 PM ✓✓", attributes: [.font: NSFont.systemFont(ofSize: Theme.small)])) }
+				if e.mine, last { ns.append(NSAttributedString(string: "  12:59\u{00A0}PM\u{00A0}✓✓", attributes: [.font: NSFont.systemFont(ofSize: Theme.small)])) }
 				let r = ns.boundingRect(with: NSSize(width: max(40, textWidth), height: .greatestFiniteMagnitude), options: [.usesLineFragmentOrigin, .usesFontLeading])
 				sum += max(1, (r.height / m.textLine).rounded()) * m.textLine
 			}

@@ -6,6 +6,12 @@ import SwiftUI
 
 @main
 struct BaudMacApp: App {
+	/// The main window's first width; `BAUD_SHOTS_WIDTH=900` (Debug) opens it at its narrowest for pictures.
+	#if DEBUG
+	static let startWidth = ProcessInfo.processInfo.environment["BAUD_SHOTS_WIDTH"].flatMap(Double.init).map { CGFloat($0) } ?? 1080
+	#else
+	static let startWidth: CGFloat = 1080
+	#endif
 	@State private var model = AppModel()
 	@State private var updates = Updates()
 	@State private var palette = false
@@ -29,7 +35,7 @@ struct BaudMacApp: App {
 				.onOpenURL { model.open(url: $0) }
 				.onAppear { model.scene(active: true); model.front = NSApp.isActive }
 		}
-		.defaultSize(width: 1080, height: 700)
+		.defaultSize(width: Self.startWidth, height: 700)
 		// No toolbar, no title bar: ⌘K lives in the Go menu, the content runs to the top edge and
 		// the traffic lights sit over the sidebar's colour.
 		.windowStyle(.hiddenTitleBar)

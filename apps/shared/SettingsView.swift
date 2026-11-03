@@ -59,6 +59,8 @@ struct SettingsView: View {
 	#if os(macOS)
 	@Environment(Updates.self) private var updates
 	@State private var section: SettingsSection = .you
+	#else
+	@State private var pushed: SettingsSection?
 	#endif
 
 	var body: some View {
@@ -82,7 +84,7 @@ struct SettingsView: View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: Space.section) {
 				ListCard {
-					NavigationLink(value: SettingsSection.you) {
+					Button { pushed = .you } label: {
 						HStack(spacing: Rows.gap) {
 							Avatar(name: model.me.name, hash: model.me.avatar, size: 56)
 							VStack(alignment: .leading, spacing: 2) {
@@ -102,7 +104,9 @@ struct SettingsView: View {
 			.padding(.horizontal, Settings.side).padding(.vertical, Space.section)
 		}
 		.background(tones.surface.ignoresSafeArea())
-		.navigationDestination(for: SettingsSection.self) { SettingsPageOf(section: $0) }
+		.navigationDestination(item: $pushed) { SettingsPageOf(section: $0) }
+		// A section asked for by name (an update waiting, `BAUD_SECTION` for the pictures) opens.
+		.onAppear { if let s = model.settingsSection.flatMap(SettingsSection.init(asked:)) { model.settingsSection = nil; pushed = s } }
 		#endif
 	}
 
@@ -114,7 +118,7 @@ struct SettingsView: View {
 	}
 	#else
 	private func row(_ s: SettingsSection) -> some View {
-		NavigationLink(value: s) {
+		Button { pushed = s } label: {
 			HStack(spacing: Rows.gap) {
 				Image(systemName: s.symbol).font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
 				Text(s.title).font(Theme.font.weight(.medium))
@@ -152,12 +156,14 @@ struct SettingsList: View {
 	@Binding var selected: SettingsSection
 	var body: some View {
 		VStack(alignment: .leading, spacing: 2) {
+			// On the loud fill when it's the section open: its quiet line flips with it.
+			let t = selected == .you ? tones.onLoudTones : tones
 			Button { selected = .you } label: {
 				HStack(spacing: Rows.gap) {
 					Avatar(name: model.me.name, hash: model.me.avatar, size: 32)
 					VStack(alignment: .leading, spacing: 1) {
 						Text(model.me.name).font(Theme.font.weight(.semibold)).lineLimit(1)
-						Text("Face, name and colour").font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1)
+						Text("Face, name and colour").font(Theme.smallFont).foregroundStyle(t.secondary).lineLimit(1)
 					}
 				}
 				.frame(minHeight: 48)
@@ -171,7 +177,7 @@ struct SettingsList: View {
 						Text(s.title).font(Theme.font)
 						Spacer(minLength: 4)
 						// An update waiting shows here, as it does at the sidebar's foot.
-						if s == .updates, updates.offering { Circle().fill(tones.strong).frame(width: 8, height: 8).accessibilityLabel("Update waiting") }
+						if s == .updates, updates.offering { Circle().fill(selected == s ? tones.onLoud : tones.strong).frame(width: 8, height: 8).accessibilityLabel("Update waiting") }
 					}
 					.frame(minHeight: Rows.line)
 				}

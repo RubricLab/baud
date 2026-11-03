@@ -205,7 +205,7 @@ struct PersonSections: View {
 	@ViewBuilder private func shared(name: String, friend: Contact?) -> some View {
 		let groups = model.conversations.filter { $0.kind == .chat && !$0.isDirect && $0.id != conv && $0.members.contains(user) && $0.members.contains(model.me.user) }
 		if friend != nil || !groups.isEmpty {
-			ListCard(title: groups.count == 1 ? "1 group in common" : "\(groups.count) groups in common") {
+			ListCard(title: groups.isEmpty ? "No groups in common" : groups.count == 1 ? "1 group in common" : "\(groups.count) groups in common") {
 				if friend != nil { Button { grouping = true } label: { ActionRow(symbol: "person.2.badge.plus", title: "Add to a group") }.buttonStyle(RowStyle()) }
 				ForEach(groups) { g in
 					Button {

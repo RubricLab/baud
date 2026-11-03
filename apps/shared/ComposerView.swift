@@ -17,6 +17,7 @@ struct ComposerView: View {
 	@State private var files: [URL] = []
 	@State private var importing = false
 	@State private var locating = false
+	@State private var emoji = false
 	@State private var choosingPhotos = false
 	@State private var photos: [PhotosPickerItem] = []
 	@State private var editing: Event?
@@ -97,8 +98,11 @@ struct ComposerView: View {
 					onAccept: { guard let m = mentionMatches.prefix(6).dropFirst(mentionIndex).first else { return false }; text = Composing.complete(text, with: m.name); mentionIndex = 0; return true },
 					focus: focused)
 					.onChange(of: text) { _, new in changed(new) }
-				Button { NSApp.orderFrontCharacterPalette(nil) } label: { Image(systemName: "face.smiling").font(.system(size: 13)) }
-					.buttonStyle(.plain).foregroundStyle(tones.secondary).frame(width: 24, height: 24).help("Emoji (⌃⌘Space); :tada: works too")
+				// baud's own picker, the one reactions use: recent first, a search that takes the keyboard.
+				Button { emoji = true } label: { Image(systemName: "face.smiling").font(Icon.font(Icon.row)) }
+					.buttonStyle(.plain).foregroundStyle(tones.secondary).frame(width: 24, height: 24).help("Emoji (:tada: works too)")
+					.accessibilityLabel("Emoji")
+					.popover(isPresented: $emoji, arrowEdge: .top) { EmojiPicker { text += $0 }.environment(\.tones, tones) }
 				#else
 				// One line sits centred on the buttons' height; more lines grow the field upward.
 				PhoneComposerText(text: $text, placeholder: placeholder, field: field)
