@@ -92,9 +92,16 @@ fun Chats(open: (ConversationId) -> Unit, you: () -> Unit) {
             }
         }
     }
+    // A long press asks first, in red: my notes are cleared on every device of mine; a chat with
+    // one friend leaves the list until they write again; a group is left, then gone from the list.
     deleting?.let { c ->
-        val home = c.kind == ConvKind.Home
-        Confirm(if (home) "Clear your notes?" else "Delete ${model.title(c)}?", if (home) "Clear" else if (c.isDirect) "Delete" else "Leave and delete", { deleting = null }) { model.delete(c) }
+        val name = model.title(c)
+        val friend = c.members.any { u -> u != model.me.user && model.contacts.any { it.user == u } }
+        when {
+            c.kind == ConvKind.Home -> Confirm("Clear your notes?", "Everything in them goes, on all your devices.", "Clear", { deleting = null }) { model.delete(c) }
+            c.isDirect -> Confirm("Delete your chat with $name?", "It leaves your list until $name writes again." + if (friend) " You stay friends." else "", "Delete", { deleting = null }) { model.delete(c) }
+            else -> Confirm("Leave and delete $name?", "You'll stop getting its messages. Someone still in it can add you back.", "Leave and delete", { deleting = null }) { model.delete(c) }
+        }
     }
 }
 

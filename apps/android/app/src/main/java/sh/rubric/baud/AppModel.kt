@@ -283,6 +283,18 @@ class AppModel(val context: Context, val core: CoreSurface) {
     fun unfriend(u: UserId) { attempt { core.unfriend(u) }; refreshAll() }
     fun delete(c: Conversation) { attempt { core.delete(c.id) }; conversations = core.conversations() }
 
+    /// Out of a group: it leaves the list at once. False when the core said no (its sentence is up).
+    fun leave(conv: ConversationId): Boolean {
+        var left = false
+        attempt { core.leave(conv); left = true }
+        setConversations()
+        return left
+    }
+    /// A group's new name, as typed; a blank one keeps the old.
+    fun rename(conv: ConversationId, name: String) { if (name.isNotBlank()) attempt { core.rename(conv, name.trim()) } }
+    fun addMember(conv: ConversationId, user: UserId) = attempt { core.addMember(conv, user) }
+    fun removeMember(conv: ConversationId, user: UserId) = attempt { core.removeMember(conv, user) }
+
     /// A tapped or scanned link: the Add sheet takes it from here.
     fun open(url: String) {
         val l = core.parse(url)

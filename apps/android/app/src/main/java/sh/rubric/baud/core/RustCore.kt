@@ -79,6 +79,10 @@ class RustCore private constructor(private val b: Ffi) : CoreSurface {
     override fun typing(conv: ConversationId) = call { b.typing(conv) }
     override fun typingNow(conv: ConversationId) = call { b.typingNow(conv) }
     override fun members(conv: ConversationId) = call { b.members(conv).map { it.toCore() } }
+    override fun addMember(conv: ConversationId, user: UserId) = call { b.addMember(conv, user) }
+    override fun removeMember(conv: ConversationId, user: UserId) = call { b.removeMember(conv, user) }
+    override fun leave(conv: ConversationId) = call { b.leave(conv) }
+    override fun rename(conv: ConversationId, name: String) = call { b.rename(conv, name) }
     override fun delivery(conv: ConversationId, event: EventId) = call { b.delivery(conv, event).toCore() }
     override fun createChat(users: List<UserId>) = call { b.createChat(users).toCore() }
     override fun createGroup(name: String, users: List<UserId>) = call { b.createGroup(name, users).toCore() }

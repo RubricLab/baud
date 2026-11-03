@@ -138,8 +138,9 @@ class FakeCore(private val dir: File, private val prefs: SharedPreferences, devi
 
     // MARK: conversations
 
+    /// The ones I'm in: a group I've left stays here, out of the list, as baud-core keeps it.
     override fun conversations(kind: ConvKind?): List<Conversation> = synchronized(lock) {
-        convs.values.map { summary(it) }.filter { kind == null || it.kind == kind }.sortedByDescending { it.lastAt }
+        convs.values.map { summary(it) }.filter { user in it.members && (kind == null || it.kind == kind) }.sortedByDescending { it.lastAt }
     }
 
     override fun conversation(id: ConversationId): Conversation? = synchronized(lock) { convs[id]?.let { summary(it) } }
@@ -305,6 +306,58 @@ class FakeCore(private val dir: File, private val prefs: SharedPreferences, devi
         }
     }
 
+    /// A friend into a group, with the line baud-core writes ("You added Maya").
+    override fun addMember(conv: ConversationId, user: UserId) {
+        synchronized(lock) {
+            val v = convs[conv] ?: throw CoreError.NotFound
+            if (!(v.c.kind == ConvKind.Chat || this.user in v.c.admins)) throw CoreError.NotAdmin
+            val k = friends[user] ?: throw CoreError.NotFound
+            if (user in v.c.members) return
+            v.c = v.c.copy(members = v.c.members + user)
+            line(v, "You added ${k.name}")
+        }
+        emit(Change.Conversation(conv), Change.Conversations)
+    }
+
+    override fun removeMember(conv: ConversationId, user: UserId) {
+        synchronized(lock) {
+            val v = convs[conv] ?: throw CoreError.NotFound
+            if (this.user !in v.c.admins) throw CoreError.NotAdmin
+            if (user !in v.c.members) return
+            v.c = v.c.copy(members = v.c.members - user, admins = v.c.admins - user)
+            line(v, "You removed ${nameOf(user)}")
+        }
+        emit(Change.Conversation(conv), Change.Conversations)
+    }
+
+    /// Out of it: my line goes to the others, and the chat leaves my list.
+    override fun leave(conv: ConversationId) {
+        synchronized(lock) {
+            val v = convs[conv] ?: throw CoreError.NotFound
+            line(v, "You left")
+            v.c = v.c.copy(members = v.c.members - user, admins = v.c.admins - user)
+        }
+        emit(Change.Conversation(conv), Change.Conversations)
+    }
+
+    override fun rename(conv: ConversationId, name: String) {
+        synchronized(lock) {
+            val v = convs[conv] ?: throw CoreError.NotFound
+            if (!(v.c.kind == ConvKind.Chat || user in v.c.admins)) throw CoreError.NotAdmin
+            v.c = v.c.copy(name = name)
+            line(v, "You named it $name", EventType.State)
+        }
+        emit(Change.Conversation(conv), Change.Conversations)
+    }
+
+    /// A line of mine in the timeline: who came, who went, a new name.
+    private fun line(v: Conv, text: String, type: EventType = EventType.Member) {
+        v.events += Event(
+            id = "e-" + hex(8), conv = v.c.id, device = thisDevice, seq = ++lamport, user = user, at = Instant.now(), lamport = lamport,
+            type = type, system = text, mine = true,
+        )
+    }
+
     override fun delivery(conv: ConversationId, event: EventId): Delivery = synchronized(lock) {
         val v = convs[conv] ?: return Delivery(event, emptyList())
         val r = v.receipts[event] ?: return Delivery(event, emptyList())
@@ -455,7 +508,9 @@ class FakeCore(private val dir: File, private val prefs: SharedPreferences, devi
                 val e = if (l.who == user) Event("e-" + hex(8), v.c.id, thisDevice, ++lamport, user, at, lamport, EventType.Message, l.text, listOfNotNull(if (l.photo) photo else null), mine = true, via = Via.Direct)
                     .also { v.events += it }
                 else incoming(v, l.who, l.text, at, if (l.photo) photo else null)
-                l.reaction?.let { (by, key) -> replace(v, e.id) { it.copy(reactions = listOf(Reaction(key, listOf(by), by == user))) } }
+                if (l.reactions.isNotEmpty()) replace(v, e.id) { ev ->
+                    ev.copy(reactions = l.reactions.groupBy({ it.second }, { it.first }).map { (key, by) -> Reaction(key, by, user in by) })
+                }
                 if (e.mine) v.receipts[e.id] = others(v.c).associate { d -> d.id to ((if (d.online) DeliveryState.Read else DeliveryState.Sent) to emptyList<String>()) }.toMutableMap()
             }
             v.read = v.events.lastOrNull()?.lamport ?: 0
@@ -465,9 +520,10 @@ class FakeCore(private val dir: File, private val prefs: SharedPreferences, devi
             Conv(newChat(listOf(user) + members, name).copy(createdAt = ago(created))).also { convs[it.c.id] = it }
 
         val weekend = conv(listOf(ana, jo), "weekend", 60 * 50)
-        script(weekend, 30 * 60, 30, listOf(Line(ana, "cabin is booked 🏡", reaction = jo to "🙌"), Line(jo, "who's driving?"), Line(user, "I can drive"), Line(ana, "I'll do groceries"), Line(jo, "bringing the speaker")))
-        val hike = conv(listOf(ana, lee), "hike", 60 * 60)
-        script(hike, 50 * 60, 40, listOf(Line(ana, "trail map is in the group"), Line(lee, "I'll bring snacks"), Line(user, "see you at the station")))
+        script(weekend, 30 * 60, 30, listOf(Line(ana, "cabin is booked 🏡", reaction = jo to "🙌", more = listOf(user to "🙌", ana to "❤️")), Line(jo, "who's driving?"), Line(user, "I can drive", more = listOf(ana to "❤️", jo to "❤️")), Line(ana, "I'll do groceries"), Line(jo, "bringing the speaker")))
+        // Ana made the hike, so she's its admin and I'm not: the screens show both sides.
+        val hike = conv(listOf(ana, lee), "hike", 60 * 60).also { it.c = it.c.copy(admins = listOf(ana)) }
+        script(hike, 50 * 60, 40, listOf(Line(ana, "trail map is in the group", more = listOf(lee to "👍", user to "👍")), Line(lee, "I'll bring snacks", reaction = ana to "😂"), Line(user, "see you at the station")))
         val dmAna = conv(listOf(ana), created = 60 * 30)
         script(dmAna, 20 * 60, 15, listOf(Line(ana, "landed 🛬"), Line(user, "welcome back!! how was lisbon?"), Line(ana, "unreal. the light there"), Line(ana, null, photo = true, reaction = user to "😍"), Line(user, "ok that's not fair"), Line(ana, "I'll tell you everything")))
         val dmJo = conv(listOf(jo), created = 60 * 5)
@@ -479,7 +535,10 @@ class FakeCore(private val dir: File, private val prefs: SharedPreferences, devi
         incoming(weekend, jo, "who's in for saturday?", now.minusSeconds(11 * 60))
     }
 
-    private data class Line(val who: UserId, val text: String?, val photo: Boolean = false, val reaction: Pair<UserId, String>? = null)
+    /// `reaction` and `more`: who put which emoji on the line, one or several people.
+    private data class Line(val who: UserId, val text: String?, val photo: Boolean = false, val reaction: Pair<UserId, String>? = null, val more: List<Pair<UserId, String>> = emptyList()) {
+        val reactions: List<Pair<UserId, String>> get() = listOfNotNull(reaction) + more
+    }
 }
 
 /// Links in both forms: dotted `peer1.f.<name>.<user>.<expires>.<device>.<meet>` and the dotless

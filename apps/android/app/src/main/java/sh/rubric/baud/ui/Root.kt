@@ -94,18 +94,25 @@ fun BaudSheet(onDismiss: () -> Unit, full: Boolean = false, content: @Composable
     ) { content() }
 }
 
-/// A question with one destructive answer (iOS's confirmation dialog).
+/// Asked before anything that can't be undone, always in the same shape: "Leave hike?", what will
+/// happen in a sentence, then the one answer in red ("Leave") beside Cancel.
 @Composable
-fun Confirm(title: String, action: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+fun Confirm(title: String, body: String, action: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     val t = LocalTones.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton({ onConfirm(); onDismiss() }) { Text(action, color = t.text, fontWeight = FontWeight.Bold) } },
-        dismissButton = { TextButton(onDismiss) { Text("Cancel", color = t.secondary) } },
+        confirmButton = { TextButton({ onConfirm(); onDismiss() }) { Text(action, color = t.danger, fontWeight = FontWeight.Bold) } },
+        dismissButton = { TextButton(onDismiss) { Text("Cancel", color = t.text, fontWeight = FontWeight.SemiBold) } },
         title = { Text(title, style = Type.heading) },
-        containerColor = t.card, titleContentColor = t.text,
+        text = { Text(body, style = Type.body, color = t.secondary) },
+        containerColor = t.card, titleContentColor = t.text, textContentColor = t.secondary,
     )
 }
+
+/// Starting over on this phone, asked first: the same words from You and from Removed.
+@Composable
+fun ConfirmErase(onDismiss: () -> Unit, onConfirm: () -> Unit) =
+    Confirm("Erase this phone?", "Its chats, friends and keys go for good. Your other devices keep theirs.", "Erase", onDismiss, onConfirm)
 
 /// Chats, and a chat over it (the stack is conversation ids, kept across a rotation or a theme
 /// change). A notification tapped or a new friend's Message opens one (`reveal`).
@@ -135,19 +142,21 @@ private fun Home() {
     if (you) BaudSheet(onDismiss = { you = false }, full = true) { You(close = { you = false }) }
 }
 
-/// This device was removed by another of mine: the picture, a word, Start over.
+/// This device was removed by another of mine: the picture, a word, Start over (asked first).
 @Composable
 private fun Removed() {
     val model = LocalModel.current
     val t = LocalTones.current
     val scope = rememberCoroutineScope()
+    var confirm by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(t.surface), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
         DeviceGlyph(DeviceShape.Phone, 72.dp, lit = false)
         Gap(16.dp)
         Text("Removed", style = Type.title)
         Gap(16.dp)
-        Quiet("Start over", { scope.launch { model.wipe() } }, strong = true)
+        DangerRow("Start over", { confirm = true }, Modifier.width(200.dp), centred = true)
     }
+    if (confirm) ConfirmErase({ confirm = false }) { scope.launch { model.wipe() } }
 }
 
 /// A device asking to become mine: its picture, its name, the six digits, Not mine or Add.

@@ -90,6 +90,22 @@ data class Tones(
         )
     }
 
+    /// What can't be undone (Leave, Remove, Delete, Erase): the one colour that isn't the person's.
+    /// The swatches' red, a solid step lifted or deepened until it reads at 4.5:1 on the window, the
+    /// side and a card (menus, dialogs), whichever colour they chose and in either light. On a deep
+    /// colour in light, white words on the colour itself, no red reads at 4.5:1 on its card short of
+    /// a pink that passes for white; there the card, where it's one bold word, holds it at 3:1 and
+    /// the window and the side still at 4.5:1.
+    val danger: Color by lazy {
+        val red = OKLCH.parse(Accent.swatches.first().hex)!!
+        val ground = listOf(surface, raised).map { OKLCH.luminance(it) }
+        val onCard = OKLCH.luminance(card)
+        fun reach(on: List<Double>, ratio: Double) = OKLCH.reach(red.l, if (light) 0.97 else 0.2, red.c, red.h, on, ratio)
+        // A hair over each floor (4.6, 3.1), as the inks are, so the colour drawn in 8 bits still clears it.
+        val l = if (light && !dark) max(reach(ground, 4.6), reach(listOf(onCard), 3.1)) else reach(ground + onCard, 4.6)
+        OKLCH.color(l, red.c, red.h)
+    }
+
     /// The colour of the mark on the app icon: the hue itself, light enough to read on the tile.
     val iconMark: Color get() = if (tinted) OKLCH.color(0.82, chroma, hue) else OKLCH.grey(0.96)
 

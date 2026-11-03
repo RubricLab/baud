@@ -322,6 +322,14 @@ interface CoreSurface {
     fun typing(conv: ConversationId)
     fun typingNow(conv: ConversationId): List<UserId>
     fun members(conv: ConversationId): List<Member>
+    /// A friend into a group: anyone in it can, in a chat; only an admin in a channel.
+    fun addMember(conv: ConversationId, user: UserId)
+    /// Someone out of a group: only an admin can.
+    fun removeMember(conv: ConversationId, user: UserId)
+    /// Me out of a group: it leaves my list, and someone still in it can add me back.
+    fun leave(conv: ConversationId)
+    /// A group's name: anyone in it can, in a chat; only an admin in a channel.
+    fun rename(conv: ConversationId, name: String)
     fun delivery(conv: ConversationId, event: EventId): Delivery
     fun createChat(users: List<UserId>): Conversation
     fun createGroup(name: String, users: List<UserId>): Conversation

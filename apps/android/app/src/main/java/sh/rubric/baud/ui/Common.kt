@@ -1,6 +1,7 @@
 // The pieces every screen is made of (Rows.swift, Theme.swift, MembersView.swift's Quiet): a face,
-// a row that darkens when pressed, the quiet and strong buttons, a small icon action, the pill, a
-// section heading, an empty line, the unread badge, and the few glyphs drawn in baud's stroke.
+// a row that darkens when pressed, the quiet and strong buttons, the red row for what can't be
+// undone, a small icon action, the pill, a section heading, an empty line, the unread badge, and
+// the few glyphs drawn in baud's stroke.
 package sh.rubric.baud.ui
 
 import android.graphics.Bitmap
@@ -60,8 +61,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -172,7 +175,7 @@ fun PresenceLight(relayed: Boolean = false, size: Dp = 8.dp, modifier: Modifier 
 
 /// The look of every row you can open (RowStyle): the fill inset from the edges and rounded,
 /// darker pressed. Selected, it takes the loud fill and its words flip to read on it: unmistakable
-/// in any colour, light or dark. Nothing runs to the edge.
+/// in any colour, light or dark. Nothing runs to the edge. Not enabled, it's the same row, still.
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun RowSurface(
@@ -181,6 +184,7 @@ fun RowSurface(
     selected: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     minHeight: Dp = 0.dp,
+    enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     val t = LocalTones.current
@@ -191,7 +195,7 @@ fun RowSurface(
         Row(
             modifier.fillMaxWidth().padding(horizontal = Metrics.inset).clip(RoundedCornerShape(9.dp))
                 .background(if (pressed) t.pressed else if (selected) t.loud else Color.Transparent)
-                .combinedClickable(source, null, onLongClick = onLongClick, onClick = onClick)
+                .combinedClickable(source, null, enabled = enabled, onLongClick = onLongClick, onClick = onClick)
                 .padding(horizontal = Metrics.pad).defaultMinSize(minHeight = minHeight),
             verticalAlignment = Alignment.CenterVertically,
             content = content,
@@ -200,8 +204,8 @@ fun RowSurface(
 }
 
 /// baud's button: quiet (a fill a step off the surface, a hairline) or strong (the loud fill, its
-/// words on it); large on first run and the Add screen; danger for the irreversible, edged in a
-/// solid step of the ink.
+/// words on it); large on first run and the Add screen. What can't be undone is never one of
+/// these: it is a DangerRow.
 @Composable
 fun Quiet(
     text: String,
@@ -209,7 +213,6 @@ fun Quiet(
     modifier: Modifier = Modifier,
     strong: Boolean = false,
     large: Boolean = false,
-    danger: Boolean = false,
     enabled: Boolean = true,
     icon: ImageVector? = null,
 ) {
@@ -222,7 +225,7 @@ fun Quiet(
         modifier.alpha(if (enabled) 1f else 0.45f).defaultMinSize(minHeight = if (large) 46.dp else 40.dp).clip(shape)
             // Pressed, the loud fill settles a step toward the ground: solid, not see-through.
             .background(if (strong) (if (pressed) lerp(t.loud, t.surface, 0.22f) else t.loud) else if (pressed) t.pressed else t.quiet)
-            .then(if (strong) Modifier else Modifier.border(1.dp, if (danger) t.tertiary else t.hairline, shape))
+            .then(if (strong) Modifier else Modifier.border(1.dp, t.hairline, shape))
             .clickable(source, null, enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = if (large) 18.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -230,6 +233,19 @@ fun Quiet(
     ) {
         if (icon != null) { Glyph(icon, 17.dp, fg); Spacer(Modifier.width(6.dp)) }
         Text(text, style = Type.body, fontWeight = FontWeight.SemiBold, color = fg, maxLines = 1)
+    }
+}
+
+/// What can't be undone (leave, remove, delete, erase), in a row of its own: red words, nothing
+/// filled, never beside another button, darker pressed. Whatever it does asks first (Confirm).
+@Composable
+fun DangerRow(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, centred: Boolean = false) {
+    val t = LocalTones.current
+    RowSurface(onClick, modifier.semantics { role = Role.Button }, minHeight = Metrics.compactRow) {
+        Text(
+            text, style = Type.body, fontWeight = FontWeight.SemiBold, color = t.danger, maxLines = 1,
+            textAlign = if (centred) TextAlign.Center else TextAlign.Start, modifier = Modifier.weight(1f),
+        )
     }
 }
 

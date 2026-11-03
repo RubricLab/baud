@@ -222,7 +222,8 @@ private fun Tile(modifier: Modifier, onClick: () -> Unit, content: @Composable (
     ) { content() }
 }
 
-/// A device, opened: its picture, its name, how it is reached; remove it unless it is this one.
+/// A device, opened: its picture, its name, how it is reached; remove it (red, asked first) unless
+/// it is this one.
 @Composable
 private fun DeviceCard(d: Device, done: () -> Unit) {
     val model = LocalModel.current
@@ -232,9 +233,11 @@ private fun DeviceCard(d: Device, done: () -> Unit) {
         DeviceGlyph(DeviceShape.of(d), 96.dp, lit = here || d.online)
         Text(d.name, style = Type.title, maxLines = 1)
         StatusWord(here || d.online, if (here) "This one" else d.word.capitalizedFirst)
-        if (!here) Quiet("Remove", { confirm = true }, danger = true)
+        if (!here) { Gap(10.dp); DangerRow("Remove", { confirm = true }, centred = true) }
     }
-    if (confirm) Confirm("Remove ${d.name}?", "Remove", { confirm = false }) { model.attempt { model.core.revoke(d.id) }; model.refreshAll(); done() }
+    if (confirm) Confirm("Remove ${d.name}?", "It stops getting your chats and friends. You can add it again later.", "Remove", { confirm = false }) {
+        model.attempt { model.core.revoke(d.id) }; model.refreshAll(); done()
+    }
 }
 
 @Composable
@@ -262,7 +265,8 @@ private fun FriendsSection(close: () -> Unit) {
     open?.let { k -> BaudSheet({ open = null }) { FriendCard(model.contacts.firstOrNull { it.user == k.user } ?: k, close) { open = null } } }
 }
 
-/// A friend, opened: face, name, their devices, Message, and Remove friend.
+/// A friend, opened: face, name, their devices, Message, and under it, on its own, Remove friend
+/// (red, asked first).
 @Composable
 private fun FriendCard(k: Contact, closeYou: () -> Unit, done: () -> Unit) {
     val model = LocalModel.current
@@ -281,12 +285,11 @@ private fun FriendCard(k: Contact, closeYou: () -> Unit, done: () -> Unit) {
                 StatusWord(d.online, d.word.capitalizedFirst)
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Quiet("Message", { done(); closeYou(); model.message(k.user) }, strong = true)
-            Quiet("Remove friend", { confirm = true }, danger = true)
-        }
+        Quiet("Message", { done(); closeYou(); model.message(k.user) }, strong = true)
+        Gap(10.dp)
+        DangerRow("Remove friend", { confirm = true }, centred = true)
     }
-    if (confirm) Confirm("Remove ${k.name}?", "Remove", { confirm = false }) { model.unfriend(k.user); done() }
+    if (confirm) Confirm("Remove ${k.name}?", "You'll stop being friends, and your chat with ${k.name} leaves your list.", "Remove", { confirm = false }) { model.unfriend(k.user); done() }
 }
 
 /// The network, honestly: this phone's state in its words, and each device it reaches right now.
@@ -394,12 +397,13 @@ private fun AppCard() {
     }
 }
 
-/// Start over on this phone: keys, store, friends here, everything; a confirmation says so.
+/// Start over on this phone: keys, store, friends here, everything. Red, at the very bottom, and
+/// a confirmation says so.
 @Composable
 private fun StartOver(close: () -> Unit) {
     val model = LocalModel.current
     val scope = rememberCoroutineScope()
     var confirm by remember { mutableStateOf(false) }
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Quiet("Start over", { confirm = true }, danger = true) }
-    if (confirm) Confirm("Erase this phone?", "Erase chats, friends and keys", { confirm = false }) { close(); scope.launch { model.wipe() } }
+    DangerRow("Start over", { confirm = true }, centred = true)
+    if (confirm) ConfirmErase({ confirm = false }) { close(); scope.launch { model.wipe() } }
 }

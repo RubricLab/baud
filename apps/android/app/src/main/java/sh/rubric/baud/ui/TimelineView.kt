@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import sh.rubric.baud.Timeline
+import sh.rubric.baud.whoReacted
 import sh.rubric.baud.core.Attachment
 import sh.rubric.baud.core.ConvKind
 import sh.rubric.baud.core.DeliveryState
@@ -194,6 +195,8 @@ private fun MessageRow(e: Event, first: Boolean, last: Boolean, timeline: Timeli
     var showPath by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf(false) }
+    var who by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
     fun react(k: String) {
         val on = !(e.reactions.firstOrNull { it.key == k }?.mine ?: false)
         model.attempt { model.core.react(e.conv, e.id, k, on) }
@@ -218,7 +221,7 @@ private fun MessageRow(e: Event, first: Boolean, last: Boolean, timeline: Timeli
                 if (first && !e.mine && !direct) Text(model.name(e.user), style = Type.small, fontWeight = FontWeight.SemiBold, color = t.secondary, modifier = Modifier.padding(horizontal = 13.dp))
                 Words(e, first, last, timeline)
                 for (a in e.attachments) AttachmentBlock(a)
-                if (e.reactions.isNotEmpty()) Reactions(e, ::react) { picking = true }
+                if (e.reactions.isNotEmpty()) Reactions(e, ::react, { who = true }) { picking = true }
                 // How it travelled, and when, a tap away; whether my newest got there is the one line under the chat.
                 if (showPath) e.via?.let { v ->
                     Row(Modifier.padding(horizontal = 13.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -238,10 +241,14 @@ private fun MessageRow(e: Event, first: Boolean, last: Boolean, timeline: Timeli
             MenuItem("Reply") { onReply(e); menu = false }
             if (e.mine && e.text != null) MenuItem("Edit") { editing = true; menu = false }
             MenuItem("Copy") { copy(context, e.text ?: ""); menu = false }
-            if (e.mine) MenuItem("Delete") { model.attempt { model.core.redact(e.conv, e.id) }; menu = false }
+            if (e.mine) MenuItem("Delete", danger = true) { deleting = true; menu = false }
         }
         if (picking) EmojiSheet({ picking = false }) { react(it); picking = false }
         if (editing) EditSheet(e) { editing = false }
+        if (who) WhoReacted(e) { who = false }
+        if (deleting) Confirm("Delete this message?", "It goes for everyone in this chat.", "Delete", { deleting = false }) {
+            model.attempt { model.core.redact(e.conv, e.id) }
+        }
     }
 }
 
@@ -295,13 +302,17 @@ internal fun links(s: String): List<IntRange> = Regex("(?i)(?:https?|baud)://\\S
     if (s.substring(m.range.first, end).endsWith("://")) null else m.range.first until end
 }.toList()
 
-/// Each reaction on a capsule (mine on the loud fill), and one more to add another.
+/// Each reaction on a capsule (mine on the loud fill), and one more to add another. A tap puts mine
+/// on or takes it off; a long press says who reacted.
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Reactions(e: Event, react: (String) -> Unit, pick: () -> Unit) {
+private fun Reactions(e: Event, react: (String) -> Unit, who: () -> Unit, pick: () -> Unit) {
     val t = LocalTones.current
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         for (r in e.reactions) Box(
-            Modifier.clip(CircleShape).background(if (r.mine) t.loud else t.card).clickable { react(r.key) }.padding(horizontal = 7.dp, vertical = 3.dp),
+            Modifier.clip(CircleShape).background(if (r.mine) t.loud else t.card)
+                .combinedClickable(onClickLabel = if (r.mine) "Take yours off" else "React ${r.key}", onLongClickLabel = "Who reacted", onLongClick = who) { react(r.key) }
+                .padding(horizontal = 7.dp, vertical = 3.dp),
         ) { Text("${r.key} ${r.users.size}", style = Type.small.merge(Type.digits), color = if (r.mine) t.onLoud else t.text) }
         Box(
             Modifier.clip(CircleShape).background(t.card).clickable(onClick = pick).defaultMinSize(minHeight = 23.dp)
@@ -312,9 +323,34 @@ private fun Reactions(e: Event, react: (String) -> Unit, pick: () -> Unit) {
 }
 
 @Composable
-private fun MenuItem(text: String, onClick: () -> Unit) {
+private fun MenuItem(text: String, danger: Boolean = false, onClick: () -> Unit) {
     val t = LocalTones.current
-    DropdownMenuItem({ Text(text, style = Type.body, color = t.text) }, onClick)
+    DropdownMenuItem({ Text(text, style = Type.body, color = if (danger) t.danger else t.text, fontWeight = if (danger) FontWeight.SemiBold else FontWeight.Normal) }, onClick)
+}
+
+/// Who reacted, in a sheet titled Reactions: each emoji, the most reactions first, and its people
+/// by name ("You", the name I gave a friend, else the name they gave). In every chat.
+@Composable
+private fun WhoReacted(e: Event, dismiss: () -> Unit) {
+    val model = LocalModel.current
+    val t = LocalTones.current
+    BaudSheet(dismiss) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp)) {
+            Text("Reactions", style = Type.heading, color = t.heading, modifier = Modifier.padding(horizontal = Metrics.inset + Metrics.pad).padding(bottom = 8.dp).semantics { heading() })
+            for ((key, names) in whoReacted(e.reactions, model.me.user, model::name)) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = Metrics.inset + Metrics.pad, vertical = 8.dp).semantics(mergeDescendants = true) {},
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(key, style = Type.title, modifier = Modifier.width(40.dp))
+                    WGap(8.dp)
+                    Text(list(names), style = Type.body, color = t.text, modifier = Modifier.weight(1f))
+                    WGap(8.dp)
+                    Text("${names.size}", style = Type.small.merge(Type.digits), fontWeight = FontWeight.SemiBold, color = t.secondary)
+                }
+            }
+        }
+    }
 }
 
 private fun mark(v: Via): Mark = when (v) { Via.Direct -> Mark.Direct; Via.Relay -> Mark.Relayed; Via.Carried -> Mark.Held; Via.Waiting -> Mark.Waiting }

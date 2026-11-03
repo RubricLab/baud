@@ -15,6 +15,8 @@ import sh.rubric.baud.core.DeliveryState
 import sh.rubric.baud.core.Event
 import sh.rubric.baud.core.EventId
 import sh.rubric.baud.core.EventType
+import sh.rubric.baud.core.Reaction
+import sh.rubric.baud.core.UserId
 import sh.rubric.baud.core.list
 import java.time.Duration
 import java.time.LocalDate
@@ -120,3 +122,12 @@ class Timeline(val conv: ConversationId, private val model: AppModel) {
             Duration.between(a.at, b.at).seconds < 300 && a.at.atZone(zone).toLocalDate() == b.at.atZone(zone).toLocalDate()
     }
 }
+
+/// Who reacted with what, for the Reactions sheet: each emoji, the most reactions first (the core's
+/// order among equals), and its people by `name`, me first as "You".
+fun whoReacted(reactions: List<Reaction>, me: UserId, name: (UserId) -> String): List<Pair<String, List<String>>> =
+    reactions.filter { it.users.isNotEmpty() }.sortedByDescending { it.users.distinct().size }.map { r ->
+        val people = r.users.distinct()
+        val names = (if (me in people) listOf("You") else emptyList()) + people.filter { it != me }.map(name)
+        r.key to names
+    }
