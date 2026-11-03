@@ -61,6 +61,7 @@
 		70FEFAFC7F1DA6BCB9A8C930 /* Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A9454EAB1FCAAC7503A2A8D /* Timeline.swift */; };
 		7E1C218C65681B0018E01E94 /* Marks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD1E47295FF64319234E1B4 /* Marks.swift */; };
 		7E5CBEAF53BBD359CDDCFFC7 /* BaudCore in Frameworks */ = {isa = PBXBuildFile; productRef = 20CF0502568396BEADCB3176 /* BaudCore */; };
+		7FBB88CE2DC53BA577472417 /* AudioRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976059C32A259F8859DE15A2 /* AudioRoutes.swift */; };
 		804B1121B68BD0C20DD3BA1B /* Depth.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E49FFF5E160264102022AF /* Depth.swift */; };
 		8201FF89C45982D303862177 /* Places.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9758F3F8F3585C72D89E9147 /* Places.swift */; };
 		8386BC24B0589D8F13A20B5F /* Composing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3E3327D1BE3506DE8153A /* Composing.swift */; };
@@ -83,6 +84,7 @@
 		A1033E95D34E64D8DD5F666B /* AudioPipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = A749C306BF94363EC4C0910A /* AudioPipe.swift */; };
 		A16D53B0313910C9A647F25C /* PeerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62AFD9D486ACA93FE4F30408 /* PeerKit */; };
 		A3E7E476D24A824EC32434AE /* ComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B7405D45CFD740E11957F6 /* ComposerView.swift */; };
+		A3F11F5A32F77083DC598C5C /* AudioRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976059C32A259F8859DE15A2 /* AudioRoutes.swift */; };
 		A458F177EAC1EA38FFAE1DC2 /* Depth.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E49FFF5E160264102022AF /* Depth.swift */; };
 		A56110ADC4BA5231A2BF9637 /* Pacer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 479CCAEA8EF0EEFC572A6A47 /* Pacer.swift */; };
 		A8C2DAA477FBEDD33796EED9 /* ComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B7405D45CFD740E11957F6 /* ComposerView.swift */; };
@@ -167,6 +169,7 @@
 		8FC89CC1CA8EBF876B323305 /* EmojiData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiData.swift; sourceTree = "<group>"; };
 		93F49973438F663CE942069B /* LinkViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkViews.swift; sourceTree = "<group>"; };
 		9758F3F8F3585C72D89E9147 /* Places.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Places.swift; sourceTree = "<group>"; };
+		976059C32A259F8859DE15A2 /* AudioRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRoutes.swift; sourceTree = "<group>"; };
 		9A9454EAB1FCAAC7503A2A8D /* Timeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Timeline.swift; sourceTree = "<group>"; };
 		9B4EE71A5BEFDE3A0174BC15 /* MembersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembersView.swift; sourceTree = "<group>"; };
 		9B6C76ED97B2C75F52DB4388 /* NetworkPicture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkPicture.swift; sourceTree = "<group>"; };
@@ -243,6 +246,7 @@
 			isa = PBXGroup;
 			children = (
 				A8C27839C02609A0C304BB9B /* Engine */,
+				976059C32A259F8859DE15A2 /* AudioRoutes.swift */,
 				C261DF934B80DC19D0362C19 /* CallCenter.swift */,
 				2CA8473B4A71D70B4EFDE1E9 /* CallMini.swift */,
 				50190B256658506679782ED5 /* CallScreen.swift */,
@@ -485,6 +489,7 @@
 				AC81F87EC3CB8AA475F0D8F3 /* AddView.swift in Sources */,
 				5083D674434306E73E94FB77 /* AppModel.swift in Sources */,
 				A1033E95D34E64D8DD5F666B /* AudioPipe.swift in Sources */,
+				7FBB88CE2DC53BA577472417 /* AudioRoutes.swift in Sources */,
 				BCBA553C336796C1C760687F /* Baud.swift in Sources */,
 				EB48967CF8E43A65C7D7E43C /* Bench.swift in Sources */,
 				8690B0527C0FDD8721A06105 /* CallCenter.swift in Sources */,
@@ -545,6 +550,7 @@
 				AEBBA993F1512B1F78328CF7 /* AddView.swift in Sources */,
 				B4BA2E2CD996417F014DB1A6 /* AppModel.swift in Sources */,
 				09C14C0344E9E4C7A4F053E2 /* AudioPipe.swift in Sources */,
+				A3F11F5A32F77083DC598C5C /* AudioRoutes.swift in Sources */,
 				83AC79CB4BA2E5F1849E4D36 /* Baud.swift in Sources */,
 				8DFE374CADE0FA344B90BD27 /* Bench.swift in Sources */,
 				91945CEC7290526F878F5EE9 /* CallCenter.swift in Sources */,

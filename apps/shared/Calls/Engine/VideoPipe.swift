@@ -118,6 +118,8 @@ final class VideoPipe: NSObject, @unchecked Sendable, AVCaptureVideoDataOutputSa
 		#if os(iOS)
 		// The call's audio session is CallKit's and the voice's: the camera leaves it alone.
 		s.automaticallyConfiguresApplicationAudioSession = false
+		// In picture-in-picture, over another app, my camera keeps going where the system allows it.
+		if s.isMultitaskingCameraAccessSupported { s.isMultitaskingCameraAccessEnabled = true }
 		#endif
 		s.beginConfiguration()
 		guard let device = camera(front: front) else { throw CallError.video("No camera here.") }

@@ -41,9 +41,19 @@ final class CallKitBridge: NSObject, CXProviderDelegate {
 		return u
 	}
 
-	/// The audio session's shape, set before CallKit activates it.
+	/// The audio session's shape, set before CallKit activates it: the same for voice and video, so
+	/// nothing about it changes mid-call (a change stops the audio engine). Video calls start on the
+	/// speaker by an override once the audio is ours (`startRoute`), never by the video-chat mode,
+	/// whose built-in speaker default can't be turned off for the earpiece.
 	private func prepareAudio(video: Bool) {
-		try? AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: video ? .videoChat : .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
+		try? AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP])
+	}
+
+	/// The call's first route: a video call on the speaker, unless a headset is on (AirPods stay
+	/// AirPods); a voice call wherever the system put it (the earpiece, or the headset).
+	private func startRoute(_ s: CallCenter.Session) {
+		if s.video, AudioRoutes.onReceiver { try? AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker) }
+		center?.routes.refresh()
 	}
 
 	func incoming(_ s: CallCenter.Session) {
@@ -127,6 +137,7 @@ final class CallKitBridge: NSObject, CXProviderDelegate {
 		prepareAudio(video: s.video)
 		try? AVAudioSession.sharedInstance().setActive(true)
 		audioActive = true
+		startRoute(s)
 	}
 
 	func connected(_ s: CallCenter.Session) {
@@ -190,7 +201,7 @@ final class CallKitBridge: NSObject, CXProviderDelegate {
 	nonisolated func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
 		MainActor.assumeIsolated {
 			audioActive = true
-			if let s = center?.session, s.speaker { try? AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker) }
+			if let s = center?.session { startRoute(s) }
 			center?.audioActivated()
 		}
 	}

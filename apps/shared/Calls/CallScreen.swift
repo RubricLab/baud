@@ -223,7 +223,7 @@ struct CallScreen: View {
 				CallButton(symbol: session.muted ? "mic.slash.fill" : "mic.fill", label: session.muted ? "Unmute" : "Mute", style: session.muted ? .on : .glass) { calls.toggleMute() }
 					.keyboardShortcut("a", modifiers: [.command, .shift])
 				#if os(iOS)
-				CallButton(symbol: session.speaker ? "speaker.wave.2.fill" : "speaker.fill", label: session.speaker ? "Speaker off" : "Speaker", style: session.speaker ? .on : .glass) { calls.toggleSpeaker() }
+				RouteButton(routes: calls.routes)
 				#endif
 				CallButton(symbol: "phone.down.fill", label: session.phase == .live ? "End call" : "Cancel", style: .danger) { calls.end() }
 			}
@@ -233,6 +233,72 @@ struct CallScreen: View {
 		}
 	}
 }
+
+/// A call button's face: the symbol on its disc, and under the big ones, what it does.
+struct CallDisc: View {
+	@Environment(\.tones) private var tones
+	let symbol: String
+	let label: String
+	var style: CallButton.Style = .glass
+	var big = false
+	var small = false
+	var hover = false
+	#if os(macOS)
+	private var size: CGFloat { big ? 56 : small ? 34 : 46 }
+	#else
+	private var size: CGFloat { big ? 68 : small ? 40 : 54 }
+	#endif
+	var body: some View {
+		VStack(spacing: 8) {
+			Image(systemName: symbol)
+				.font(.system(size: size * 0.38, weight: .semibold))
+				.foregroundStyle(style == .on ? tones.onLoud : .white)
+				.contentTransition(.symbolEffect(.replace))
+				.frame(width: size, height: size)
+				.background(Circle().fill(fill))
+				.scaleEffect(hover ? 1.05 : 1)
+			if big { Text(label).font(.system(size: 13, weight: .semibold)).foregroundStyle(tones.text) }
+		}
+		// A finger's worth around the small ones.
+		.padding(small ? 4 : 0)
+		.contentShape(Rectangle())
+	}
+	private var fill: Color {
+		switch style {
+		case .glass: return hover ? tones.quiet : tones.field
+		case .on: return tones.loud
+		case .danger: return CallInk.danger
+		case .accept: return CallInk.accept
+		}
+	}
+}
+
+#if os(iOS)
+/// The middle button, for where the call sounds. With only the iPhone, it turns the speaker on and
+/// off. With AirPods, a car or headphones around, it shows where the sound is now (their symbol, lit
+/// on the speaker) and a tap lists every place it can go, the current one ticked.
+struct RouteButton: View {
+	let routes: AudioRoutes
+	var body: some View {
+		if routes.choosable, let now = routes.current {
+			Menu {
+				Picker("Audio", selection: Binding(get: { now.id }, set: { id in if let r = routes.available.first(where: { $0.id == id }) { routes.choose(r) } })) {
+					ForEach(routes.available) { r in Label(r.name, systemImage: r.symbol).tag(r.id) }
+				}
+				.pickerStyle(.inline)
+			} label: {
+				CallDisc(symbol: now.symbol, label: now.name, style: now.kind == .speaker ? .on : .glass)
+			}
+			.buttonStyle(CallButton.Press())
+			.accessibilityLabel("Audio: \(now.name)")
+			.onAppear { routes.refresh() }
+		} else {
+			CallButton(symbol: "speaker.wave.2.fill", label: routes.onSpeaker ? "Speaker off" : "Speaker", style: routes.onSpeaker ? .on : .glass) { routes.toggleSpeaker() }
+				.onAppear { routes.refresh() }
+		}
+	}
+}
+#endif
 
 /// Their picture, the whole screen. Filled when it's the same way round as the screen; whole, on the
 /// room's colour, when it isn't (a phone held upright on a wide Mac window), so no one is cut to a
@@ -509,11 +575,6 @@ struct CallButton: View {
 	var small = false
 	let action: () -> Void
 	@State private var hover = false
-	#if os(macOS)
-	private var size: CGFloat { big ? 56 : small ? 34 : 46 }
-	#else
-	private var size: CGFloat { big ? 68 : small ? 40 : 54 }
-	#endif
 	var body: some View {
 		Button {
 			#if os(iOS)
@@ -521,33 +582,14 @@ struct CallButton: View {
 			#endif
 			action()
 		} label: {
-			VStack(spacing: 8) {
-				Image(systemName: symbol)
-					.font(.system(size: size * 0.38, weight: .semibold))
-					.foregroundStyle(style == .on ? tones.onLoud : .white)
-					.frame(width: size, height: size)
-					.background(Circle().fill(fill))
-					.scaleEffect(hover && enabled ? 1.05 : 1)
-				if big { Text(label).font(.system(size: 13, weight: .semibold)).foregroundStyle(tones.text) }
-			}
-			// A finger's worth around the small ones.
-			.padding(small ? 4 : 0)
-			.contentShape(Rectangle())
+			CallDisc(symbol: symbol, label: label, style: style, big: big, small: small, hover: hover && enabled)
 		}
 		.buttonStyle(Press())
 		.help(label)
 		.accessibilityLabel(label)
 		.onHover { h in withAnimation(.easeOut(duration: 0.12)) { hover = h } }
 	}
-	private var fill: Color {
-		switch style {
-		case .glass: return hover ? tones.quiet : tones.field
-		case .on: return tones.loud
-		case .danger: return CallInk.danger
-		case .accept: return CallInk.accept
-		}
-	}
-	private struct Press: ButtonStyle {
+	struct Press: ButtonStyle {
 		func makeBody(configuration: Configuration) -> some View {
 			configuration.label.scaleEffect(configuration.isPressed ? 0.92 : 1).opacity(configuration.isPressed ? 0.85 : 1)
 				.animation(.easeOut(duration: 0.12), value: configuration.isPressed)

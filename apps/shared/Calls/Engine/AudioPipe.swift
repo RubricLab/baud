@@ -4,7 +4,8 @@
 /// or concealed, or nothing) is mixed into a small queue the speaker drains. Muted sends silence,
 /// so timing and loss stay honest. The system stops an audio engine, without a word, whenever
 /// the devices under it change (voice processing coming on, the speaker button, AirPods, another
-/// call): a watchdog sees it, by the engine or by the sound no longer moving, and builds it again.
+/// call): a watchdog sees it within a quarter second, by the engine or by the sound no longer
+/// moving, and builds it again at once. Every second of that is a second of a call nobody hears.
 /// `test` swaps the microphone for a synthetic voice and the speaker for a meter: a call can be
 /// proven with neither, and without asking for either. With `BAUD_CALL_SPEAKER=silent` the real
 /// speaker stays, at zero volume: playout proven on real hardware, still with no microphone.
@@ -42,6 +43,8 @@ final class AudioPipe: @unchecked Sendable {
 	private var interrupted = false
 	private var heals: [Date] = []
 	private var seen = (renders: 0, captures: 0)
+	/// Quarter seconds in a row the speaker (or the microphone) didn't come by.
+	private var stalls = (renders: 0, captures: 0)
 	private var changes: NSObjectProtocol?
 	private var observers: [NSObjectProtocol] = []
 	private var pending: [Float] = []
@@ -134,7 +137,7 @@ final class AudioPipe: @unchecked Sendable {
 				#endif
 			}
 			every(.milliseconds(10), on: queue) { [weak self] in self?.refill() }
-			every(.seconds(1), on: control) { [weak self] in self?.watch() }
+			every(.milliseconds(250), on: control) { [weak self] in self?.watch() }
 		}
 	}
 
@@ -231,8 +234,8 @@ final class AudioPipe: @unchecked Sendable {
 
 	// MARK: healing
 
-	/// Every second: an engine that stopped, or whose speaker or microphone stopped coming by,
-	/// is built again. A microphone allowed during the call is taken up.
+	/// Every quarter second: an engine that stopped, or whose speaker or microphone hasn't come by
+	/// for half a second, is built again. A microphone allowed during the call is taken up.
 	private func watch() {
 		guard wanted, !interrupted else { return }
 		guard let e = engine else { heal("there was no engine"); return }
@@ -245,11 +248,13 @@ final class AudioPipe: @unchecked Sendable {
 			heal("the microphone was allowed", modes: [.voice, .plain])
 			return
 		}
+		stalls.renders = now.renders == seen.renders ? stalls.renders + 1 : 0
+		stalls.captures = now.captures == seen.captures ? stalls.captures + 1 : 0
+		if !running { heal("the engine stopped"); return }
 		// A new engine takes a moment to get going.
-		guard Date().timeIntervalSince(startedAt) > 2 else { return }
-		if !running { heal("the engine stopped") }
-		else if now.renders == seen.renders { heal("the speaker stopped asking for sound") }
-		else if mode != .playout, now.captures == seen.captures { heal("the microphone stopped") }
+		guard Date().timeIntervalSince(startedAt) > 0.8 else { return }
+		if stalls.renders >= 2 { heal("the speaker stopped asking for sound") }
+		else if mode != .playout, stalls.captures >= 2 { heal("the microphone stopped") }
 	}
 
 	/// The devices under the engine changed. The system stops it when their formats did; when it
@@ -260,12 +265,13 @@ final class AudioPipe: @unchecked Sendable {
 	}
 
 	/// A new engine, the same way as before (voice processing may still give way to plain capture);
-	/// no more often than every two seconds, and a way that broke five times in a minute gives way
+	/// no more often than twice a second, and a way that broke five times in a minute gives way
 	/// to the next.
 	private func heal(_ why: String, modes: [Mode]? = nil, now force: Bool = false) {
 		guard wanted else { return }
 		let now = Date()
-		if !force, let last = heals.last, now.timeIntervalSince(last) < 2 { return }
+		if !force, let last = heals.last, now.timeIntervalSince(last) < 0.5 { return }
+		stalls = (0, 0)
 		heals = heals.filter { now.timeIntervalSince($0) < 60 } + [now]
 		var ways = modes ?? (mode == .voice ? [.voice, .plain] : [mode])
 		if modes == nil, heals.count >= 5, mode == .voice { ways = [.plain]; heals = [] }
@@ -291,9 +297,14 @@ final class AudioPipe: @unchecked Sendable {
 				guard let self else { return }
 				self.control.async { [self] in self.heal("the media services restarted", now: true) }
 			},
-			c.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: nil) { n in
+			c.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: nil) { [weak self] n in
 				let why = (n.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt).flatMap(AVAudioSession.RouteChangeReason.init)
 				callLog("audio: the route changed (\(why.map(Self.words) ?? "?"))\(Self.route())")
+				// The engine often stops a moment after the route moves, with or without a word.
+				self?.control.asyncAfter(deadline: .now() + .milliseconds(150)) { [weak self] in
+					guard let self, self.wanted, !self.interrupted, let e = self.engine, !e.isRunning else { return }
+					self.heal("the route moved", now: true)
+				}
 			},
 		]
 	}

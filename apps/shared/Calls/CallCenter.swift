@@ -36,6 +36,10 @@ final class CallCenter {
 		nonisolated var id: String { device }
 		var first: String { name.split(separator: " ").first.map(String.init) ?? name }
 		@ObservationIgnored let layer = AVSampleBufferDisplayLayer()
+		#if os(iOS)
+		/// The same picture, for the system's picture-in-picture once baud goes to the background.
+		@ObservationIgnored let pipLayer = AVSampleBufferDisplayLayer()
+		#endif
 		@ObservationIgnored var link: CallRoute?
 		/// Who opened the link: when two of us dial each other at once, both keep the one opened by
 		/// the smaller device id.
@@ -147,6 +151,12 @@ final class CallCenter {
 	static let most = 8
 	#if os(iOS)
 	@ObservationIgnored private lazy var kit = CallKitBridge(center: self)
+	/// Where the call sounds: the iPhone, its speaker, a headset. Made with the first call.
+	@ObservationIgnored private(set) lazy var routes: AudioRoutes = {
+		let r = AudioRoutes()
+		r.onChange = { [weak self] in self?.routeMoved() }
+		return r
+	}()
 	#endif
 
 	func attach(_ model: AppModel, _ baud: Baud?) {
@@ -470,14 +480,17 @@ final class CallCenter {
 		v.flip { front in Task { @MainActor in s.front = front } }
 	}
 
-	func toggleSpeaker() {
-		guard let s = session else { return }
-		s.speaker.toggle()
-		#if os(iOS)
-		try? AVAudioSession.sharedInstance().overrideOutputAudioPort(s.speaker ? .speaker : .none)
-		#endif
+	#if os(iOS)
+	/// The speaker on or off, when there's nowhere else for the sound to go.
+	func toggleSpeaker() { routes.toggleSpeaker() }
+	/// The sound moved (the person, or a headset coming or going): the speaker's state and the
+	/// proximity sensor follow it.
+	private func routeMoved() {
+		guard let s = session, !s.phase.over else { return }
+		if s.speaker != routes.onSpeaker { s.speaker = routes.onSpeaker }
 		stayAwake()
 	}
+	#endif
 
 	#if os(macOS)
 	@ObservationIgnored private var activity: NSObjectProtocol?
@@ -490,7 +503,7 @@ final class CallCenter {
 		let s = session.flatMap { $0.phase.over || $0.phase == .incoming ? nil : $0 }
 		#if os(iOS)
 		UIApplication.shared.isIdleTimerDisabled = s != nil
-		UIDevice.current.isProximityMonitoringEnabled = s.map { !$0.speaker && !($0.video && $0.cameraOn) } ?? false
+		UIDevice.current.isProximityMonitoringEnabled = s.map { routes.current?.kind == .phone && !($0.video && $0.cameraOn) } ?? false
 		#else
 		if s != nil, activity == nil { activity = ProcessInfo.processInfo.beginActivity(options: [.idleSystemSleepDisabled, .idleDisplaySleepDisabled, .userInitiated], reason: "A call is going on") }
 		else if s == nil, let a = activity { ProcessInfo.processInfo.endActivity(a); activity = nil }
@@ -547,7 +560,13 @@ final class CallCenter {
 		case .state(let muted, let camera):
 			guard let p = s.participants.first(where: { $0.link === link }) else { return }
 			p.muted = muted; p.camera = camera
-			if !camera { p.layer.sampleBufferRenderer.flush(removingDisplayedImage: true) {}; p.showing = false; p.firstFrame.reset() }
+			if !camera {
+				p.layer.sampleBufferRenderer.flush(removingDisplayedImage: true) {}
+				#if os(iOS)
+				p.pipLayer.sampleBufferRenderer.flush(removingDisplayedImage: true) {}
+				#endif
+				p.showing = false; p.firstFrame.reset()
+			}
 		case .ring, .join, .keyframe, .stats, .forward, .caps: break
 		}
 	}
@@ -674,9 +693,15 @@ final class CallCenter {
 	/// says the picture is showing.
 	private static func renderer(_ p: Participant) -> @Sendable (CMSampleBuffer) -> Void {
 		let r = Renderer(p.layer.sampleBufferRenderer)
+		#if os(iOS)
+		let pip = Renderer(p.pipLayer.sampleBufferRenderer)
+		#endif
 		let first = p.firstFrame
 		return { [weak p] in
 			r.r.enqueue($0)
+			#if os(iOS)
+			pip.r.enqueue($0)
+			#endif
 			if first.take() { Task { @MainActor in p?.showing = true } }
 		}
 	}

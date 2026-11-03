@@ -2,7 +2,9 @@
 /// everything from the moment a call is placed or answered until it's over, in a window of its own
 /// above the app's, edge to edge. Made small, that window shrinks to a picture in a corner: the app
 /// underneath is in reach (chats, settings, sheets), the picture can be thrown to any corner, and a
-/// tap makes the call big again.
+/// tap makes the call big again. On a video call, leaving baud (home, another app) hands their
+/// picture to the system's picture-in-picture, over everything, until baud is back.
+import AVKit
 import SwiftUI
 import UIKit
 
@@ -31,6 +33,7 @@ final class CallOverlay: NSObject {
 
 	func sync(_ model: AppModel) {
 		self.model = model
+		defer { syncPiP() }
 		guard let s = model.calls.session else { hide(); return }
 		// The ring is CallKit's (except in a test call, or one the system wouldn't ring).
 		if s.phase == .incoming && !CallCenter.test && s.callKit { hide(); return }
@@ -72,10 +75,23 @@ final class CallOverlay: NSObject {
 	}
 
 	private func hide() {
+		pip = nil
 		guard let w = window else { return }
 		window = nil; host = nil
 		w.isHidden = true
 		mainWindow?.makeKey()
+	}
+
+	// MARK: the system's picture-in-picture
+
+	private var pip: CallPiP?
+
+	/// Armed while a video call is live and its window is up, on the first person's picture; it
+	/// starts by itself as baud goes to the background.
+	private func syncPiP() {
+		guard CallPiP.supported, let s = model?.calls.session, s.video, s.phase == .live, let p = s.participants.first, let view = host?.view else { pip = nil; return }
+		if pip?.participant !== p || pip?.source !== view { pip = CallPiP(source: view, participant: p) { [weak self] in self?.model?.calls.minimized = false } }
+		pip?.fit(s.remoteAspect)
 	}
 
 	// MARK: where it sits
@@ -121,6 +137,82 @@ final class CallOverlay: NSObject {
 			let p = CGPoint(x: w.frame.midX + v.x * 0.15, y: w.frame.midY + v.y * 0.15)
 			corner = p.x < bounds.midX ? (p.y < bounds.midY ? .topLeft : .bottomLeft) : (p.y < bounds.midY ? .topRight : .bottomRight)
 			if let s = model?.calls.session { place(w, s, animated: true) }
+		}
+	}
+}
+
+/// Their picture over everything, while baud is in the background: the system's picture-in-picture
+/// for a video call, fed the same frames as the call's own screen.
+@MainActor
+final class CallPiP: NSObject, AVPictureInPictureControllerDelegate {
+	let participant: CallCenter.Participant
+	weak var source: UIView?
+	private let controller: AVPictureInPictureController
+	private let content = AVPictureInPictureVideoCallViewController()
+	private let back: () -> Void
+
+	/// Not on the simulator, nor on an iPhone set to never use it.
+	static let supported = AVPictureInPictureController.isPictureInPictureSupported()
+
+	init?(source: UIView, participant: CallCenter.Participant, back: @escaping () -> Void) {
+		guard Self.supported else { return nil }
+		self.participant = participant; self.source = source; self.back = back
+		let picture = LayerView(participant.pipLayer)
+		picture.translatesAutoresizingMaskIntoConstraints = false
+		content.view.addSubview(picture)
+		NSLayoutConstraint.activate([
+			picture.leadingAnchor.constraint(equalTo: content.view.leadingAnchor), picture.trailingAnchor.constraint(equalTo: content.view.trailingAnchor),
+			picture.topAnchor.constraint(equalTo: content.view.topAnchor), picture.bottomAnchor.constraint(equalTo: content.view.bottomAnchor),
+		])
+		content.view.backgroundColor = .black
+		controller = AVPictureInPictureController(contentSource: .init(activeVideoCallSourceView: source, contentViewController: content))
+		controller.canStartPictureInPictureAutomaticallyFromInline = true
+		super.init()
+		controller.delegate = self
+		fit(nil)
+		possible = controller.observe(\.isPictureInPicturePossible, options: [.initial, .new]) { c, _ in
+			let ok = c.isPictureInPicturePossible
+			Task { @MainActor in callLog("call: picture-in-picture \(ok ? "ready" : "not possible yet")") }
+		}
+	}
+	private var possible: NSKeyValueObservation?
+
+	nonisolated func pictureInPictureControllerDidStartPictureInPicture(_ c: AVPictureInPictureController) {
+		Task { @MainActor in callLog("call: picture-in-picture on") }
+	}
+
+	/// The window takes the shape of their picture (upright until it's known).
+	func fit(_ aspect: CGFloat?) {
+		let a = aspect ?? 9.0 / 16.0
+		let size = a >= 1 ? CGSize(width: 640, height: 640 / a) : CGSize(width: 640 * a, height: 640)
+		if content.preferredContentSize != size { content.preferredContentSize = size }
+	}
+
+	nonisolated func pictureInPictureController(_ c: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler done: @escaping (Bool) -> Void) {
+		MainActor.assumeIsolated { back() }
+		done(true)
+	}
+
+	nonisolated func pictureInPictureController(_ c: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
+		callLog("call: picture-in-picture wouldn't start: \(error)")
+	}
+
+	/// A layer the view keeps the size of.
+	private final class LayerView: UIView {
+		let hosted: AVSampleBufferDisplayLayer
+		init(_ l: AVSampleBufferDisplayLayer) {
+			hosted = l
+			super.init(frame: .zero)
+			l.videoGravity = .resizeAspectFill
+			layer.addSublayer(l)
+			isUserInteractionEnabled = false
+		}
+		required init?(coder: NSCoder) { nil }
+		override func layoutSubviews() {
+			super.layoutSubviews()
+			CATransaction.begin(); CATransaction.setDisableActions(true)
+			hosted.frame = bounds
+			CATransaction.commit()
 		}
 	}
 }
