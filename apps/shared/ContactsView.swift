@@ -29,7 +29,8 @@ struct FriendsPage: View {
 						}
 					}
 					ListCard(title: model.contacts.count == 1 ? "1 friend" : "\(model.contacts.count) friends", footer: model.contacts.isEmpty ? "Friends are people you've met: one scans the other's code, or opens their link." : nil) {
-						ForEach(model.contacts.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }) { k in row(k) }
+						// By the name I see: a nickname, where I've given one.
+						ForEach(model.contacts.sorted { model.name(of: $0.user).localizedCaseInsensitiveCompare(model.name(of: $1.user)) == .orderedAscending }) { k in row(k) }
 					}
 				}
 				.padding(.horizontal, Space.side).padding(.vertical, Space.section)
@@ -45,7 +46,7 @@ struct FriendsPage: View {
 	}
 
 	@ViewBuilder private func row(_ k: Contact) -> some View {
-		let r = PersonRow(name: k.name, hash: k.avatar, presence: Mark.presence(k.devices), detail: presenceWord(k.devices).capitalizedFirst, verified: k.verified) {
+		let r = PersonRow(name: model.name(of: k.user), hash: k.avatar, presence: Mark.presence(k.devices), detail: presenceWord(k.devices).capitalizedFirst, verified: k.verified) {
 			#if os(iOS)
 			Image(systemName: "chevron.right").font(Icon.font(Icon.inline)).foregroundStyle(tones.tertiary)
 			#endif

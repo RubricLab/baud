@@ -52,7 +52,7 @@ struct Palette: View {
 			Item(id: "k-friend", title: "New friend", keys: "⌥⌘N", symbol: "person.badge.plus", command: .newFriend),
 		] + (Features.spaces ? [Item(id: "k-space", title: "New space", keys: "⌃⌥⌘N", symbol: "square.grid.2x2", command: .newSpace)] : []) + [
 			Item(id: "k-friends", title: "Friends", keys: "⇧⌘1", symbol: "person.crop.circle", command: .friends),
-			Item(id: "k-network", title: "Network", keys: "⇧⌘2", symbol: "point.3.connected.trianglepath.dotted", command: .network),
+			Item(id: "k-network", title: "Connection", keys: "⇧⌘2", symbol: "point.3.connected.trianglepath.dotted", command: .network),
 			Item(id: "k-settings", title: "Settings", keys: "⌘,", symbol: "gearshape", command: .settings),
 		]
 		out.append(Shelf(id: "Actions", items: actions.filter { hit($0.title) }))

@@ -193,7 +193,9 @@ struct Root: View {
 				case "friends": model.showFriends()
 				case "back": model.pane = nil
 				case let w where w.hasPrefix("connection:"):
-					Shots.render(ConnectionSheet().modifier(Tinted(hex: model.shownHex)).environment(model).font(Theme.font), width: 440, background: tones.surface, to: String(w.dropFirst(11)))
+					// Its words without the scroll view, which draws nothing into a picture.
+					Shots.render(VStack(spacing: 0) { SheetHeader(title: "Connection"); ConnectionDetails().padding(.horizontal, Space.side).padding(.vertical, Space.section) }
+						.modifier(Tinted(hex: model.shownHex)).environment(model).font(Theme.font), width: 440, background: tones.surface, to: String(w.dropFirst(11)))
 				default: openWindow(id: what)
 				}
 			}

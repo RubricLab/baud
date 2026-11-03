@@ -129,6 +129,19 @@ enum Shots {
 				show("back")
 			case "friends":
 				show("friends"); await snap(step); show("back")
+			case "msginfo":
+				// Info for my newest message in Sam's chat, and for Sam's newest: drawn by themselves.
+				if let s = sam {
+					let events = model.core.events(s.id, before: nil, limit: 100).filter { $0.type == .message && $0.text != nil }
+					for (name, e) in [("mine", events.last { $0.mine }), ("theirs", events.last { !$0.mine })] {
+						guard let e else { continue }
+						Shots.render(MessageInfo(event: e).modifier(Tinted(hex: model.shownHex)).environment(model).font(Theme.font), width: 420, background: .clear, to: dir + "/mac-msginfo-\(name)\(suffix).png")
+					}
+				}
+			case let s where s.hasPrefix("open-"):
+				// Any chat by its name (`open-weekend`), at rest.
+				if let c = model.chats.first(where: { model.title($0) == String(s.dropFirst(5)) }) { model.open(c.id) }
+				await snap(s)
 			case "connection":
 				show("connection:" + dir + "/mac-connection\(suffix).png")
 				try? await Task.sleep(for: .seconds(1))

@@ -449,17 +449,29 @@ struct ReactionsList: View {
 struct MessageInfo: View {
 	@Environment(\.tones) private var tones
 	@Environment(AppModel.self) private var model
+	/// Drawn into a picture: a scroll view draws nothing there, so the page is laid out whole.
+	@Environment(\.rendering) private var rendering
 	let event: Event
 	var body: some View {
-		let c = model.conversation(event.conv)
 		VStack(spacing: 0) {
 			SheetHeader(title: "Info")
-			ScrollView {
-				VStack(alignment: .leading, spacing: Space.section) {
+			if rendering { page } else { ScrollView { page } }
+		}
+		.background(tones.surface.ignoresSafeArea())
+		#if os(macOS)
+		.frame(width: 420, height: rendering ? nil : 560)
+		#else
+		.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+		#endif
+	}
+
+	private var page: some View {
+		let c = model.conversation(event.conv)
+		return VStack(alignment: .leading, spacing: Space.section) {
 					MessageRow(event: event, first: true, last: true, onReply: { _ in }, onThread: { _ in }, lifted: true)
 						.allowsHitTesting(false)
 					ListCard {
-						ActionRow(symbol: "clock", title: event.mine ? "Sent" : "Sent", value: event.at.formatted(date: .abbreviated, time: .shortened)).cardRow()
+						ActionRow(symbol: "clock", title: "Sent", value: event.at.formatted(date: .abbreviated, time: .shortened)).cardRow()
 						if let t = event.text, !t.isEmpty, PlaceText.parse(t) == nil {
 							Button { copy(t) } label: { ActionRow(symbol: "doc.on.doc", title: "Copy text") }.buttonStyle(RowStyle())
 						}
@@ -484,14 +496,6 @@ struct MessageInfo: View {
 					}
 				}
 				.padding(.horizontal, Space.side).padding(.vertical, Space.section)
-			}
-		}
-		.background(tones.surface.ignoresSafeArea())
-		#if os(macOS)
-		.frame(width: 420, height: 560)
-		#else
-		.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
-		#endif
 	}
 
 	/// Mine: who has it, each person once, at the furthest any of their devices has it.
@@ -518,10 +522,10 @@ struct MessageInfo: View {
 		}
 	}
 	private func rank(_ s: DeliveryState) -> Int { switch s { case .read: 3; case .delivered: 2; case .carried: 1; case .sent: 0 } }
-	/// The device it was written on, by its name, when it's one I know.
+	/// The device it was written on, by its name ("Sam's Mac"), when it's one I know.
 	private func device(_ id: DeviceId) -> String {
-		if let p = model.peers.first(where: { $0.device.id == id }) { return Names.device(p.device.name) }
 		if let d = model.core.members(event.conv).flatMap(\.devices).first(where: { $0.id == id }) { return d.name }
+		if let p = model.peers.first(where: { $0.device.id == id }) { return "\(p.own ? "Your" : p.userName + "'s") \(DeviceShape(p.device).word)" }
 		return "Their device"
 	}
 	private func how(_ v: Event.Via) -> String {
