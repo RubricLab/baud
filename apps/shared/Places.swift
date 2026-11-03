@@ -1,8 +1,11 @@
-/// Sharing where I am, the app's side (BaudCore's Places.swift has the rules). The location service
-/// runs only while a share is on, and sends a fix when I've moved 25 m or 20 s have passed; it
-/// stops the moment the last share ends. A share is started from the pin in a chat's header, for
-/// an hour, until the end of the day, or until I stop; the people sharing in a chat show on a map
-/// card at its top, in the chat's own colour, their faces as the pins.
+/// Where I am, in a chat, the app's side (BaudCore's Places.swift has the rules for live shares).
+/// Three things people do, from the composer's + (Location):
+/// - send where they are once: a message of its own words (a pin and a map link, so any baud, old
+///   or new, can read it), drawn here as a small map with their face on it;
+/// - share live, for an hour, until tonight, or until they stop: the location service runs only
+///   while a share is on, a fix when I've moved 25 m or 20 s have passed, and stops with the last;
+/// - see everyone sharing live in the chat: a slim bar under its header while anyone is, opening
+///   one map of all of them, with how far and how fresh, and my own share's stop.
 import BaudCore
 import CoreLocation
 import MapKit
@@ -52,6 +55,30 @@ final class Whereabouts: NSObject, CLLocationManagerDelegate {
 		}
 	}
 
+	// MARK: once
+
+	private var waiting: [CheckedContinuation<CLLocation?, Never>] = []
+	var denied: Bool { manager.authorizationStatus == .denied || manager.authorizationStatus == .restricted }
+	/// Where I was last seen by the location service, if it's been on.
+	var lastFix: CLLocation? { manager.location }
+
+	/// One fix now, for a place sent once: a recent one if there is one, else the service asked
+	/// for one (and for permission, the first time), ten seconds at most.
+	func once() async -> CLLocation? {
+		if let l = manager.location, Date().timeIntervalSince(l.timestamp) < 30, l.horizontalAccuracy >= 0, l.horizontalAccuracy < 100 { return l }
+		if denied { return nil }
+		manager.delegate = self
+		return await withCheckedContinuation { c in
+			waiting.append(c)
+			if manager.authorizationStatus == .notDetermined { manager.requestWhenInUseAuthorization() } else { manager.requestLocation() }
+			Task { try? await Task.sleep(for: .seconds(10)); self.answer(self.manager.location) }
+		}
+	}
+	private func answer(_ l: CLLocation?) {
+		let w = waiting; waiting = []
+		w.forEach { $0.resume(returning: l) }
+	}
+
 	private func send(_ l: CLLocation) {
 		guard l.horizontalAccuracy >= 0 else { return }
 		if let (p, at) = last, l.distance(from: p) < 25, Date().timeIntervalSince(at) < 20 { return }
@@ -61,10 +88,13 @@ final class Whereabouts: NSObject, CLLocationManagerDelegate {
 
 	nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
 		guard let l = locations.last else { return }
-		Task { @MainActor in send(l) }
+		Task { @MainActor in if !waiting.isEmpty { answer(l) }; if on { send(l) } }
 	}
 	nonisolated func locationManagerDidChangeAuthorization(_ changed: CLLocationManager) {
 		Task { @MainActor in
+			if !waiting.isEmpty {
+				if denied { answer(nil) } else if manager.authorizationStatus != .notDetermined { manager.requestLocation() }
+			}
 			guard on else { return }
 			#if os(iOS)
 			// A share that should keep going in the background asks for Always once When In Use is given.
@@ -74,114 +104,35 @@ final class Whereabouts: NSObject, CLLocationManagerDelegate {
 			if let l = manager.location { send(l) }
 		}
 	}
-	nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
-}
-
-/// The pin in a chat's header: start sharing, for how long, or stop.
-struct ShareSpot: View {
-	@Environment(AppModel.self) private var model
-	@Environment(\.tones) private var tones
-	let conv: ConversationId
-	var body: some View {
-		let until = model.sharingPlaces[conv]
-		Menu {
-			if let until {
-				Text(until == .distantFuture ? "Sharing until you stop" : "Sharing until \(clock(until))")
-				Button("Stop sharing", role: .destructive) { model.local.stopSharing(conv) }
-			} else {
-				Section("Share your location here") {
-					Button("For 1 hour") { model.local.share(place: conv, until: Date().addingTimeInterval(3600)) }
-					Button("Until the end of the day") { model.local.share(place: conv, until: Calendar.current.startOfDay(for: Date()).addingTimeInterval(86_400)) }
-					Button("Until I stop") { model.local.share(place: conv, until: nil) }
-				}
-			}
-		} label: {
-			Image(systemName: until == nil ? "location" : "location.fill").font(.system(size: 14, weight: .semibold))
-				.frame(width: 30, height: 30)
-				.foregroundStyle(until == nil ? tones.secondary : tones.onMine)
-				.background { if until != nil { Circle().fill(tones.mine) } }
-		}
-		.menuIndicator(.hidden)
-		.buttonStyle(.plain)
-		.help(until == nil ? "Share your location" : "Sharing your location")
-		.accessibilityLabel(until == nil ? "Share your location" : "Sharing your location")
+	nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+		Task { @MainActor in if !waiting.isEmpty, denied { answer(nil) } }
 	}
 }
 
-/// The people sharing where they are in this chat, on a small map at the top; me too, when I am.
-struct PlacesCard: View {
-	@Environment(AppModel.self) private var model
-	@Environment(\.tones) private var tones
-	let conv: ConversationId
-	@State private var open = false
-	var body: some View {
-		let _ = model.placesTick
-		let theirs = model.local.places(conv)
-		let mine = model.sharingPlaces[conv]
-		if !theirs.isEmpty || mine != nil {
-			Button { open = true } label: {
-				VStack(alignment: .leading, spacing: 0) {
-					if !theirs.isEmpty { PlacesMap(places: theirs, interactive: false).frame(height: 128) }
-					HStack(spacing: 8) {
-						Image(systemName: "location.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(tones.secondary)
-						Text(line(theirs, mine)).font(Theme.smallFont).foregroundStyle(tones.text).lineLimit(1)
-						Spacer(minLength: 4)
-						if mine != nil { Button("Stop") { model.local.stopSharing(conv) }.buttonStyle(.plain).font(Theme.smallFont.weight(.semibold)).foregroundStyle(tones.text) }
-					}
-					.padding(.horizontal, 12).padding(.vertical, 9)
-				}
-				.clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-				.glass(corner: 16)
-			}
-			.buttonStyle(.plain)
-			.padding(.horizontal, 16).padding(.top, 8)
-			.disabled(theirs.isEmpty)
-			.sheet(isPresented: $open) {
-				PlacesMap(places: model.local.places(conv), interactive: true)
-					.ignoresSafeArea()
-					#if os(macOS)
-					.frame(minWidth: 560, minHeight: 440)
-					#endif
-					.presentationDragIndicator(.visible)
-			}
-		}
-	}
-
-	private func line(_ theirs: [Place], _ mine: Date?) -> String {
-		let names = theirs.map { model.name(of: $0.user).split(separator: " ").first.map(String.init) ?? "" }
-		var parts: [String] = []
-		if !names.isEmpty {
-			let newest = theirs.map(\.at).max().map { Date(timeIntervalSince1970: $0) } ?? Date()
-			parts.append("\(list(names)) \(names.count == 1 ? "is" : "are") sharing · \(ago(newest))")
-		}
-		if let mine { parts.append(mine == .distantFuture ? "You're sharing" : "You're sharing until \(clock(mine))") }
-		return parts.joined(separator: " · ")
-	}
-	private func ago(_ d: Date) -> String {
-		let s = Int(Date().timeIntervalSince(d))
-		return s < 60 ? "now" : s < 3600 ? "\(s / 60) min ago" : clock(d)
-	}
+/// Someone on a map: their face where they are.
+struct Pin: Identifiable, Hashable {
+	let id: String
+	let name: String
+	let hash: BlobHash?
+	let lat: Double, lon: Double
+	var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
 }
 
 /// A map in the app's colour: Apple's map drained of its own colours and washed in the hue, each
 /// person's face where they are.
-struct PlacesMap: View {
-	@Environment(AppModel.self) private var model
+struct HueMap: View {
 	@Environment(\.tones) private var tones
-	let places: [Place]
-	let interactive: Bool
+	let pins: [Pin]
+	var interactive = true
 	/// One person: their neighbourhood, about two kilometres across. Several: all of them.
 	private var start: MapCameraPosition {
-		guard places.count == 1, let p = places.first else { return .automatic }
-		return .camera(MapCamera(centerCoordinate: CLLocationCoordinate2D(latitude: p.lat, longitude: p.lon), distance: 2200))
+		guard pins.count == 1, let p = pins.first else { return .automatic }
+		return .camera(MapCamera(centerCoordinate: p.coordinate, distance: 2200))
 	}
 	var body: some View {
 		Map(initialPosition: start, interactionModes: interactive ? .all : []) {
-			ForEach(places, id: \.user) { p in
-				Annotation(model.name(of: p.user), coordinate: CLLocationCoordinate2D(latitude: p.lat, longitude: p.lon), anchor: .center) {
-					Avatar(name: model.name(of: p.user), hash: model.contacts.first { $0.user == p.user }?.avatar, size: 30)
-						.padding(2).background(Circle().fill(tones.mine)).shadow(color: tones.shade, radius: 6, y: 3)
-				}
+			ForEach(pins) { p in
+				Annotation(p.name, coordinate: p.coordinate, anchor: .center) { PinFace(name: p.name, hash: p.hash) }
 			}
 		}
 		.mapStyle(.standard(pointsOfInterest: .excludingAll))
@@ -189,5 +140,17 @@ struct PlacesMap: View {
 		.saturation(0)
 		.overlay(tones.surface.blendMode(.color).allowsHitTesting(false))
 		.compositingGroup()
+	}
+}
+
+/// A face as a pin: ringed in the chat's strongest colour, lifted off the map.
+struct PinFace: View {
+	@Environment(\.tones) private var tones
+	let name: String
+	let hash: BlobHash?
+	var size: CGFloat = 32
+	var body: some View {
+		Avatar(name: name, hash: hash, size: size)
+			.padding(2.5).background(Circle().fill(tones.mine)).shadow(color: tones.shade, radius: 6, y: 3)
 	}
 }

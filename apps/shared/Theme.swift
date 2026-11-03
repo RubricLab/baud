@@ -408,9 +408,12 @@ enum Accent {
 		let n = NSColor(c).usingColorSpace(.sRGB) ?? .black
 		return String(format: "%02X%02X%02X", Int(n.redComponent * 255), Int(n.greenComponent * 255), Int(n.blueComponent * 255))
 		#else
+		// The system picker hands out Display P3: in sRGB its vivid colours fall outside 0…1, and an
+		// unclamped one made a hex of sixteen digits that no colour could be read from.
 		var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-		UIColor(c).getRed(&r, green: &g, blue: &b, alpha: &a)
-		return String(format: "%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
+		UIColor(c).resolvedColor(with: .current).getRed(&r, green: &g, blue: &b, alpha: &a)
+		func byte(_ x: CGFloat) -> Int { Int((min(1, max(0, x)) * 255).rounded()) }
+		return String(format: "%02X%02X%02X", byte(r), byte(g), byte(b))
 		#endif
 	}
 }
@@ -480,7 +483,9 @@ struct Hairline: View {
 struct Avatar: View {
 	@Environment(\.accent) private var accent
 	@Environment(\.tones) private var tones
-	@Environment(AppModel.self) private var model
+	/// Optional: a face drawn where the app's model doesn't reach (a map's pins, drawn by MapKit
+	/// outside the view tree) shows its initials rather than stopping the app.
+	@Environment(AppModel.self) private var model: AppModel?
 	let name: String
 	var hash: BlobHash? = nil
 	var size: CGFloat = 24
@@ -497,7 +502,7 @@ struct Avatar: View {
 		let gap = max(3, size / 10)
 		ZStack(alignment: .bottomTrailing) {
 			Group {
-				if let hash, let img = model.image(hash) { img.resizable().scaledToFill() }
+				if let hash, let img = model?.image(hash) { img.resizable().scaledToFill() }
 				else {
 					Circle().fill(tones.face)
 						.overlay(Text(initials).font(.system(size: size * (initials.count > 1 ? 0.38 : 0.44), weight: .bold, design: .rounded)).foregroundStyle(tones.onFace))

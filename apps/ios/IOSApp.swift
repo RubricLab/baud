@@ -18,10 +18,20 @@ struct BaudApp: App {
 	var body: some Scene {
 		WindowGroup {
 			// The hue is applied above the root, so every sheet the root presents wears it too.
-			IOSRoot().modifier(Tinted(hex: model.accentHex)).environment(model)
+			Group {
+				if model.waiting { LaunchView(locked: true) } else { IOSRoot() }
+			}
+				.modifier(Tinted(hex: model.accentHex)).environment(model)
 				.environment(\.restart, { model = AppModel() })
+				// Unlocked at last: everything can be read now, so baud opens for real.
+				.onReceive(NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)) { _ in
+					guard model.waiting else { return }
+					model = AppModel(); Refresh.model = model; model.scene(active: phase == .active)
+				}
 				.onOpenURL { model.open(url: $0) }
 				.onChange(of: phase) { _, p in
+					// Waiting on a lock that has lifted: open for real.
+					if p == .active, model.waiting, !AppModel.locked, ProcessInfo.processInfo.environment["BAUD_LOCKED"] == nil { model = AppModel(); Refresh.model = model }
 					// In front: online. A glance away (inactive): still online. Leaving: online a
 					// little longer to finish what's under way, then the background wakes.
 					switch p {
@@ -165,6 +175,8 @@ struct HomeTab: View {
 				.listRowInsets(EdgeInsets()).listRowSeparator(.hidden).listRowBackground(Color.clear)
 			}
 			.listStyle(.plain).scrollContentBackground(.hidden)
+			// A scroll through the chats puts the search's keyboard away.
+			.scrollDismissesKeyboard(.immediately)
 			.modifier(DeleteChatQuestion())
 			.background(Ground())
 			.toolbar(.hidden, for: .navigationBar)
@@ -178,7 +190,14 @@ struct HomeTab: View {
 		.onChange(of: model.reveal) { _, id in if let id, model.conversation(id)?.kind == .chat { you = false; path = [.conv(id)]; model.reveal = nil } }
 		.sheet(item: $sheet) { NewSheet(what: $0).presentationBackground { Ground() } }
 		// You: devices, friends, network, colour, the app; from the face.
-		.sheet(isPresented: $you, onDismiss: { if let o = model.afterYou { model.afterYou = nil; model.offer = o } }) { SettingsView().presentationDetents([.large]).presentationBackground { Ground() }.presentationDragIndicator(.visible) }
+		.sheet(isPresented: $you, onDismiss: { if let o = model.afterYou { model.afterYou = nil; model.offer = o } }) {
+			// A stack of its own: a friend opens full height, with the way back.
+			NavigationStack {
+				SettingsView().toolbar(.hidden, for: .navigationBar)
+					.navigationDestination(for: PersonLink.self) { PersonPage(user: $0.user, conv: $0.conv) }
+			}
+			.presentationDetents([.large]).presentationBackground { Ground() }.presentationDragIndicator(.visible)
+		}
 	}
 }
 
@@ -278,21 +297,39 @@ struct SpaceScreen: View {
 		.background(Ground())
 		.toolbar(.hidden, for: .navigationBar)
 		.sheet(item: $sheet) { NewSheet(what: $0, space: space).presentationBackground { Ground() } }
-		.sheet(item: $person) { m in PersonCard(m: m, conv: space).presentationDetents([.medium]).presentationBackground { Ground() } }
+		.sheet(item: $person) { m in NavigationStack { PersonPage(user: m.user, conv: space) }.presentationDetents([.large]).presentationDragIndicator(.visible) }
 		.onAppear { model.selectedSpace = space }
 	}
 }
 
 struct ConversationScreen: View {
 	@Environment(\.tones) private var tones
+	@Environment(AppModel.self) private var model
 	let conv: ConversationId
 	@State private var members = false
+	@State private var detail = NavigationPath()
 	var body: some View {
 		ConversationView(conv: conv, showMembers: $members)
 			.background(Ground())
-			.sheet(isPresented: $members) { MembersView(conv: conv, close: { members = false }).presentationBackground(tones.raised) }
+			// Its details, a stack of their own: a person and Add people push in, full height, and back.
+			.sheet(isPresented: $members) {
+				NavigationStack(path: $detail) {
+					MembersView(conv: conv, close: { members = false })
+						.toolbar(.hidden, for: .navigationBar)
+						.navigationDestination(for: PersonLink.self) { PersonPage(user: $0.user, conv: $0.conv) }
+						.navigationDestination(for: AddPeopleLink.self) { AddPeopleSheet(conv: $0.conv, pushed: true) }
+				}
+				.presentationBackground(tones.surface)
+			}
 			// `BAUD_INFO=1`: its details open once it's on screen, for the pictures.
-			.task { if ProcessInfo.processInfo.environment["BAUD_INFO"] == "1" { try? await Task.sleep(for: .milliseconds(700)); members = true } }
+			// `BAUD_INFO=person:Ana` or `add` goes one step further in, for the pictures.
+			.task {
+				guard let info = ProcessInfo.processInfo.environment["BAUD_INFO"] else { return }
+				try? await Task.sleep(for: .milliseconds(700)); members = true
+				try? await Task.sleep(for: .milliseconds(600))
+				if info == "add" { detail.append(AddPeopleLink(conv: conv)) }
+				else if info.hasPrefix("person:"), let m = model.core.members(conv).first(where: { model.name(of: $0.user).hasPrefix(info.dropFirst(7)) }) { detail.append(PersonLink(user: m.user, conv: conv)) }
+			}
 	}
 }
 
@@ -345,4 +382,14 @@ enum Staged {
 			}
 		}
 	}
+}
+
+/// The edge swipe back works with our own headers too. Hiding the system's bar (every screen draws
+/// its own) switched it off, so the back button was the only way back, and an easy one to miss.
+extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
+	override open func viewDidLoad() {
+		super.viewDidLoad()
+		interactivePopGestureRecognizer?.delegate = self
+	}
+	public func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool { viewControllers.count > 1 }
 }

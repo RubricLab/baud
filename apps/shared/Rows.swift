@@ -73,7 +73,8 @@ struct IconButton: View {
 					#if os(macOS)
 					.frame(width: 24, height: 24)
 					#else
-					.frame(width: 36, height: 36)
+					// 44 points under a finger: Apple's minimum, and the misses stop.
+					.frame(width: 44, height: 44)
 					#endif
 					.background(Circle().fill(configuration.isPressed ? tones.pressed : hover ? tones.hover : .clear))
 					.contentShape(Circle())
@@ -127,6 +128,7 @@ struct ChatRow: View {
 		let friend = other.flatMap { u in model.contacts.first { $0.user == u } }
 		HStack(spacing: 10) {
 			if c.kind == .home { Avatar(name: model.me.name, hash: model.me.avatar, size: Rows.face) }
+			else if c.kind == .chat && !c.isDirect { GroupFace(conversation: c, size: Rows.face) }
 			else { Avatar(name: model.title(c), hash: friend?.avatar, size: Rows.face, presence: other.map { u in Mark.presence(friend?.devices ?? model.core.members(c.id).first { $0.user == u }?.devices ?? []) }) }
 			VStack(alignment: .leading, spacing: 2) {
 				HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -135,7 +137,8 @@ struct ChatRow: View {
 					if c.kind != .home || c.lastText != nil { Text(whenShort(c.lastAt)).font(Theme.smallFont).foregroundStyle(tones.secondary).monospacedDigit() }
 				}
 				HStack(spacing: 4) {
-					if c.lastUser == model.me.user, let e = c.lastEvent { DeliveryMark(delivery: model.core.delivery(c.id, e), size: Theme.small + 1) }
+					// Only a mark here: a tap anywhere on the row opens the chat (the sentence is inside).
+					if c.lastUser == model.me.user, let e = c.lastEvent { DeliveryMark(delivery: model.core.delivery(c.id, e), size: Theme.small + 1, interactive: false) }
 					Text(preview).font(Theme.smallFont).foregroundStyle(c.unread > 0 ? tones.text : tones.secondary).lineLimit(1)
 					Spacer(minLength: 4)
 					if c.unread > 0 { UnreadBadge(count: c.unread) }
@@ -148,7 +151,8 @@ struct ChatRow: View {
 	private var preview: String {
 		// An empty second line still takes its line (a no-break space), so every row is two lines tall;
 		// my own chat says what it is until there's something in it.
-		guard let t = c.lastText else { return c.isDirect || c.kind == .home ? model.status(c) : "\u{00A0}" }
+		guard let raw = c.lastText else { return c.isDirect || c.kind == .home ? model.status(c) : "\u{00A0}" }
+		let t = PlaceText.parse(raw) != nil ? "📍 Location" : raw
 		if c.kind == .home { return t }
 		let who = c.lastUser == model.me.user ? "You: " : (c.isDirect ? "" : (c.lastUser.map { model.name(of: $0) + ": " } ?? ""))
 		return who + t

@@ -17,7 +17,7 @@ struct ConversationView: View {
 			HStack(spacing: 0) {
 				VStack(spacing: 0) {
 					Header(conversation: c, showMembers: $showMembers)
-					PlacesCard(conv: conv)
+					LiveBar(conv: conv)
 					TimelineView(timeline: timeline, onReply: { reply = $0 }, onThread: { thread = $0 })
 					ComposerView(conv: conv, reply: $reply)
 				}
@@ -74,7 +74,16 @@ struct Header: View {
 		let reachable = live || wakeable
 		HStack(spacing: 8) {
 			#if os(iOS)
-			IconButton(symbol: "chevron.left", help: "Back", size: 17) { dismiss() }.padding(.leading, -10)
+			// Back: a wide target from the screen's edge (a thumb that lands a little right still goes
+			// back), and a gap before the name, which opens the details.
+			Button { dismiss() } label: {
+				Image(systemName: "chevron.left").font(.system(size: 19, weight: .semibold))
+					.frame(width: 46, height: 48, alignment: .leading).padding(.leading, 16)
+					.contentShape(Rectangle())
+			}
+			.buttonStyle(Pressed()).foregroundStyle(tones.text)
+			.padding(.leading, -16).padding(.trailing, 2)
+			.accessibilityLabel("Back")
 			#endif
 			VStack(alignment: .leading, spacing: 3) {
 				HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -115,7 +124,6 @@ struct Header: View {
 						.disabled(busy || !reachable)
 				}
 			}
-			ShareSpot(conv: conversation.id)
 			// A group's people and how many; one other person's details.
 			Button { showMembers.toggle() } label: {
 				HStack(spacing: 4) {
@@ -123,6 +131,9 @@ struct Header: View {
 					else { Image(systemName: "person.2").font(.system(size: 12, weight: .semibold)); Text("\(conversation.members.count)").font(Theme.smallFont.weight(.semibold)).monospacedDigit() }
 				}
 				.padding(.horizontal, 8).frame(height: 24)
+				#if os(iOS)
+				.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+				#endif
 			}
 			.buttonStyle(Pill(on: showMembers)).keyboardShortcut("i", modifiers: .command).help(conversation.isDirect || own ? "Details (⌘I)" : "People (⌘I)")
 			.accessibilityLabel(conversation.isDirect || own ? "Details" : "\(conversation.members.count) people")
@@ -258,3 +269,11 @@ struct DragsWindow: ViewModifier {
 	}
 }
 #endif
+
+/// A press that shows: a little smaller and dimmer under the finger.
+struct Pressed: ButtonStyle {
+	func makeBody(configuration: Configuration) -> some View {
+		configuration.label.opacity(configuration.isPressed ? 0.55 : 1).scaleEffect(configuration.isPressed ? 0.94 : 1)
+			.animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+	}
+}

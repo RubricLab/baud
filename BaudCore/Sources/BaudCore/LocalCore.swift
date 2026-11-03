@@ -55,10 +55,19 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 		self.dir = dir ?? FileManager.default.temporaryDirectory.appendingPathComponent("baud-\(UUID().uuidString)")
 		try? FileManager.default.createDirectory(at: self.dir.appendingPathComponent("blobs"), withIntermediateDirectories: true)
 		store = try Store(path: dir.map { $0.appendingPathComponent("baud.sqlite").path } ?? ":memory:")
-		let dk = keys.get("device-key") ?? { let k = randomBytes(32); keys.put("device-key", k); return k }()
-		device = stableId("device:" + hex(dk))
+		let read = keys.get("device-key")
+		if read == nil, keys.locked { throw KeysLocked() }
+		let dk = read ?? { let k = randomBytes(32); keys.put("device-key", k); return k }()
+		// Who I am is the network's identity once it has been adopted (a device linked into a person
+		// has no user key of its own): kept here, so a launch knows me at once instead of showing
+		// the name screen until the network is up.
+		let adopted = (user: store.one("select v from me where k='user'")?.string("v") ?? "", device: store.one("select v from me where k='device'")?.string("v") ?? "")
+		device = adopted.device.isEmpty ? stableId("device:" + hex(dk)) : adopted.device
 		if dir != nil { wipeLegacy() }
-		if let uk = keys.get("user-key") {
+		if !adopted.user.isEmpty {
+			user = adopted.user
+			name = store.one("select v from me where k='name'")?.string("v") ?? ""
+		} else if let uk = keys.get("user-key") {
 			user = stableId("user:" + hex(uk))
 			name = store.one("select v from me where k='name'")?.string("v") ?? ""
 			store.run("insert or ignore into people(user,name,fingerprint) values(?,?,?)", [user, name, fingerprint(user)])
@@ -926,6 +935,8 @@ public final class LocalCore: CoreSurface, @unchecked Sendable {
 			}
 			user = u; name = n
 			store.run("insert or replace into me(k,v) values('name',?)", [n])
+			store.run("insert or replace into me(k,v) values('user',?)", [u])
+			store.run("insert or replace into me(k,v) values('device',?)", [thisDevice])
 			store.run("insert or replace into people(user,name,fingerprint,verified,contact,met_at) values(?,?,?,1,0,coalesce((select met_at from people where user=?),?))", [u, n, fingerprint(u), u, Date()])
 			for d in devices { store.run("insert or ignore into devices(id,user,name,kind,added_at) values(?,?,?,?,?)", [d.id, u, d.name, d.kind.rawValue, Date()]) }
 			let ids = devices.map(\.id)

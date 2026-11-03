@@ -178,6 +178,9 @@ struct Swatches: View {
 	@Environment(\.rendering) private var rendering
 	@Environment(\.tones) private var tones
 	@Environment(AppModel.self) private var model
+	/// Here, not in Dots: on a narrow screen Dots is read for its two rows, never put on screen
+	/// itself, and state of its own would go nowhere.
+	@State private var picking = false
 	var body: some View {
 		ViewThatFits(in: .horizontal) {
 			HStack(spacing: 10) { dots }
@@ -187,11 +190,12 @@ struct Swatches: View {
 			}
 		}
 	}
-	private var dots: Dots { Dots(model: model, tones: tones, rendering: rendering) }
+	private var dots: Dots { Dots(model: model, tones: tones, rendering: rendering, picking: $picking) }
 	struct Dots: View {
 		let model: AppModel
 		let tones: Tones
 		let rendering: Bool
+		@Binding var picking: Bool
 		var body: some View { prefix; suffix }
 		@ViewBuilder var prefix: some View {
 			// No colour: white (the plain ramp, light or dark as the system is) or black (black in both).
@@ -201,10 +205,9 @@ struct Swatches: View {
 		}
 		@ViewBuilder var suffix: some View {
 			ForEach(Accent.swatches.suffix(4), id: \.hex) { s in swatch(s.hex, fill: AnyShapeStyle(Accent.color(s.hex)!), name: s.name) }
-			// Any colour: a rainbow circle the size of the others. On the iPhone the system picker
-			// opens on tap but never draws its own well (it sits, all but invisible, over the
-			// circle); on the Mac that well took no clicks (Dexter: "the color picker doesn't
-			// click"), so the circle is a button that opens the colour panel.
+			// Any colour: a rainbow circle the size of the others, a button that opens the system's
+			// colour picker (a sheet on the iPhone, the colour panel on the Mac). The picker's own
+			// well, hidden over the circle, took no clicks on the Mac and did nothing on the iPhone.
 			let custom = model.accentHex != nil && model.accentHex != Accent.black && !Accent.swatches.contains { $0.hex == model.accentHex }
 			let rainbow = Circle().fill(AngularGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple, .red], center: .center)).frame(width: 26, height: 26)
 				.overlay(Circle().strokeBorder(tones.hairline))
@@ -215,14 +218,12 @@ struct Swatches: View {
 			}
 			.buttonStyle(.plain).accessibilityLabel("Any colour")
 			#else
-			ZStack {
-				rainbow
-				if !rendering {
-					ColorPicker("", selection: Binding(get: { model.accent }, set: { model.accentHex = Accent.hex($0) }), supportsOpacity: false).labelsHidden()
-						.frame(width: 36, height: 36).opacity(0.02).clipShape(Circle())
+			Button { picking = true } label: { rainbow.frame(width: 36, height: 36).contentShape(Circle()) }
+				.buttonStyle(.plain).accessibilityLabel("Any colour")
+				.sheet(isPresented: $picking) {
+					ColourSheet(start: model.chosen) { model.accentHex = $0 }
+						.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
 				}
-			}
-			.frame(width: 36, height: 36).accessibilityLabel("Any colour")
 			#endif
 		}
 		private func swatch(_ hex: String?, fill: AnyShapeStyle, name: String) -> some View {
@@ -362,53 +363,25 @@ struct FriendsSection: View {
 		ListCard(title: "Friends") {
 			Button { addFriend() } label: { ActionRow(symbol: "plus", title: "Add a friend") }.buttonStyle(RowStyle())
 			ForEach(model.contacts) { k in
-				Button { open = k.user } label: {
-					HStack(spacing: 10) {
-						Avatar(name: k.name, hash: k.avatar, size: Rows.face)
-						Text(k.name).font(Theme.font.weight(.medium)).lineLimit(1)
-						if k.verified { MarkView(mark: .verified, size: 14, color: tones.secondary) }
-						Spacer(minLength: 8)
-						StatusWord(on: k.online, word: presenceWord(k.devices).capitalizedFirst)
-					}.frame(height: Rows.chat)
-				}
-				.buttonStyle(RowStyle())
-				.modifier(ThingCard(shown: Binding(get: { open == k.user }, set: { if !$0 { open = nil } })) { FriendCard(k: k) })
+				let row = HStack(spacing: 10) {
+					Avatar(name: k.name, hash: k.avatar, size: Rows.face, presence: Mark.presence(k.devices))
+					Text(k.name).font(Theme.font.weight(.medium)).lineLimit(1)
+					if k.verified { MarkView(mark: .verified, size: 14, color: tones.secondary) }
+					Spacer(minLength: 8)
+					StatusWord(on: k.online, word: presenceWord(k.devices).capitalizedFirst)
+					#if os(iOS)
+					Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(tones.tertiary)
+					#endif
+				}.frame(height: Rows.chat)
+				#if os(iOS)
+				NavigationLink(value: PersonLink(user: k.user)) { row }.buttonStyle(RowStyle())
+				#else
+				Button { open = k.user } label: { row }
+					.buttonStyle(RowStyle())
+					.popover(isPresented: Binding(get: { open == k.user }, set: { if !$0 { open = nil } }), arrowEdge: .trailing) { PersonPage(user: k.user).frame(width: 360, height: 560) }
+				#endif
 			}
 		}
-	}
-}
-
-/// A friend, opened: face, name, their devices, Message and Verify.
-struct FriendCard: View {
-	@Environment(AppModel.self) private var model
-	@Environment(\.tones) private var tones
-	let k: Contact
-	@State private var verifying = false
-	@State private var confirm = false
-	var body: some View {
-		VStack(spacing: 14) {
-			Avatar(name: k.name, hash: k.avatar, size: 72)
-			HStack(spacing: 6) {
-				Text(k.name).font(Theme.titleFont)
-				MarkView(mark: k.verified ? .verified : k.vouched ? .vouched : .unverified, size: 16, color: k.verified ? tones.text : tones.secondary)
-			}
-			HStack(spacing: 14) {
-				ForEach(k.devices) { d in
-					VStack(spacing: 4) { DeviceGlyph(shape: DeviceShape(d), lit: d.online, size: 40); StatusWord(on: d.online, word: d.word.capitalizedFirst) }
-				}
-			}
-			HStack(spacing: 8) {
-				Button("Message") { model.message(k.user) }.buttonStyle(Quiet(strong: true))
-				if !k.verified { Button("Verify") { verifying = true }.buttonStyle(Quiet()) }
-				Button("Remove friend", role: .destructive) { confirm = true }.buttonStyle(Quiet(danger: true))
-					.confirmationDialog("Remove \(k.name)?", isPresented: $confirm, titleVisibility: .visible) {
-						Button("Remove", role: .destructive) { model.unfriend(k.user) }
-						Button("Cancel", role: .cancel) {}
-					} message: { Text("You'll stop being friends.") }
-			}
-		}
-		.frame(maxWidth: .infinity)
-		.sheet(isPresented: $verifying) { VerifySheet(contact: k) }
 	}
 }
 
@@ -513,6 +486,33 @@ extension String {
 	/// "away 2 h" → "Away 2 h".
 	var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }
+
+#if os(iOS)
+/// The iPhone's colour picker for Any colour: a pick lands when a finger lets go (a tap on the
+/// grid, the end of a drag on the spectrum), not on every step, so the app re-colours once.
+struct ColourSheet: UIViewControllerRepresentable {
+	let start: Color?
+	let pick: (String) -> Void
+	func makeUIViewController(context: Context) -> UIColorPickerViewController {
+		let c = UIColorPickerViewController()
+		c.supportsAlpha = false
+		c.title = "Any colour"
+		if let start { c.selectedColor = UIColor(start) }
+		c.delegate = context.coordinator
+		return c
+	}
+	func updateUIViewController(_ c: UIColorPickerViewController, context: Context) {}
+	func makeCoordinator() -> Coordinator { Coordinator(pick) }
+	final class Coordinator: NSObject, UIColorPickerViewControllerDelegate {
+		let pick: (String) -> Void
+		init(_ pick: @escaping (String) -> Void) { self.pick = pick }
+		func colorPickerViewController(_ c: UIColorPickerViewController, didSelect color: UIColor, continuously: Bool) {
+			if !continuously { pick(Accent.hex(Color(uiColor: color))) }
+		}
+		func colorPickerViewControllerDidFinish(_ c: UIColorPickerViewController) { pick(Accent.hex(Color(uiColor: c.selectedColor))) }
+	}
+}
+#endif
 
 #if os(macOS)
 /// The Mac's colour panel for Any colour: a pick lands when the mouse lets go, not on every step

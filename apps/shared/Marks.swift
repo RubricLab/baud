@@ -211,18 +211,26 @@ struct DeliveryMark: View {
 	@Environment(\.tones) private var tones
 	let delivery: Delivery
 	var size: CGFloat = 14
+	/// Its own tap target (in a chat); in a list row it's only a mark, and the row takes the tap.
+	var interactive = true
 	@State private var showing = false
 	var body: some View {
 		let m = Mark.delivery(delivery)
-		MarkView(mark: m, size: size, color: m == .sending ? tones.secondary : tones.text)
+		let mark = MarkView(mark: m, size: size, color: m == .sending ? tones.secondary : tones.text)
 			.modifier(Turning(on: m == .sending && delivery.devices.contains { $0.device.online }))
 			.help(delivery.sentence)
-			.contentShape(Rectangle().inset(by: -6))
-			#if os(iOS)
-			.onTapGesture { showing.toggle() }
-			.popover(isPresented: $showing) { Text(delivery.sentence).font(Theme.smallFont).padding(10).frame(maxWidth: 320).presentationCompactAdaptation(.popover) }
-			#endif
 			.accessibilityLabel(delivery.sentence)
+		#if os(iOS)
+		if interactive {
+			mark.contentShape(Rectangle().inset(by: -6))
+				.onTapGesture { showing.toggle() }
+				.popover(isPresented: $showing) { Text(delivery.sentence).font(Theme.smallFont).padding(10).frame(maxWidth: 320).presentationCompactAdaptation(.popover) }
+		} else {
+			mark.allowsHitTesting(false)
+		}
+		#else
+		mark
+		#endif
 	}
 }
 

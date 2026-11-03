@@ -68,6 +68,77 @@ struct ActionRow: View {
 	}
 }
 
+/// One of a few equal tiles side by side, a glyph over a word: what a page is for (message, call,
+/// video), a tap each.
+struct ActionTile: View {
+	@Environment(\.tones) private var tones
+	let symbol: String
+	let title: String
+	let action: () -> Void
+	var body: some View {
+		Button(action: action) {
+			VStack(spacing: 6) {
+				Image(systemName: symbol).font(.system(size: 19, weight: .semibold))
+				Text(title).font(Theme.smallFont.weight(.semibold))
+			}
+			.foregroundStyle(tones.text)
+			.frame(maxWidth: .infinity).frame(height: 64)
+			.glass(corner: Parts.corner)
+			.contentShape(Rectangle())
+		}
+		.buttonStyle(Pressed())
+		.accessibilityLabel(title)
+	}
+	struct Pressed: ButtonStyle {
+		func makeBody(configuration: Configuration) -> some View {
+			configuration.label.scaleEffect(configuration.isPressed ? 0.96 : 1).opacity(configuration.isPressed ? 0.8 : 1)
+				.animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+		}
+	}
+}
+
+/// A group's face: the people in it, two or three of their faces gathered in one circle (photos
+/// first), so a group never looks like a person and you can see who's in it at a glance.
+struct GroupFace: View {
+	@Environment(AppModel.self) private var model
+	let conversation: Conversation
+	var size: CGFloat
+	var body: some View {
+		let people = faces
+		let gap = max(1.5, size / 24)
+		ZStack {
+			switch people.count {
+			case 0: Avatar(name: model.title(conversation), size: size)
+			case 1: Avatar(name: people[0].name, hash: people[0].hash, size: size)
+			case 2:
+				let d = (size * 0.62).rounded()
+				let o = (size - d) / 2
+				face(people[0], d).offset(x: -o, y: -o)
+				Circle().frame(width: d + gap * 2, height: d + gap * 2).offset(x: o, y: o).blendMode(.destinationOut)
+				face(people[1], d).offset(x: o, y: o)
+			default:
+				let d = (size * 0.56).rounded()
+				let spots = [CGPoint(x: -0.22, y: 0.17), CGPoint(x: 0.22, y: 0.17), CGPoint(x: 0, y: -0.22)]
+				ForEach(0..<3, id: \.self) { i in
+					if i > 0 { Circle().frame(width: d + gap * 2, height: d + gap * 2).offset(x: spots[i].x * size, y: spots[i].y * size).blendMode(.destinationOut) }
+					face(people[i], d).offset(x: spots[i].x * size, y: spots[i].y * size)
+				}
+			}
+		}
+		.compositingGroup()
+		.frame(width: size, height: size)
+		.accessibilityLabel(model.title(conversation))
+	}
+	private func face(_ p: (name: String, hash: BlobHash?), _ d: CGFloat) -> some View {
+		Avatar(name: p.name, hash: p.hash, size: d)
+	}
+	/// Everyone but me, photos first, then by name; three at most.
+	private var faces: [(name: String, hash: BlobHash?)] {
+		let others = conversation.members.filter { $0 != model.me.user }.map { u in (name: model.name(of: u), hash: model.contacts.first { $0.user == u }?.avatar) }
+		return Array(others.sorted { ($0.hash != nil) != ($1.hash != nil) ? $0.hash != nil : $0.name < $1.name }.prefix(3))
+	}
+}
+
 /// What can't be undone (leaving a group, removing someone, erasing this device): its own card, last
 /// on the page, in red; the press asks first, saying what will happen, and only the answer does it.
 struct DangerCard: View {

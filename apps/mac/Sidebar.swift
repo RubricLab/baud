@@ -233,7 +233,7 @@ struct SpaceList: View {
 		ForEach(people) { m in
 			Button { person = m } label: { PersonRow(m: m, conv: space.id) }
 				.buttonStyle(RowStyle())
-				.popover(isPresented: Binding(get: { person?.id == m.id }, set: { if !$0 { person = nil } }), arrowEdge: .trailing) { PersonCard(m: m, conv: space.id) }
+				.popover(isPresented: Binding(get: { person?.id == m.id }, set: { if !$0 { person = nil } }), arrowEdge: .trailing) { PersonPage(user: m.user, conv: space.id).frame(width: 360, height: 560) }
 		}
 	}
 }

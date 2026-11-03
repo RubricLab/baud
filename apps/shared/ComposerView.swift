@@ -16,6 +16,7 @@ struct ComposerView: View {
 	@State private var text = ""
 	@State private var files: [URL] = []
 	@State private var importing = false
+	@State private var locating = false
 	@State private var choosingPhotos = false
 	@State private var photos: [PhotosPickerItem] = []
 	@State private var editing: Event?
@@ -74,12 +75,17 @@ struct ComposerView: View {
 				Menu {
 					Button { choosingPhotos = true } label: { Label("Photos", systemImage: "photo.on.rectangle") }
 					Button { importing = true } label: { Label("Files", systemImage: "folder") }
+					Button { locating = true } label: { Label("Location", systemImage: "location") }
 				} label: { Image(systemName: "plus").font(.system(size: 14, weight: .semibold)).frame(width: 24, height: PhoneComposerText.line) }
 					.foregroundStyle(tones.secondary).accessibilityLabel("Attach")
 				#else
-				Button { importing = true } label: { Image(systemName: "plus").font(.system(size: 14, weight: .semibold)) }
-					.buttonStyle(.plain).foregroundStyle(tones.secondary).frame(width: 24, height: 24)
-					.help("Attach files and photos (or drop or paste them here)")
+				Menu {
+					Button { importing = true } label: { Label("Photos and Files…", systemImage: "paperclip") }
+					Button { locating = true } label: { Label("Location…", systemImage: "location") }
+				} label: { Image(systemName: "plus").font(.system(size: 14, weight: .semibold)) }
+					.menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden).fixedSize()
+					.foregroundStyle(tones.secondary).frame(width: 24, height: 24)
+					.help("Attach files, photos or where you are (or drop or paste files here)")
 				#endif
 				#if os(macOS)
 				MacComposerText(text: $text, placeholder: placeholder, onSend: send,
@@ -125,6 +131,12 @@ struct ComposerView: View {
 			guard thread == nil, let urls, !urls.isEmpty else { return }
 			files += urls.filter { !files.contains($0) }; model.dropped[conv] = nil
 		}
+		// The model and the colour handed on by name: a sheet from the composer doesn't inherit them.
+		.sheet(isPresented: $locating) { LocationSheet(conv: conv).environment(model).environment(\.tones, tones) }
+		#if DEBUG
+		// `BAUD_LOCATE=1`: the Location sheet opens on the chat, for a picture.
+		.task { if ProcessInfo.processInfo.environment["BAUD_LOCATE"] == "1" { try? await Task.sleep(for: .milliseconds(900)); locating = true } }
+		#endif
 		.fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: true) { r in
 			// Picked by the person: readable here whether or not the URL is security-scoped.
 			if case .success(let urls) = r { files += urls.map { _ = $0.startAccessingSecurityScopedResource(); return $0 } }

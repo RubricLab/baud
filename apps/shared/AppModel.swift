@@ -2,6 +2,7 @@
 /// few bits of UI state that outlive a view: selection, drafts, the demo people. No protocol
 /// logic: everything about devices, delivery and paths comes from the core as sentences.
 import BaudCore
+import CoreLocation
 import Foundation
 import Network
 import Observation
@@ -296,19 +297,39 @@ final class AppModel {
 		let lab = false
 		#endif
 		keys = AppleKeychain(fallbackDir: dir, fileOnly: lab)
+		// Before the first unlock after a restart (a background wake, a call coming in), neither the
+		// keychain nor the store can be read. Opening anyway made a nameless stand-in, and baud asked
+		// for a name; it waits instead, on an empty store in memory that touches neither, and the app
+		// makes a new model once the iPhone is unlocked. (Only when a read actually fails: whether
+		// protected data is available reads false while the app is still starting.)
+		var wait = false
+		#if DEBUG
+		// `BAUD_LOCKED=1`: as if not unlocked since a restart, for a picture of the wait.
+		if ProcessInfo.processInfo.environment["BAUD_LOCKED"] == "1" { wait = true }
+		#endif
 		let opened: LocalCore
-		do { opened = try LocalCore(dir: dir, keys: keys, deviceName: AppModel.deviceName, kind: AppModel.deviceKind) }
+		if wait { opened = try! LocalCore(dir: nil, keys: MemoryKeys(), deviceName: AppModel.deviceName, kind: AppModel.deviceKind) }
+		else { do { opened = try LocalCore(dir: dir, keys: keys, deviceName: AppModel.deviceName, kind: AppModel.deviceKind) }
+		catch is KeysLocked {
+			wait = true
+			opened = try! LocalCore(dir: nil, keys: MemoryKeys(), deviceName: AppModel.deviceName, kind: AppModel.deviceKind)
+		}
+		catch where AppModel.locked {
+			wait = true
+			opened = try! LocalCore(dir: nil, keys: MemoryKeys(), deviceName: AppModel.deviceName, kind: AppModel.deviceKind)
+		}
 		catch {
 			// A store that won't open at its home opens in memory, and the screen says so.
 			opened = try! LocalCore(dir: nil, keys: keys, deviceName: AppModel.deviceName, kind: AppModel.deviceKind)
 			openFailure = "Couldn't open baud's store at \(dir.path): \(error). Running in memory for now; nothing you do here will be kept."
-		}
+		} }
+		waiting = wait
 		local = opened
 		mesh.join(local)
 		// The demo people live on the in-process mesh alone: the crate adopting its identity while
 		// they are seeded left them half made ("demo failed: notAdmin").
 		let demoOn = ProcessInfo.processInfo.environment["BAUD_DEMO"].map { $0 != "0" } ?? UserDefaults.standard.bool(forKey: "demo")
-		core = Crate.wanted && !demoOn ? Baud(local: local, dir: dir, keys: keys) : local
+		core = Crate.wanted && !demoOn && !wait ? Baud(local: local, dir: dir, keys: keys) : local
 		me = core.me()
 		(core as? Baud)?.onLinkRequest = { [weak self] id, code, device, name, kind in Task { @MainActor in self?.linkAsk = LinkAsk(id: id, code: code, device: device, name: name, kind: kind) } }
 		// `BAUD_ACCENT=0090FF|none` sets the colour for a smoke or a picture.
@@ -317,7 +338,7 @@ final class AppModel {
 		selectedConversation = UserDefaults.standard.string(forKey: "conversation")
 		sub = core.subscribe { [weak self] c in Task { @MainActor in self?.changed(c) } }
 		refreshAll()
-		if !named, let n = ProcessInfo.processInfo.environment["BAUD_NAME"] { try? core.setName(n); me = core.me(); onboarded = true; Measure.log("staged name \(n), named=\(named), keys in \(keys.usingFile ? "file" : "keychain")") }
+		if !named, !wait, let n = ProcessInfo.processInfo.environment["BAUD_NAME"] { try? core.setName(n); me = core.me(); onboarded = true; Measure.log("staged name \(n), named=\(named), keys in \(keys.usingFile ? "file" : "keychain")") }
 		if named, demoWanted { startDemo() }
 		// `BAUD_OPEN_LINK=baud://…` is a launch from a scanned or tapped link, for the smoke on the simulator.
 		if let u = ProcessInfo.processInfo.environment["BAUD_OPEN_LINK"] { join = Join(link: Code.parse(u)) }
@@ -452,6 +473,17 @@ final class AppModel {
 	var onboarded: Bool = UserDefaults.standard.bool(forKey: "onboarded") { didSet { UserDefaults.standard.set(onboarded, forKey: "onboarded") } }
 	/// Why the core couldn't open, shown on the first screen instead of nothing.
 	private(set) var openFailure: String?
+	/// The iPhone hasn't been unlocked since it restarted: nothing of mine can be read yet, and the
+	/// launch screen shows until it can (never the name screen, which is for a first run).
+	private(set) var waiting = false
+	/// The iPhone's files are still locked (not unlocked since a restart).
+	static var locked: Bool {
+		#if os(iOS)
+		return !UIApplication.shared.isProtectedDataAvailable
+		#else
+		return false
+		#endif
+	}
 	var demoWanted: Bool {
 		if let v = ProcessInfo.processInfo.environment["BAUD_DEMO"] { return v != "0" }
 		return UserDefaults.standard.bool(forKey: "demo")
@@ -474,6 +506,10 @@ final class AppModel {
 				guard let chat = who.conversations(.chat).first(where: { $0.isDirect && $0.members.contains(me.user) }) else { continue }
 				who.moved(lat: lat, lon: lon, accuracy: 15)
 				who.share(place: chat.id, until: Date().addingTimeInterval(3600))
+			}
+			// And Jo sends where she is once, a place in the chat.
+			if let chat = d.jo.conversations(.chat).first(where: { $0.isDirect && $0.members.contains(me.user) }), PlaceText.parse(chat.lastText) == nil {
+				_ = try? d.jo.send(chat.id, Draft(text: PlaceText.make(CLLocationCoordinate2D(latitude: 40.7412, longitude: -73.9897))))
 			}
 		}
 		// `BAUD_DEMO_DISAPPEAR=<seconds>`: disappearing messages on in my chat with Sam (I turned it

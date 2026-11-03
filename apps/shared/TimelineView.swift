@@ -73,6 +73,8 @@ struct TimelineView: View {
 				Color.clear.frame(height: 4).id("bottom").listRowSeparator(.hidden).listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
 			}
 			.defaultScrollAnchor(.bottom)
+			// Scrolling back through the chat takes the keyboard down with the finger, as Messages does.
+			.scrollDismissesKeyboard(.interactively)
 			.environment(\.reveal, Self.held ?? reveal)
 			.simultaneousGesture(
 				DragGesture(minimumDistance: 14)
@@ -323,6 +325,8 @@ struct MessageRow: View {
 				if editing {
 					TextField("", text: $editText, axis: .vertical).textFieldStyle(.plain).font(Theme.font)
 						.onSubmit { model.attempt { try model.core.edit(event.conv, event.id, text: editText) }; editing = false }
+				} else if let at = PlaceText.parse(event.text) {
+					PlaceBubble(event: event, at: at)
 				} else if let t = text {
 					// Just the words. How it travelled is beside it on a hover (Mac) or a drag to the left
 					// (iPhone), the sentence a tap away; whether my newest got there is one line under the

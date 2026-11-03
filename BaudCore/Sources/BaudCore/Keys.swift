@@ -8,7 +8,14 @@ public protocol Keys: AnyObject, Sendable {
 	func get(_ item: String) -> Data?
 	func put(_ item: String, _ bytes: Data)
 	func delete(_ item: String)
+	/// The keys are there but can't be read yet (an iPhone not unlocked since it restarted): a
+	/// missing key now means "wait", never "make a new one".
+	var locked: Bool { get }
 }
+public extension Keys { var locked: Bool { false } }
+
+/// The keychain can't be read yet; the store waits rather than making a new identity.
+public struct KeysLocked: Error {}
 
 public final class MemoryKeys: Keys, @unchecked Sendable {
 	private var d: [String: Data] = [:]
@@ -30,6 +37,8 @@ public final class AppleKeychain: Keys, @unchecked Sendable {
 	/// `fileOnly`: the secrets go straight to the file, never the keychain (lab copies, each its own).
 	let fileOnly: Bool
 	public init(fallbackDir: URL, fileOnly: Bool = false) { fallback = fallbackDir.appendingPathComponent("keys"); self.fileOnly = fileOnly; usingFile = fileOnly }
+	/// The last read found the keychain locked (before the first unlock after a restart).
+	public private(set) var locked = false
 	private func q(_ item: String) -> [String: Any] {
 		[kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: Self.service, kSecAttrAccount as String: item, kSecUseDataProtectionKeychain as String: true]
 	}
@@ -38,13 +47,16 @@ public final class AppleKeychain: Keys, @unchecked Sendable {
 		var query = q(item); query[kSecReturnData as String] = true
 		var out: AnyObject?
 		let status = SecItemCopyMatching(query as CFDictionary, &out)
-		if status == errSecSuccess { return out as? Data }
+		if status == errSecSuccess { locked = false; return out as? Data }
+		// Locked, not missing: nothing is read from the file and nothing new is written in its place.
+		if status == errSecInteractionNotAllowed { locked = true; return nil }
 		if status == errSecMissingEntitlement { usingFile = true }
 		// Not in the keychain: a build that fell back to the file last time still has it there.
 		if let d = try? Data(contentsOf: fallback.appendingPathComponent(item)) { usingFile = true; return d }
 		return nil
 	}
 	public func put(_ item: String, _ bytes: Data) {
+		if locked { return }
 		if !usingFile {
 			SecItemDelete(q(item) as CFDictionary)
 			var add = q(item)
