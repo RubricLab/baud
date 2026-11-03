@@ -80,35 +80,38 @@ struct Faces: View {
 	}
 }
 
+/// Nothing open: a quiet column of the things to start, each with its keys, so a click works and
+/// the keys are learnt.
 struct HomeOverview: View {
 	@Environment(AppModel.self) private var model
 	@Environment(\.tones) private var tones
 	@Binding var sheet: NewSheet.What?
+	var jump: () -> Void = {}
 	var body: some View {
-		let online = model.contacts.filter(\.online)
-		VStack(alignment: .leading, spacing: 18) {
-			VStack(alignment: .leading, spacing: 4) {
+		VStack(spacing: 12) {
+			Text("No chat open").font(Theme.headingFont).foregroundStyle(tones.secondary)
+			VStack(spacing: 0) {
+				row("New chat", "bubble.left", "⌘N") { sheet = .chat }
+				row("New group", "person.2", "⇧⌘N") { sheet = .group }
+				row("New friend", "person.badge.plus", "⌥⌘N") { model.offer = .friend }
+				row("Jump to…", "magnifyingglass", "⌘K", action: jump)
 			}
-			HStack(spacing: 12) {
-				Button { model.offer = .friend } label: { Start(title: "New friend", detail: "", symbol: "person.badge.plus") }.buttonStyle(TileStyle())
-				Button { sheet = .group } label: { Start(title: "New group", detail: "⇧⌘N", symbol: "person.2") }.buttonStyle(TileStyle())
-			}
+			.frame(width: 300)
 		}
-		.padding(.horizontal, 28).padding(.top, Theme.band + 18)
-		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+		.padding(.bottom, Theme.band)
+		.frame(maxWidth: .infinity, maxHeight: .infinity)
 		.background(tones.surface)
 	}
-	struct Start: View {
-		@Environment(\.tones) private var tones
-		let title: String, detail: String, symbol: String
-		var body: some View {
-			VStack(alignment: .leading, spacing: 10) {
-				Image(systemName: symbol).font(.system(size: 16, weight: .medium)).foregroundStyle(tones.secondary)
-				VStack(alignment: .leading, spacing: 2) {
-					Text(title).font(Theme.font.weight(.semibold))
-					Text(detail).font(Theme.smallFont).foregroundStyle(tones.secondary)
-				}
-			}.padding(14).frame(width: 160, height: 88, alignment: .topLeading)
+	private func row(_ title: String, _ symbol: String, _ keys: String, action: @escaping () -> Void) -> some View {
+		Button(action: action) {
+			HStack(spacing: Rows.gap) {
+				Image(systemName: symbol).font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: 20)
+				Text(title).font(Theme.font.weight(.medium))
+				Spacer(minLength: 8)
+				Keycap(keys: keys)
+			}
+			.frame(minHeight: Rows.line)
 		}
+		.buttonStyle(RowStyle())
 	}
 }

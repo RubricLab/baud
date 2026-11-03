@@ -1,5 +1,5 @@
-/// ⌘K: one field that jumps to a conversation or a person, runs a command, or searches every
-/// message. Arrows, enter, escape.
+/// ⌘K: one field that jumps to a chat or a person, does something with the open chat, runs a
+/// command, or searches every message. In sections, each command with its keys; arrows, ⏎, ⎋.
 import BaudCore
 import SwiftUI
 
@@ -12,92 +12,141 @@ struct Palette: View {
 	@State private var index = 0
 	@FocusState private var focused: Bool
 
-	enum Command: Hashable { case open(ConversationId), person(UserId), hit(Hit), newChat, newGroup, newSpace, network, contacts, settings }
-	struct Item: Identifiable { let id: String; let title: String; let detail: String; let command: Command }
+	enum Command: Hashable { case open(ConversationId), person(UserId), hit(Hit), newChat, newGroup, newFriend, newSpace, friends, network, settings, call(ConversationId, video: Bool), details, markRead(ConversationId) }
+	struct Item: Identifiable { let id: String; let title: String; var detail: String? = nil; var keys: String? = nil; var symbol: String? = nil; let command: Command }
+	struct Shelf: Identifiable { let id: String; let items: [Item] }
 
-	private var items: [Item] {
+	private var sections: [Shelf] {
 		let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-		var out: [Item] = []
-		for c in model.conversations where (Features.spaces || c.kind == .chat) && (q.isEmpty || model.title(c).lowercased().contains(q)) {
-			let space = c.space.flatMap(model.conversation)?.name
-			out.append(Item(id: "c-\(c.id)", title: c.kind == .channel ? (c.name ?? "") : model.title(c), detail: c.kind == .channel ? "channel in \(space ?? "a space")" : c.kind == .space ? "space" : c.isDirect ? "chat" : "group chat", command: .open(c.id)))
-		}
-		for k in model.contacts where !q.isEmpty && k.name.lowercased().contains(q) {
-			out.append(Item(id: "p-\(k.user)", title: k.name, detail: k.sentence, command: .person(k.user)))
-		}
-		let commands: [(String, Command)] = [("New chat", .newChat), ("New group", .newGroup)] + (Features.spaces ? [("New space", .newSpace)] : []) + [("Add", .contacts), ("Settings", .settings)]
-		for (t, c) in commands where q.isEmpty || t.lowercased().contains(q) { out.append(Item(id: "k-\(t)", title: t, detail: "command", command: c)) }
-		if q.count >= 2 {
-			for h in model.core.search(query, scope: nil).prefix(20) {
-				out.append(Item(id: "h-\(h.id)", title: "\(model.name(of: h.event.user)): \(h.snippet)", detail: model.title(h.conversation) + " · " + whenShort(h.event.at), command: .hit(h)))
+		func hit(_ t: String) -> Bool { q.isEmpty || t.lowercased().contains(q) }
+		var out: [Shelf] = []
+		// What can be done with the chat that's open.
+		if let c = model.selectedConversation.flatMap(model.conversation) {
+			let name = model.title(c)
+			var here: [Item] = []
+			if model.calls.callable(c.id), model.calls.session == nil {
+				here.append(Item(id: "x-call", title: "Call \(name)", symbol: "phone", command: .call(c.id, video: false)))
+				here.append(Item(id: "x-video", title: "Video call \(name)", symbol: "video", command: .call(c.id, video: true)))
 			}
+			here.append(Item(id: "x-details", title: model.details ? "Hide details" : "Show details", keys: "⌘I", symbol: "info.circle", command: .details))
+			if c.unread > 0 { here.append(Item(id: "x-read", title: "Mark as read", keys: "⇧⌘U", symbol: "checkmark.message", command: .markRead(c.id))) }
+			out.append(Shelf(id: "This chat", items: here.filter { hit($0.title) }))
 		}
-		return Array(out.prefix(40))
+		let chats = model.conversations.filter { (Features.spaces || c($0)) && hit(model.title($0)) }.map { c in
+			Item(id: "c-\(c.id)", title: c.kind == .channel ? (c.name ?? "") : model.title(c), detail: c.kind == .channel ? c.space.flatMap(model.conversation)?.name : nil, command: .open(c.id))
+		}
+		out.append(Shelf(id: "Chats", items: chats))
+		if !q.isEmpty {
+			out.append(Shelf(id: "People", items: model.contacts.filter { hit($0.name) }.map { Item(id: "p-\($0.user)", title: $0.name, detail: presenceWord($0.devices).capitalizedFirst, command: .person($0.user)) }))
+		}
+		let actions: [Item] = [
+			Item(id: "k-chat", title: "New chat", keys: "⌘N", symbol: "bubble.left", command: .newChat),
+			Item(id: "k-group", title: "New group", keys: "⇧⌘N", symbol: "person.2", command: .newGroup),
+			Item(id: "k-friend", title: "New friend", keys: "⌥⌘N", symbol: "person.badge.plus", command: .newFriend),
+		] + (Features.spaces ? [Item(id: "k-space", title: "New space", keys: "⌃⌥⌘N", symbol: "square.grid.2x2", command: .newSpace)] : []) + [
+			Item(id: "k-friends", title: "Friends", keys: "⇧⌘1", symbol: "person.crop.circle", command: .friends),
+			Item(id: "k-network", title: "Network", keys: "⇧⌘2", symbol: "point.3.connected.trianglepath.dotted", command: .network),
+			Item(id: "k-settings", title: "Settings", keys: "⌘,", symbol: "gearshape", command: .settings),
+		]
+		out.append(Shelf(id: "Actions", items: actions.filter { hit($0.title) }))
+		if q.count >= 2 {
+			out.append(Shelf(id: "Messages", items: model.core.search(query, scope: nil).prefix(20).map { h in
+				Item(id: "h-\(h.id)", title: "\(model.name(of: h.event.user)): \(h.snippet)", detail: model.title(h.conversation) + " · " + whenShort(h.event.at), command: .hit(h))
+			}))
+		}
+		return out.filter { !$0.items.isEmpty }
 	}
+	private func c(_ c: Conversation) -> Bool { c.kind == .chat || c.kind == .home }
 
 	var body: some View {
-		let list = items
+		let sections = self.sections
+		let flat = sections.flatMap(\.items)
 		VStack(spacing: 0) {
 			HStack(spacing: 10) {
-				Image(systemName: "magnifyingglass").font(.system(size: 15, weight: .medium)).foregroundStyle(tones.secondary)
-				TextField("", text: $query, prompt: Text("Search").foregroundStyle(tones.secondary))
+				Image(systemName: "magnifyingglass").font(Icon.font(Icon.bar)).foregroundStyle(tones.secondary)
+				TextField("", text: $query, prompt: Text("Jump to a chat, a person or a command").foregroundStyle(tones.secondary))
 					.textFieldStyle(.plain).font(.system(size: Theme.heading))
 					.focused($focused)
-					.onSubmit { if list.indices.contains(index) { run(list[index].command); shown = false } }
+					.onSubmit { if flat.indices.contains(index) { go(flat[index].command) } }
 					.onChange(of: query) { _, _ in index = 0 }
-					.onKeyPress(.downArrow) { index = min(index + 1, list.count - 1); return .handled }
+					.onKeyPress(.downArrow) { index = min(index + 1, flat.count - 1); return .handled }
 					.onKeyPress(.upArrow) { index = max(index - 1, 0); return .handled }
 					.onKeyPress(.escape) { shown = false; return .handled }
 			}
-			.padding(.horizontal, 16).frame(height: 52)
+			.padding(.horizontal, Space.side).frame(height: Theme.header)
 			Hairline()
 			ScrollViewReader { proxy in
 				ScrollView {
-					LazyVStack(spacing: 0) {
-						ForEach(Array(list.enumerated()), id: \.element.id) { i, item in
-							// The selected row is the loud fill: its quiet words flip with it.
-							let t = i == index ? tones.onLoudTones : tones
-							Button { run(item.command); shown = false } label: {
-								HStack(spacing: 10) {
-									icon(item.command, t)
-									Text(item.title).font(Theme.font.weight(i == index ? .semibold : .regular)).lineLimit(1)
-									Spacer(minLength: 8)
-									Text(item.detail).font(Theme.smallFont).foregroundStyle(t.secondary).lineLimit(1)
-								}.frame(height: 32)
+					LazyVStack(alignment: .leading, spacing: 0) {
+						ForEach(sections) { s in
+							SectionTitle(s.id).padding(.top, 8).padding(.bottom, 2)
+							ForEach(s.items) { item in
+								let i = flat.firstIndex { $0.id == item.id } ?? 0
+								Button { go(item.command) } label: { row(item, on: i == index) }
+									.buttonStyle(RowStyle(selected: i == index)).id(i)
 							}
-							.buttonStyle(RowStyle(selected: i == index)).id(i)
 						}
-						if list.isEmpty { EmptyLine(text: "Nothing matches “\(query)”.").padding(.top, 10) }
+						if flat.isEmpty { EmptyLine(text: "Nothing matches “\(query)”.").padding(.top, 12) }
 					}
-					.padding(.vertical, 6)
+					.padding(.bottom, 8)
 				}
 				.onChange(of: index) { _, i in proxy.scrollTo(i) }
 			}
+			Hairline()
+			HStack(spacing: 12) {
+				hint("↑↓", "to move"); hint("⏎", "to open"); hint("esc", "to close")
+				Spacer()
+			}
+			.padding(.horizontal, Space.side).frame(height: 32)
 		}
-		.frame(width: 560, height: 420)
+		.frame(width: 560, height: 460)
 		.background(tones.surface)
 		.onAppear { focused = true }
 	}
 
-	/// What each kind of thing is, at a glance: a face, a channel's #, a space's tile, a command's glyph.
-	@ViewBuilder private func icon(_ c: Command, _ tones: Tones) -> some View {
-		Group {
-			switch c {
+	private func go(_ c: Command) { run(c); shown = false }
+
+	private func row(_ item: Item, on: Bool) -> some View {
+		HStack(spacing: Rows.gap) {
+			icon(item).frame(width: 20)
+			Text(item.title).font(Theme.font.weight(on ? .semibold : .regular)).lineLimit(1)
+			Spacer(minLength: 8)
+			if let keys = item.keys { Keycap(keys: keys) }
+			else if let d = item.detail { Text(d).font(Theme.smallFont).foregroundStyle(tones.secondary).lineLimit(1) }
+		}
+		.frame(minHeight: Rows.line)
+	}
+
+	private func hint(_ keys: String, _ words: String) -> some View {
+		HStack(spacing: 4) { Keycap(keys: keys); Text(words).font(Theme.smallFont).foregroundStyle(tones.secondary) }
+	}
+
+	/// What each thing is, at a glance: a face (a group's faces), a channel's #, a space's tile, a
+	/// command's glyph.
+	@ViewBuilder private func icon(_ item: Item) -> some View {
+		if let symbol = item.symbol { Image(systemName: symbol).font(Icon.font(Icon.row)).foregroundStyle(tones.secondary) }
+		else {
+			switch item.command {
 			case .open(let id):
 				if let conv = model.conversation(id) {
 					switch conv.kind {
 					case .channel: Text("#").font(Theme.font.weight(.semibold)).foregroundStyle(tones.secondary)
 					case .space: SpaceTile(name: conv.name ?? "", size: 18)
+					case .home: Avatar(name: model.me.name, hash: model.me.avatar, size: 20)
 					default:
-						let other = conv.isDirect ? conv.members.first { $0 != model.me.user } : nil
-						Avatar(name: model.title(conv), size: 20, presence: other.flatMap { u in model.contacts.first { $0.user == u } }.map { Mark.presence($0.devices) })
+						if conv.isDirect {
+							let other = conv.members.first { $0 != model.me.user }
+							let friend = other.flatMap { u in model.contacts.first { $0.user == u } }
+							Avatar(name: model.title(conv), hash: friend?.avatar, size: 20, presence: friend.map { Mark.presence($0.devices) })
+						} else { GroupFace(conversation: conv, size: 20) }
 					}
 				}
-			case .person(let u): Avatar(name: model.name(of: u), size: 20, presence: model.contacts.first { $0.user == u }.map { Mark.presence($0.devices) })
-			case .hit: Image(systemName: "text.magnifyingglass").font(.system(size: 12)).foregroundStyle(tones.secondary)
-			default: Image(systemName: "command").font(.system(size: 11, weight: .semibold)).foregroundStyle(tones.secondary)
+			case .person(let u):
+				let k = model.contacts.first { $0.user == u }
+				Avatar(name: model.name(of: u), hash: k?.avatar, size: 20, presence: k.map { Mark.presence($0.devices) })
+			case .hit: Image(systemName: "text.magnifyingglass").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary)
+			default: EmptyView()
 			}
 		}
-		.frame(width: 22)
 	}
 }

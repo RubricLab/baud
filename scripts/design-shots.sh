@@ -45,7 +45,7 @@ if [[ " $WHAT " == *" mac "* ]]; then
     D=$(mktemp -d "$TMP/mac.XXXX"); mkdir -p "$OUT/mac/$accent"
     env BAUD_DEMO=1 BAUD_DEMO_EVENTS=${EVENTS:-400} BAUD_NAME="${ME:-Robin}" BAUD_DIR="$D" BAUD_ACCENT=$accent BAUD_APPEARANCE=$mode \
       BAUD_PORTMAP=0 BAUD_RELAY=0 BAUD_HIDDEN=1 BAUD_NOTIFY=log \
-      BAUD_SHOTS="$OUT/mac/$accent" ${STEPS:+BAUD_SHOTS_STEPS=$STEPS} \
+      BAUD_SHOTS="$OUT/mac/$accent" ${STEPS:+BAUD_SHOTS_STEPS=$STEPS} ${EXTRA:-} \
       "$APP/Contents/MacOS/baud" > "$OUT/mac/$accent-$mode.log" 2>&1
     grep -E "snap|rendered|error|fatal" "$OUT/mac/$accent-$mode.log" | cut -c1-140
     rm -rf "$D"
