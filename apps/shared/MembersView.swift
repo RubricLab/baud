@@ -17,6 +17,10 @@ struct MembersView: View {
 	@FocusState private var editing: Bool
 	@State private var person: Member?
 	@State private var removing: Member?
+	@State private var media = false
+	@State private var searching = false
+	@State private var labelling = false
+	@State private var label = ""
 
 	var body: some View {
 		if let c = model.conversation(conv) {
@@ -33,7 +37,7 @@ struct MembersView: View {
 				ScrollView {
 					Group {
 						if let other {
-							PersonSections(user: other.user, conv: c.id, inChat: true, done: close) { DisappearCard(conversation: c) }
+							PersonSections(user: other.user, conv: c.id, inChat: true, done: close)
 						} else {
 							VStack(alignment: .leading, spacing: Space.section) {
 								hero(c, members: members, group: group)
@@ -43,7 +47,18 @@ struct MembersView: View {
 								if c.kind == .home {
 									ListCard(title: "Devices") { ForEach(model.me.devices) { d in DeviceRow(d: d, this: d.id == model.me.thisDevice).cardRow() } }
 								} else if c.kind != .space {
-									DisappearCard(conversation: c)
+									if group { groupTiles(c) }
+									ListCard {
+										DisappearPicker(conversation: c).cardRow()
+										if group {
+											Menu {
+												if model.muted(c.id) != nil { Button { model.unmute(c.id) } label: { Label("Unmute", systemImage: "bell") } }
+												else { ForEach(MuteMenu.choices, id: \.0) { t, s in Button(t) { model.mute(c.id, for: s) } } }
+											} label: { ActionRow(symbol: "bell", title: "Notifications", value: model.muted(c.id) == nil ? "On" : "Muted").cardRow() }
+											.menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
+											Button { media = true } label: { ActionRow(symbol: "photo.on.rectangle", title: "Media, links and files") }.buttonStyle(RowStyle())
+										}
+									}
 								}
 								if c.kind != .home { people(c, members: members, group: group, admin: admin) }
 								if group {
@@ -63,6 +78,13 @@ struct MembersView: View {
 				Button("Remove", role: .destructive) { if let m = removing { model.attempt { try model.core.removeMember(conv, m.user) } }; removing = nil }
 				Button("Cancel", role: .cancel) { removing = nil }
 			} message: { Text("They'll stop getting new messages here.") }
+			.sheet(isPresented: $media) { MediaPage(conv: conv, done: { close?() }).environment(model).environment(\.tones, tones) }
+			.sheet(isPresented: $searching) { ChatSearch(conv: conv, done: { close?() }).environment(model).environment(\.tones, tones) }
+			.alert("Your label in \(model.title(c))", isPresented: $labelling) {
+				TextField("organiser, plus one…", text: $label)
+				Button("Save") { model.setLabel(conv, model.me.user, String(label.prefix(24))) }
+				Button("Cancel", role: .cancel) {}
+			} message: { Text("Everyone in the group sees it beside your name.") }
 			.onAppear { name = c.name ?? ""; topic = c.topic ?? "" }
 			.onChange(of: conv) { _, _ in renaming = false; name = model.conversation(conv)?.name ?? ""; topic = model.conversation(conv)?.topic ?? "" }
 		}
@@ -83,6 +105,9 @@ struct MembersView: View {
 				#endif
 			}
 			ForEach(members) { m in
+				if m.me, group {
+					Button { label = m.label ?? ""; labelling = true } label: { MemberRow(m: m, conv: conv) }.buttonStyle(RowStyle())
+				} else {
 				#if os(iOS)
 				NavigationLink(value: PersonLink(user: m.user, conv: conv)) { MemberRow(m: m, conv: conv) }
 					.buttonStyle(RowStyle())
@@ -90,10 +115,27 @@ struct MembersView: View {
 				#else
 				Button { person = m } label: { MemberRow(m: m, conv: conv) }
 					.buttonStyle(RowStyle())
-					.popover(isPresented: Binding(get: { person?.id == m.id }, set: { if !$0 { person = nil } })) { PersonPage(user: m.user, conv: conv).frame(width: 360, height: 560) }
+					.popover(isPresented: Binding(get: { person?.id == m.id }, set: { if !$0 { person = nil } })) { PersonPage(user: m.user, conv: conv).frame(width: 360, height: 600) }
 					.contextMenu { menu(m, c, admin: admin) }
 				#endif
+				}
 			}
+		}
+	}
+
+	/// A group's round tiles: a call, a video call, muting it, searching it.
+	private func groupTiles(_ c: Conversation) -> some View {
+		let muted = model.muted(c.id) != nil
+		let callable = model.calls.callable(c.id) && model.calls.session == nil
+		return HStack(spacing: 8) {
+			RoundTile(symbol: "video", title: "Video") { model.calls.start(c.id, video: true) }.disabled(!callable)
+			RoundTile(symbol: "phone", title: "Call") { model.calls.start(c.id, video: false) }.disabled(!callable)
+			Menu {
+				if muted { Button { model.unmute(c.id) } label: { Label("Unmute", systemImage: "bell") } }
+				else { ForEach(MuteMenu.choices, id: \.0) { t, s in Button(t) { model.mute(c.id, for: s) } } }
+			} label: { RoundTileFace(symbol: muted ? "bell.slash.fill" : "bell.slash", title: muted ? "Muted" : "Mute", on: muted) }
+			.menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
+			RoundTile(symbol: "magnifyingglass", title: "Search") { searching = true }
 		}
 	}
 
@@ -170,13 +212,13 @@ struct MemberRow: View {
 	let conv: ConversationId
 	var body: some View {
 		let through = model.through(m, in: conv)
-		let c = model.conversation(conv)
+		let group = model.conversation(conv).map { !$0.isDirect && $0.kind != .home } == true
 		PersonRow(name: m.me ? model.me.name : model.name(of: m.user),
 			hash: m.me ? model.me.avatar : model.contacts.first { $0.user == m.user }?.avatar,
 			presence: Mark.presence(m.devices),
-			detail: m.me ? "You" : !through.isEmpty ? "Through \(list(through))" : model.isFriend(m.user) ? "Friend · \(presenceWord(m.devices))" : presenceWord(m.devices).capitalizedFirst,
-			// Admin means something only where there are people to manage.
-			badge: m.admin && c.map { !$0.isDirect && $0.kind != .home } == true ? "admin" : nil,
+			detail: m.me ? (m.label == nil && group ? "You · Set your label" : "You") : !through.isEmpty ? "Through \(list(through))" : model.isFriend(m.user) ? "Friend · \(presenceWord(m.devices))" : presenceWord(m.devices).capitalizedFirst,
+			// Their label in the group, else admin (which means something only where there are people to manage).
+			badge: group ? (m.label ?? (m.admin ? "admin" : nil)) : nil,
 			member: m)
 	}
 }

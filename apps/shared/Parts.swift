@@ -442,41 +442,96 @@ struct ReactionsList: View {
 	return "\(r.key) \(list(names))"
 }
 
-/// My message, opened: who has it and who has read it, person by person, from the receipts.
+/// A message, opened: the message itself, when it was sent (and when it goes, if it disappears), and
+/// then, for mine, who has it person by person (read, delivered, held for them by a device, not
+/// yet), from the receipts; for theirs, the device it came from and how it came. Its reactions,
+/// with who gave each. The one place a message's path is spelled out.
 struct MessageInfo: View {
 	@Environment(\.tones) private var tones
 	@Environment(AppModel.self) private var model
 	let event: Event
 	var body: some View {
-		let d = model.core.delivery(event.conv, event.id)
-		let people = Dictionary(grouping: d.devices, by: \.personName).map { (name: $0.key, best: $0.value.map(\.state).max { rank($0) < rank($1) } ?? .sent, carriers: Set($0.value.flatMap(\.carriers))) }
-			.sorted { rank($0.best) != rank($1.best) ? rank($0.best) > rank($1.best) : $0.name < $1.name }
-		VStack(alignment: .leading, spacing: 12) {
-			VStack(alignment: .leading, spacing: 2) {
-				Text("Message info").font(Theme.headingFont)
-				Text("Sent \(event.at.formatted(date: .abbreviated, time: .shortened))").font(Theme.smallFont).foregroundStyle(tones.secondary)
+		let c = model.conversation(event.conv)
+		VStack(spacing: 0) {
+			SheetHeader(title: "Info")
+			ScrollView {
+				VStack(alignment: .leading, spacing: Space.section) {
+					MessageRow(event: event, first: true, last: true, onReply: { _ in }, onThread: { _ in }, lifted: true)
+						.allowsHitTesting(false)
+					ListCard {
+						ActionRow(symbol: "clock", title: event.mine ? "Sent" : "Sent", value: event.at.formatted(date: .abbreviated, time: .shortened)).cardRow()
+						if let t = event.text, !t.isEmpty, PlaceText.parse(t) == nil {
+							Button { copy(t) } label: { ActionRow(symbol: "doc.on.doc", title: "Copy text") }.buttonStyle(RowStyle())
+						}
+						if let c, c.disappear > 0 { ActionRow(symbol: "timer", title: "Disappears", value: "\(disappearAfter(c.disappear)) after it's read").cardRow() }
+						if !event.mine {
+							ActionRow(symbol: "laptopcomputer.and.iphone", title: "From", value: device(event.device)).cardRow()
+							if let v = event.via { ActionRow(symbol: "point.3.connected.trianglepath.dotted", title: "How it came", value: how(v)).cardRow() }
+						}
+					}
+					if event.mine { people }
+					if !event.reactions.isEmpty {
+						ListCard(title: "Reactions") {
+							ForEach(event.reactions.sorted { $0.users.count > $1.users.count }, id: \.key) { r in
+								HStack(alignment: .firstTextBaseline, spacing: Rows.gap) {
+									Text(r.key).font(.system(size: Theme.body + 6)).frame(width: Rows.personFace)
+									Text(list(r.users.filter { $0 == model.me.user }.map { _ in "You" } + r.users.filter { $0 != model.me.user }.map(model.name(of:)))).font(Theme.font)
+									Spacer(minLength: 0)
+								}
+								.frame(minHeight: Rows.line).cardRow()
+							}
+						}
+					}
+				}
+				.padding(.horizontal, Space.side).padding(.vertical, Space.section)
 			}
-			if people.isEmpty { Text("Only you are here.").font(Theme.font).foregroundStyle(tones.secondary) }
-			ForEach(people, id: \.name) { p in
-				HStack(spacing: 8) {
-					MarkView(mark: mark(p.best), size: Theme.small + 3, color: tones.secondary).frame(width: 20)
-					Text(p.name).font(Theme.font)
-					Spacer(minLength: 12)
-					Text(word(p.best, p.carriers)).font(Theme.smallFont).foregroundStyle(tones.secondary)
+		}
+		.background(tones.surface.ignoresSafeArea())
+		#if os(macOS)
+		.frame(width: 420, height: 560)
+		#else
+		.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+		#endif
+	}
+
+	/// Mine: who has it, each person once, at the furthest any of their devices has it.
+	@ViewBuilder private var people: some View {
+		let d = model.core.delivery(event.conv, event.id)
+		let byPerson = Dictionary(grouping: d.devices, by: \.personName).map { (name: $0.key, best: $0.value.map(\.state).max { rank($0) < rank($1) } ?? .sent, carriers: Array(Set($0.value.flatMap(\.carriers))).sorted()) }
+			.sorted { $0.name < $1.name }
+		if byPerson.isEmpty {
+			ListCard { Text("Only you are here.").font(Theme.font).foregroundStyle(tones.secondary).frame(minHeight: Rows.line).cardRow() }
+		}
+		// Read, delivered, held for them, not yet: furthest first.
+		ForEach([3, 2, 1, 0], id: \.self) { level in
+			let here = byPerson.filter { rank($0.best) == level }
+			if !here.isEmpty {
+				ListCard(title: ["Not yet", "Held for", "Delivered to", "Read by"][level]) {
+					ForEach(here, id: \.name) { p in
+						PersonRow(name: p.name, detail: level == 1 ? (p.carriers.isEmpty ? "A device holds it for them" : "Held by \(list(p.carriers))") : nil) {
+							MarkView(mark: [Mark.sending, .carried, .delivered, .read][level], size: Theme.small + 3, color: tones.secondary)
+						}
+						.cardRow()
+					}
 				}
 			}
 		}
-		.padding(Space.side)
-		.frame(minWidth: 260, maxWidth: .infinity, alignment: .leading)
 	}
 	private func rank(_ s: DeliveryState) -> Int { switch s { case .read: 3; case .delivered: 2; case .carried: 1; case .sent: 0 } }
-	private func mark(_ s: DeliveryState) -> Mark { switch s { case .read: .read; case .delivered: .delivered; case .carried: .carried; case .sent: .sending } }
-	private func word(_ s: DeliveryState, _ carriers: Set<String>) -> String {
-		switch s {
-		case .read: "Read"
-		case .delivered: "Delivered"
-		case .carried: carriers.count == 1 ? "Carried by \(carriers.first!)" : "Carried while they're away"
-		case .sent: "Not yet"
+	/// The device it was written on, by its name, when it's one I know.
+	private func device(_ id: DeviceId) -> String {
+		if let p = model.peers.first(where: { $0.device.id == id }) { return Names.device(p.device.name) }
+		if let d = model.core.members(event.conv).flatMap(\.devices).first(where: { $0.id == id }) { return d.name }
+		return "Their device"
+	}
+	private func how(_ v: Event.Via) -> String {
+		switch v {
+		case .direct: return "Straight from them"
+		case .relay: return "Through a helper"
+		case .waiting: return "Waited for you to come online"
+		case .carried:
+			if let c = event.carriedBy, let p = model.peers.first(where: { $0.device.id == c }) { return "Held by \(p.own ? "your" : p.userName + "'s") \(DeviceShape(p.device).word)" }
+			return "Held by a device while you were away"
 		}
 	}
 }

@@ -252,7 +252,8 @@ struct MessageRow: View {
 			}
 			VStack(alignment: event.mine ? .trailing : .leading, spacing: 4) {
 				if first, !event.mine, !direct {
-					Text(model.name(of: event.user)).font(Theme.smallFont.weight(.semibold)).foregroundStyle(tones.secondary).padding(.horizontal, 13)
+					(Text(model.name(of: event.user)).font(Theme.smallFont.weight(.semibold)) + Text(timeline.labels[event.user].map { "  " + $0 } ?? "").font(Theme.smallFont))
+						.foregroundStyle(tones.secondary).padding(.horizontal, 13)
 				}
 				words
 				ForEach(event.attachments, id: \.hash) { AttachmentBlock(attachment: $0) }
@@ -303,12 +304,12 @@ struct MessageRow: View {
 		#if os(iOS)
 		.sheet(isPresented: $picking) { EmojiPicker { model.toggleReaction(event, $0) }.environment(\.tones, tones).presentationDetents([.large]).presentationDragIndicator(.visible) }
 		.sheet(isPresented: $showReactions) { ScrollView { ReactionsList(reactions: event.reactions) }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible).presentationBackground(tones.surface) }
-		.sheet(isPresented: $showInfo) { ScrollView { MessageInfo(event: event) }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible).presentationBackground(tones.surface) }
+		.sheet(isPresented: $showInfo) { MessageInfo(event: event).environment(model).environment(\.tones, tones) }
 		.sheet(isPresented: $forwarding) { ForwardSheet(event: event).environment(model).environment(\.tones, tones) }
 		#else
 		.popover(isPresented: $picking, arrowEdge: .trailing) { EmojiPicker { model.toggleReaction(event, $0) } }
 		.popover(isPresented: $showReactions, arrowEdge: event.mine ? .leading : .trailing) { ReactionsList(reactions: event.reactions).frame(width: 280).background(tones.surface) }
-		.popover(isPresented: $showInfo, arrowEdge: event.mine ? .leading : .trailing) { MessageInfo(event: event).frame(width: 300).background(tones.surface) }
+		.sheet(isPresented: $showInfo) { MessageInfo(event: event).environment(model).environment(\.tones, tones) }
 		.sheet(isPresented: $forwarding) { ForwardSheet(event: event).environment(model).environment(\.tones, tones) }
 		#endif
 		.confirmationDialog("Delete this message?", isPresented: $deleting, titleVisibility: .visible) {
@@ -517,8 +518,8 @@ struct MessageRow: View {
 		if !timeline.threadsInline { Button { onThread(event) } label: { Label("Reply in thread", systemImage: "bubble.left.and.bubble.right") } }
 		Button { forwarding = true } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
 		if let t = event.text, !t.isEmpty, PlaceText.parse(t) == nil { Button { copy(t) } label: { Label("Copy text", systemImage: "doc.on.doc") } }
+		Button { showInfo = true } label: { Label("Info", systemImage: "info.circle") }
 		if event.mine {
-			Button { showInfo = true } label: { Label("Info", systemImage: "info.circle") }
 			if event.text != nil, PlaceText.parse(event.text) == nil { Button { editText = event.text ?? ""; editing = true } label: { Label("Edit", systemImage: "pencil") } }
 			Divider()
 			Button(role: .destructive) { deleting = true } label: { Label("Delete…", systemImage: "trash") }
@@ -589,8 +590,8 @@ struct HoldMenu: View {
 		var out: [(String, String, Bool, () -> Void)] = [("Reply", "arrowshape.turn.up.left", false, { onReply(e) })]
 		out.append(("Forward", "arrowshape.turn.up.right", false, { ask(.forward) }))
 		if let t = e.text, !t.isEmpty, PlaceText.parse(t) == nil { out.append(("Copy text", "doc.on.doc", false, { copy(t) })) }
+		out.append(("Info", "info.circle", false, { ask(.info) }))
 		if e.mine {
-			out.append(("Info", "info.circle", false, { ask(.info) }))
 			if e.text != nil, PlaceText.parse(e.text) == nil { out.append(("Edit", "pencil", false, { ask(.edit) })) }
 			out.append(("Delete…", "trash", true, { ask(.delete) }))
 		}

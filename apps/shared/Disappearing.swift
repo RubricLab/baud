@@ -38,11 +38,14 @@ struct DisappearPicker: View {
 		} label: {
 			HStack(spacing: Rows.gap) {
 				Image(systemName: "timer").font(Icon.font(Icon.row)).foregroundStyle(tones.secondary).frame(width: Rows.personFace)
-				Text(words).font(Theme.font.weight(.medium)).foregroundStyle(can ? tones.text : tones.secondary)
+				VStack(alignment: .leading, spacing: 2) {
+					Text("Disappearing messages").font(Theme.font.weight(.medium)).foregroundStyle(tones.text)
+					Text(!can ? "\(words) · only an admin can change this" : c.disappear == 0 ? "Off" : "New messages go \(disappearAfter(c.disappear)) after they're read").font(Theme.smallFont).foregroundStyle(tones.secondary).fixedSize(horizontal: false, vertical: true)
+				}
 				Spacer(minLength: 4)
 				if can { Image(systemName: "chevron.up.chevron.down").font(Icon.font(Icon.inline)).foregroundStyle(tones.secondary) }
 			}
-			.frame(minHeight: Rows.line).contentShape(Rectangle())
+			.frame(minHeight: Rows.person).contentShape(Rectangle())
 		}
 		.menuIndicator(.hidden).buttonStyle(.plain).disabled(!can)
 		.accessibilityLabel("Disappearing messages: \(words)")

@@ -40,7 +40,12 @@ final class Timeline {
 	/// the conversation, in time order, each quoting the message it answers. Channels keep theirs.
 	let threadsInline: Bool
 
+	/// Members' labels in a group ("organiser"), shown after their names over their messages.
+	private(set) var labels: [UserId: String] = [:]
+
 	func reload() {
+		let fresh = Dictionary(model.core.members(conv).compactMap { m in m.label.map { (m.user, $0) } }, uniquingKeysWith: { a, _ in a })
+		if fresh != labels { labels = fresh }
 		let want = max(page, events.count)
 		let main = model.core.events(conv, before: nil, limit: want)
 		exhausted = main.count < want
