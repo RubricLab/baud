@@ -26,7 +26,7 @@ timed() {
   local t=$1; shift
   "$@" >/dev/null 2>&1 & local p=$!
   ( sleep "$t"; kill "$p" 2>/dev/null ) & local w=$!
-  wait "$p" 2>/dev/null; kill "$w" 2>/dev/null
+  wait "$p" 2>/dev/null; kill "$w" 2>/dev/null; wait "$w" 2>/dev/null
   return 0
 }
 
